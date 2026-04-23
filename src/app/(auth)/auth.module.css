@@ -4,10 +4,22 @@
   align-items: center;
   justify-content: center;
   background:
-    radial-gradient(circle at 0% 0%, rgba(78,207,160,0.10), transparent 30%),
-    radial-gradient(circle at 100% 12%, rgba(176,225,245,0.45), transparent 24%),
-    linear-gradient(180deg, #f6fafa 0%, #eef7f5 48%, #e6f4f1 100%);
+    radial-gradient(ellipse at 50% 0%, rgba(201,100,66,0.12) 0%, transparent 56%),
+    linear-gradient(180deg, #fffdfa 0%, var(--bg) 44%, #f5efe8 100%);
   padding: 24px 16px;
+  position: relative;
+}
+
+.page::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    linear-gradient(rgba(26,23,20,.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(26,23,20,.04) 1px, transparent 1px);
+  background-size: 80px 80px;
+  mask-image: linear-gradient(to bottom, transparent 0%, black 20%, black 80%, transparent 100%);
 }
 
 .card {
@@ -23,7 +35,7 @@
 
 /* ── Left branding panel ── */
 .left {
-  background: #0a0a0a;
+  background: linear-gradient(160deg, #9B4A2D 0%, #C96442 55%, #B05535 100%);
   padding: 48px 44px;
   display: flex;
   flex-direction: column;
@@ -116,7 +128,7 @@
   width: 44px;
   height: 44px;
   border-radius: 22px;
-  background: #eef7f5;
+  background: #F3EEE7;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -139,7 +151,7 @@
 
 .sentNote {
   padding: 14px;
-  background: #eef7f5;
+  background: #F3EEE7;
   border-radius: 10px;
   font-size: 12px;
   color: #404040;
@@ -173,7 +185,7 @@
 
 .tabToggle {
   display: flex;
-  background: #eef7f5;
+  background: #F3EEE7;
   border-radius: 8px;
   padding: 3px;
   margin-bottom: 20px;
@@ -238,11 +250,24 @@
 .obPage {
   min-height: 100vh;
   background:
-    radial-gradient(circle at 0% 0%, rgba(78,207,160,0.10), transparent 30%),
-    radial-gradient(circle at 100% 12%, rgba(176,225,245,0.45), transparent 24%),
-    linear-gradient(180deg, #f6fafa 0%, #eef7f5 48%, #e6f4f1 100%);
+    radial-gradient(ellipse at 50% 0%, rgba(201,100,66,0.10) 0%, transparent 50%),
+    linear-gradient(180deg, #fffdfa 0%, var(--bg) 44%, #f5efe8 100%);
   display: flex;
   flex-direction: column;
+  position: relative;
+}
+
+.obPage::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  background:
+    linear-gradient(rgba(26,23,20,.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(26,23,20,.04) 1px, transparent 1px);
+  background-size: 80px 80px;
+  mask-image: linear-gradient(to bottom, transparent 0%, black 15%, black 85%, transparent 100%);
 }
 
 .obTopbar {
@@ -290,19 +315,19 @@
 }
 
 .obStepBubble[data-state="done"] {
-  background: #1A8C64;
+  background: var(--accent);
   color: #fff;
   border: none;
 }
 
 .obStepBubble[data-state="active"] {
   background: #fff;
-  border: 1.5px solid #1A8C64;
-  color: #1A8C64;
+  border: 1.5px solid var(--accent);
+  color: var(--accent);
 }
 
 .obStepBubble[data-state="pending"] {
-  background: #eef7f5;
+  background: #F3EEE7;
   border: 1.5px solid rgba(14,30,26,0.10);
   color: #a3a3a3;
 }
@@ -314,7 +339,7 @@
 
 .obStepLabel[data-state="active"] {
   font-weight: 600;
-  color: #1A8C64;
+  color: var(--accent);
 }
 
 .obStepLabel[data-state="pending"],
