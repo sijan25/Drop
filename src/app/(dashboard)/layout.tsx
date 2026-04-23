@@ -100,7 +100,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       height: '100vh',
       overflow: 'hidden',
       background:
-        'radial-gradient(circle at 0% 0%, rgba(78,207,160,0.10), transparent 30%), radial-gradient(circle at 100% 12%, rgba(176,225,245,0.45), transparent 24%), linear-gradient(180deg, #f6fafa 0%, #eef7f5 48%, #e6f4f1 100%)',
+        'radial-gradient(circle at top center, rgba(201,100,66,0.08) 0%, transparent 32%), linear-gradient(180deg, #fffdfa 0%, var(--bg) 44%, #f5efe8 100%)',
     }}>
       {/* Sidebar */}
       <aside style={{

@@ -597,7 +597,7 @@ export default function Home() {
 
         <div className="landing-shell landing-footer-bottom">
           <span>© 2026 Droppi. Todos los derechos reservados.</span>
-          <span>Tegucigalpa & San Pedro Sula, Honduras</span>
+          <span>San Pedro Sula, Honduras</span>
         </div>
       </footer>
     </main>

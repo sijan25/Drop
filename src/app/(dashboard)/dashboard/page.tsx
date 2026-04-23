@@ -299,7 +299,7 @@ export default function DashboardPage() {
         overflowY: 'auto',
         padding: '20px 28px 28px',
         background:
-          'radial-gradient(circle at top right, rgba(78,207,160,0.08) 0%, transparent 20%), linear-gradient(180deg, rgba(255,255,255,0.18) 0%, transparent 100%)',
+          'radial-gradient(circle at top right, rgba(201,100,66,0.06) 0%, transparent 20%), linear-gradient(180deg, rgba(255,255,255,0.18) 0%, transparent 100%)',
       }}>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, minmax(160px, 1fr))', gap: 14, marginBottom: 24 }}>
           <StatCard label="Ventas del mes" value={`L ${stats.ventasMes.toLocaleString()}`} help="Este mes · pedidos pagados" icon={Icons.wallet} accent="orange"/>
