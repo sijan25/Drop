@@ -1,0 +1,15 @@
+{
+  "mcpServers": {
+    "supabase": {
+      "type": "http",
+      "url": "https://mcp.supabase.com/mcp?project_ref=jbbbyawiaovowihqkaoe"
+    },
+    "notion": {
+      "command": "npx",
+      "args": ["-y", "@notionhq/notion-mcp-server"],
+      "env": {
+        "OPENAPI_MCP_HEADERS": "{\"Authorization\": \"Bearer ntn_b28060339323TzyNRxN5BbAh9fdNRetfQlakBSMSaFR91a\", \"Notion-Version\": \"2022-06-28\"}"
+      }
+    }
+  }
+}

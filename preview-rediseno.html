@@ -1,0 +1,531 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>FardoDrops — Preview Rediseño Público</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet"/>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg:       #FAF9F7;
+    --bg-2:     #F2F0EC;
+    --surface:  #FFFFFF;
+    --line:     #E8E4DF;
+    --ink:      #1A1714;
+    --ink-2:    #4A4540;
+    --ink-3:    #8A8380;
+    --accent:   #C96442;   /* terracota — neutro cálido, ni masculino ni femenino */
+    --accent-2: #F0E8E3;
+    --green:    #2D6A4F;
+    --green-bg: #D8F3DC;
+    font-family: 'Inter', sans-serif;
+    background: var(--bg);
+    color: var(--ink);
+  }
+
+  /* ── Layout ── */
+  body { min-height: 100vh; }
+  .container { max-width: 1200px; margin: 0 auto; padding: 0 24px; }
+
+  /* ── Nav ── */
+  nav {
+    background: var(--surface);
+    border-bottom: 1px solid var(--line);
+    position: sticky; top: 0; z-index: 100;
+    height: 60px;
+    display: flex; align-items: center;
+  }
+  .nav-inner {
+    width: 100%; max-width: 1200px; margin: 0 auto; padding: 0 24px;
+    display: flex; align-items: center; justify-content: space-between; gap: 24px;
+  }
+  .nav-brand { font-size: 17px; font-weight: 900; letter-spacing: -0.03em; color: var(--ink); }
+  .nav-links { display: flex; gap: 6px; }
+  .nav-link {
+    padding: 7px 14px; border-radius: 8px; font-size: 13px; font-weight: 500;
+    color: var(--ink-2); cursor: pointer; transition: background .12s;
+    border: none; background: transparent;
+  }
+  .nav-link:hover { background: var(--bg-2); color: var(--ink); }
+  .nav-link.active { background: var(--accent-2); color: var(--accent); font-weight: 600; }
+  .nav-right { display: flex; align-items: center; gap: 12px; }
+  .nav-ig { font-size: 12px; font-weight: 600; color: var(--ink-2); display: flex; align-items: center; gap: 6px; }
+  .cart-btn {
+    width: 40px; height: 40px; border-radius: 20px;
+    background: var(--ink); color: #fff; border: none; cursor: pointer;
+    display: flex; align-items: center; justify-content: center; position: relative;
+  }
+  .cart-badge {
+    position: absolute; top: -4px; right: -4px; width: 18px; height: 18px;
+    background: var(--accent); border-radius: 9px; font-size: 10px; font-weight: 700;
+    color: #fff; display: flex; align-items: center; justify-content: center;
+  }
+
+  /* ── Hero Drop ── */
+  .hero {
+    margin: 24px 0;
+    border-radius: 20px;
+    overflow: hidden;
+    background: var(--ink);
+    position: relative;
+    min-height: 380px;
+    display: flex;
+  }
+  .hero-img {
+    position: absolute; inset: 0;
+    background: linear-gradient(135deg, #2a1f1a 0%, #1a1410 60%, #0f0b09 100%);
+  }
+  .hero-img::after {
+    content: '';
+    position: absolute; inset: 0;
+    background: linear-gradient(to right, rgba(10,8,6,0.88) 0%, rgba(10,8,6,0.4) 60%, rgba(10,8,6,0.1) 100%);
+  }
+  .hero-content {
+    position: relative; z-index: 2;
+    padding: 40px 48px;
+    display: flex; align-items: center; justify-content: space-between; gap: 40px;
+    width: 100%;
+  }
+  .hero-left { flex: 1; }
+  .hero-badge {
+    display: inline-flex; align-items: center; gap: 7px;
+    background: rgba(201,100,66,0.22); border: 1px solid rgba(201,100,66,0.45);
+    color: #f4a882; border-radius: 20px; padding: 6px 14px;
+    font-size: 11px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase;
+    margin-bottom: 20px;
+  }
+  .hero-badge-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--accent); animation: pulse 1.6s infinite; }
+  @keyframes pulse { 0%,100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.5; transform: scale(0.85); } }
+  .hero-title { font-size: 52px; font-weight: 900; letter-spacing: -0.03em; color: #fff; line-height: 1.0; margin-bottom: 12px; }
+  .hero-title span { color: var(--accent); }
+  .hero-desc { font-size: 14px; color: rgba(255,255,255,0.58); line-height: 1.6; max-width: 380px; }
+  .hero-right {
+    display: flex; flex-direction: column; align-items: flex-end; gap: 24px;
+    flex-shrink: 0;
+  }
+  .countdown-label { font-size: 10px; color: rgba(255,255,255,0.45); text-align: right; letter-spacing: 0.1em; text-transform: uppercase; font-weight: 600; margin-bottom: 6px; }
+  .countdown-blocks { display: flex; gap: 8px; align-items: center; }
+  .countdown-block { text-align: center; }
+  .countdown-num {
+    font-size: 36px; font-weight: 900; color: #fff; line-height: 1;
+    background: rgba(255,255,255,0.10); border: 1px solid rgba(255,255,255,0.14);
+    border-radius: 10px; padding: 10px 14px; min-width: 60px;
+    font-variant-numeric: tabular-nums;
+  }
+  .countdown-lbl { font-size: 9px; color: rgba(255,255,255,0.4); margin-top: 5px; letter-spacing: 0.12em; text-transform: uppercase; }
+  .countdown-sep { font-size: 28px; font-weight: 900; color: rgba(255,255,255,0.3); margin-bottom: 20px; }
+  .hero-cta {
+    display: inline-flex; align-items: center; gap: 8px;
+    background: var(--accent); color: #fff; border: none; cursor: pointer;
+    padding: 0 28px; height: 52px; border-radius: 12px;
+    font-size: 14px; font-weight: 700; letter-spacing: 0.02em;
+    transition: opacity .12s; white-space: nowrap;
+  }
+  .hero-cta:hover { opacity: 0.88; }
+
+  /* ── Sección catálogo ── */
+  .catalog-section { padding: 48px 0; }
+  .section-eyebrow {
+    display: flex; align-items: center; gap: 8px;
+    font-size: 11px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase;
+    color: var(--accent); margin-bottom: 8px;
+  }
+  .section-title { font-size: 30px; font-weight: 800; letter-spacing: -0.025em; margin-bottom: 24px; }
+
+  /* Filtros */
+  .filters { display: flex; gap: 6px; margin-bottom: 32px; flex-wrap: wrap; }
+  .filter-btn {
+    padding: 8px 16px; border-radius: 100px; font-size: 13px; font-weight: 500;
+    border: 1.5px solid var(--line); background: var(--surface); color: var(--ink-2);
+    cursor: pointer; transition: all .12s;
+  }
+  .filter-btn:hover { border-color: var(--ink-3); color: var(--ink); }
+  .filter-btn.active {
+    background: var(--ink); color: #fff; border-color: var(--ink);
+  }
+
+  /* Grid */
+  .product-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+
+  .product-card {
+    background: var(--surface); border-radius: 16px;
+    overflow: hidden; cursor: pointer;
+    transition: transform .15s, box-shadow .15s;
+    border: 1px solid var(--line);
+  }
+  .product-card:hover { transform: translateY(-3px); box-shadow: 0 12px 32px rgba(26,23,20,0.10); }
+  .product-img {
+    width: 100%; aspect-ratio: 3/4; object-fit: cover;
+    background: var(--bg-2);
+    position: relative;
+    overflow: hidden;
+  }
+  .product-img-placeholder {
+    width: 100%; aspect-ratio: 3/4;
+    background: linear-gradient(135deg, #EDE9E3 0%, #DDD8D0 100%);
+    display: flex; align-items: center; justify-content: center;
+    color: var(--ink-3); font-size: 12px;
+    position: relative;
+  }
+  .product-badge {
+    position: absolute; top: 10px; left: 10px;
+    padding: 5px 10px; border-radius: 100px;
+    font-size: 11px; font-weight: 700; letter-spacing: 0.02em;
+  }
+  .badge-stock { background: #FEF3C7; color: #92400E; }
+  .badge-sold { background: var(--ink); color: #fff; }
+  .badge-new { background: var(--accent-2); color: var(--accent); }
+  .wishlist-btn {
+    position: absolute; top: 10px; right: 10px;
+    width: 32px; height: 32px; border-radius: 16px;
+    background: rgba(255,255,255,0.88); border: 1px solid rgba(0,0,0,0.08);
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer; font-size: 14px;
+    backdrop-filter: blur(4px);
+  }
+  .product-info { padding: 12px 14px 14px; }
+  .product-brand { font-size: 10px; font-weight: 700; color: var(--ink-3); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 3px; }
+  .product-name { font-size: 13px; font-weight: 600; color: var(--ink); margin-bottom: 8px; line-height: 1.3; }
+  .product-footer { display: flex; align-items: center; justify-content: space-between; }
+  .product-price { font-size: 15px; font-weight: 800; color: var(--ink); font-variant-numeric: tabular-nums; }
+  .product-meta { font-size: 11px; font-weight: 600; }
+  .in-stock { color: var(--green); }
+  .low-stock { color: #B45309; }
+  .out-stock { color: var(--ink-3); }
+
+  /* Talla chip */
+  .product-talla {
+    display: inline-block;
+    font-size: 10px; font-weight: 700; color: var(--ink-2);
+    background: var(--bg-2); border: 1px solid var(--line);
+    border-radius: 5px; padding: 2px 6px;
+    margin-bottom: 8px;
+  }
+
+  /* ── Sección WhatsApp ── */
+  .whatsapp-section {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 20px;
+    padding: 56px 64px;
+    margin: 0 0 48px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 48px;
+    align-items: center;
+  }
+  .ws-title {
+    font-size: 36px; font-weight: 900; letter-spacing: -0.03em; line-height: 1.1;
+    margin-bottom: 14px;
+  }
+  .ws-title span { color: var(--accent); }
+  .ws-desc { font-size: 15px; color: var(--ink-2); line-height: 1.65; margin-bottom: 24px; }
+  .ws-form { display: flex; gap: 8px; }
+  .ws-input {
+    flex: 1; height: 50px; border-radius: 12px;
+    border: 1.5px solid var(--line); background: var(--bg);
+    padding: 0 16px; font-size: 14px; color: var(--ink);
+    outline: none; font-family: inherit;
+    transition: border-color .12s;
+  }
+  .ws-input:focus { border-color: var(--ink-3); }
+  .ws-input::placeholder { color: var(--ink-3); }
+  .ws-btn {
+    height: 50px; padding: 0 20px; border-radius: 12px;
+    background: var(--accent); color: #fff; border: none; cursor: pointer;
+    font-size: 13px; font-weight: 700; white-space: nowrap;
+    display: flex; align-items: center; gap: 6px;
+    transition: opacity .12s;
+  }
+  .ws-btn:hover { opacity: 0.88; }
+  .ws-card {
+    background: var(--bg); border: 1px solid var(--line);
+    border-radius: 16px; padding: 20px 22px;
+    box-shadow: 0 8px 28px rgba(26,23,20,0.07);
+  }
+  .ws-card-dots { display: flex; gap: 5px; margin-bottom: 12px; }
+  .ws-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--accent); }
+  .ws-dot:nth-child(2) { opacity: 0.5; }
+  .ws-dot:nth-child(3) { opacity: 0.25; }
+  .ws-card-label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--ink-2); margin-bottom: 8px; }
+  .ws-card-msg { font-size: 14px; color: var(--ink-2); line-height: 1.55; font-style: italic; }
+  .ws-perks { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 14px; }
+  .ws-perk {
+    display: inline-flex; align-items: center; gap: 5px;
+    font-size: 11px; font-weight: 600; color: var(--ink-2);
+    background: var(--bg-2); border-radius: 100px; padding: 5px 10px;
+  }
+
+  /* ── Footer ── */
+  footer {
+    background: var(--ink);
+    padding: 48px 24px 28px;
+  }
+  .footer-inner {
+    max-width: 1200px; margin: 0 auto;
+    display: flex; align-items: flex-start; justify-content: space-between; gap: 32px;
+    margin-bottom: 32px;
+  }
+  .footer-brand { font-size: 22px; font-weight: 900; letter-spacing: -0.02em; color: #fff; margin-bottom: 8px; }
+  .footer-bio { font-size: 13px; color: rgba(255,255,255,0.45); line-height: 1.55; max-width: 240px; }
+  .footer-socials { display: flex; gap: 8px; margin-top: 16px; }
+  .footer-social {
+    width: 38px; height: 38px; border-radius: 10px;
+    border: 1px solid rgba(255,255,255,0.16); background: rgba(255,255,255,0.06);
+    display: flex; align-items: center; justify-content: center;
+    color: rgba(255,255,255,0.7); cursor: pointer; font-size: 15px;
+    transition: background .12s;
+  }
+  .footer-social:hover { background: rgba(255,255,255,0.12); }
+  .footer-links-group { }
+  .footer-links-title { font-size: 11px; text-transform: uppercase; letter-spacing: 0.1em; color: rgba(255,255,255,0.35); font-weight: 700; margin-bottom: 12px; }
+  .footer-link { display: block; font-size: 13px; color: rgba(255,255,255,0.58); margin-bottom: 8px; cursor: pointer; }
+  .footer-link:hover { color: #fff; }
+  .footer-bottom {
+    max-width: 1200px; margin: 0 auto;
+    border-top: 1px solid rgba(255,255,255,0.08);
+    padding-top: 20px;
+    display: flex; justify-content: space-between; align-items: center;
+  }
+  .footer-copy { font-size: 11px; color: rgba(255,255,255,0.25); letter-spacing: 0.06em; }
+
+  /* ── Nota comparación ── */
+  .comparison-bar {
+    background: #1A1714; color: #fff;
+    padding: 10px 24px; text-align: center;
+    font-size: 12px; font-weight: 600; letter-spacing: 0.04em;
+    position: sticky; top: 60px; z-index: 99;
+  }
+  .comparison-bar span { color: var(--accent); }
+</style>
+</head>
+<body>
+
+<!-- Banner informativo -->
+<div class="comparison-bar">PREVIEW · Rediseño <span>neutro cálido</span> — Fondo #FAF9F7 · Acento terracota #C96442</div>
+
+<!-- Nav -->
+<nav>
+  <div class="nav-inner">
+    <div class="nav-brand">MITIENDAHN</div>
+    <div class="nav-links">
+      <button class="nav-link active">⚡ Nuevo Drop</button>
+      <button class="nav-link">Catálogo</button>
+      <button class="nav-link">Sold Out</button>
+    </div>
+    <div class="nav-right">
+      <div class="nav-ig">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/></svg>
+        @mitiendahn
+      </div>
+      <button class="cart-btn">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>
+        <div class="cart-badge">2</div>
+      </button>
+    </div>
+  </div>
+</nav>
+
+<div class="container">
+
+  <!-- Hero Drop Activo -->
+  <div class="hero" style="margin-top:24px;">
+    <div class="hero-img"></div>
+    <div class="hero-content">
+      <div class="hero-left">
+        <div class="hero-badge">
+          <div class="hero-badge-dot"></div>
+          DROP ACTIVO AHORA
+        </div>
+        <div class="hero-title">SEASON<br/><span>VOL. 02</span></div>
+        <div class="hero-desc">Nuestra colección más limitada hasta la fecha. Piezas únicas, sin reposición. Una vez que se van, se van para siempre.</div>
+      </div>
+      <div class="hero-right">
+        <div>
+          <div class="countdown-label">Cierre de drop en</div>
+          <div class="countdown-blocks">
+            <div class="countdown-block">
+              <div class="countdown-num">02</div>
+              <div class="countdown-lbl">HORAS</div>
+            </div>
+            <div class="countdown-sep">:</div>
+            <div class="countdown-block">
+              <div class="countdown-num">43</div>
+              <div class="countdown-lbl">MIN</div>
+            </div>
+            <div class="countdown-sep">:</div>
+            <div class="countdown-block">
+              <div class="countdown-num">18</div>
+              <div class="countdown-lbl">SEG</div>
+            </div>
+          </div>
+        </div>
+        <button class="hero-cta">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>
+          Comprar colección
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Catálogo -->
+  <div class="catalog-section">
+    <div class="section-eyebrow">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+      CATÁLOGO DE TEMPORADA
+    </div>
+    <div class="section-title">Dropping now</div>
+
+    <div class="filters">
+      <button class="filter-btn active">Todo</button>
+      <button class="filter-btn">Blusas</button>
+      <button class="filter-btn">Vestidos</button>
+      <button class="filter-btn">Pantalones</button>
+      <button class="filter-btn">Chaquetas</button>
+      <button class="filter-btn">Faldas</button>
+      <button class="filter-btn">Hoodies</button>
+    </div>
+
+    <div class="product-grid">
+
+      <!-- Card 1 — imagen -->
+      <div class="product-card">
+        <div class="product-img-placeholder" style="background: linear-gradient(160deg, #E8D5C4 0%, #C9A98A 100%);">
+          <div class="product-badge badge-stock">Solo 1 unidad</div>
+          <div class="wishlist-btn">♡</div>
+          <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="rgba(120,90,60,0.4)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+        </div>
+        <div class="product-info">
+          <div class="product-brand">Zara Originals</div>
+          <div class="product-name">Crop Top Naranja</div>
+          <div class="product-talla">Talla M</div>
+          <div class="product-footer">
+            <div class="product-price">L 500</div>
+            <div class="product-meta low-stock">1 disponible</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Card 2 — con imagen oscura -->
+      <div class="product-card">
+        <div class="product-img-placeholder" style="background: linear-gradient(160deg, #C8C8C8 0%, #888 100%);">
+          <div class="wishlist-btn">♡</div>
+          <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="rgba(60,60,60,0.35)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+        </div>
+        <div class="product-info">
+          <div class="product-brand">Mitienda Exclusive</div>
+          <div class="product-name">Sudadera Oversize 'MNML'</div>
+          <div class="product-talla">Talla L</div>
+          <div class="product-footer">
+            <div class="product-price">L 1,200</div>
+            <div class="product-meta in-stock">En stock</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Card 3 — sold out -->
+      <div class="product-card" style="opacity:0.7;">
+        <div class="product-img-placeholder" style="background: linear-gradient(160deg, #F0EBE8 0%, #D4C4C4 100%);">
+          <div class="product-badge badge-sold">Sold out</div>
+          <div class="wishlist-btn">♡</div>
+          <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="rgba(100,80,80,0.3)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+        </div>
+        <div class="product-info">
+          <div class="product-brand">Bershka</div>
+          <div class="product-name">Vestido Satín Noir</div>
+          <div class="product-talla">Talla S</div>
+          <div class="product-footer">
+            <div class="product-price">L 850</div>
+            <div class="product-meta out-stock">Agotado</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Card 4 -->
+      <div class="product-card">
+        <div class="product-img-placeholder" style="background: linear-gradient(160deg, #E8D8C8 0%, #C4967A 100%);">
+          <div class="product-badge badge-new">Nuevo</div>
+          <div class="wishlist-btn">♡</div>
+          <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="rgba(120,70,40,0.3)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+        </div>
+        <div class="product-info">
+          <div class="product-brand">Pull & Bear</div>
+          <div class="product-name">Cargo Pants Desert</div>
+          <div class="product-talla">Talla M</div>
+          <div class="product-footer">
+            <div class="product-price">L 950</div>
+            <div class="product-meta in-stock">En stock</div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- WhatsApp CTA -->
+  <div class="whatsapp-section">
+    <div>
+      <div class="ws-title">¿Te perdiste<br/>el <span>último drop?</span></div>
+      <div class="ws-desc">Suscribite a nuestra lista VIP en WhatsApp para tener acceso 30 minutos antes que el resto.</div>
+      <div class="ws-form">
+        <input class="ws-input" type="tel" placeholder="+504 WhatsApp"/>
+        <button class="ws-btn">
+          Avisarme
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+        </button>
+      </div>
+      <div class="ws-perks">
+        <div class="ws-perk">🔔 Aviso 30 min antes</div>
+        <div class="ws-perk">🎁 Acceso VIP</div>
+        <div class="ws-perk">🚫 Sin spam</div>
+      </div>
+    </div>
+    <div class="ws-card">
+      <div class="ws-card-dots">
+        <div class="ws-dot"></div>
+        <div class="ws-dot"></div>
+        <div class="ws-dot"></div>
+      </div>
+      <div class="ws-card-label">Nueva notificación</div>
+      <div class="ws-card-msg">"El drop de invierno ya está disponible. Revisá el catálogo ahora 🔥"</div>
+    </div>
+  </div>
+
+</div><!-- /container -->
+
+<!-- Footer -->
+<footer>
+  <div class="footer-inner">
+    <div>
+      <div class="footer-brand">MITIENDAHN</div>
+      <div class="footer-bio">Ropa y zapatos seleccionados. Drops limitados cada temporada.</div>
+      <div class="footer-socials">
+        <div class="footer-social">ig</div>
+        <div class="footer-social">tk</div>
+        <div class="footer-social">fb</div>
+      </div>
+    </div>
+    <div class="footer-links-group">
+      <div class="footer-links-title">Tienda</div>
+      <div class="footer-link">Catálogo</div>
+      <div class="footer-link">Drops</div>
+      <div class="footer-link">Sold Out</div>
+    </div>
+    <div class="footer-links-group">
+      <div class="footer-links-title">Ayuda</div>
+      <div class="footer-link">Seguimiento de pedido</div>
+      <div class="footer-link">Preguntas frecuentes</div>
+      <div class="footer-link">Contacto</div>
+    </div>
+  </div>
+  <div class="footer-bottom">
+    <div class="footer-copy">© 2026 MITIENDAHN — TODOS LOS DERECHOS RESERVADOS</div>
+    <div class="footer-copy" style="color:rgba(201,100,66,0.5);">Powered by FardoDrops</div>
+  </div>
+</footer>
+
+</body>
+</html>
