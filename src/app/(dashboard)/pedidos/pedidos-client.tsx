@@ -139,6 +139,7 @@ export default function PedidosClient({
           description="Las prendas volverán a estar disponibles en tu inventario. Esta acción no se puede deshacer."
           confirmLabel="Sí, cancelar pedido"
           variant="warning"
+          loading={pending}
           onConfirm={() => confirmarCancelar(confirmCancelar)}
           onClose={() => setConfirmCancelar(null)}
         />

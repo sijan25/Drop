@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, useTransition } from 'react';
 import { toast } from 'sonner';
 import { ConfirmModal } from '@/components/shared/confirm-modal';
 import { useRouter } from 'next/navigation';
@@ -139,6 +139,7 @@ export default function DropsPage() {
   const [dropCerradoId, setDropCerradoId] = useState<string>('');
   const [migrando, setMigrando] = useState(false);
   const [confirmDeleteDrop, setConfirmDeleteDrop] = useState<string | null>(null);
+  const [deletePending, startDeleteTransition] = useTransition();
 
   useEffect(() => {
     async function cargar() {
@@ -667,7 +668,8 @@ export default function DropsPage() {
           description="Se eliminará el drop y perderás todo su historial. Las prendas asociadas quedarán sin drop asignado."
           confirmLabel="Sí, eliminar"
           variant="danger"
-          onConfirm={() => eliminarDrop(confirmDeleteDrop)}
+          loading={deletePending}
+          onConfirm={() => startDeleteTransition(() => eliminarDrop(confirmDeleteDrop))}
           onClose={() => setConfirmDeleteDrop(null)}
         />
       )}

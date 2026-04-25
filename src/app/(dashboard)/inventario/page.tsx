@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useTransition } from 'react';
 import { toast } from 'sonner';
 import { Icons } from '@/components/shared/icons';
 import { ConfirmModal } from '@/components/shared/confirm-modal';
@@ -329,6 +329,7 @@ export default function InventarioPage() {
   const [modal, setModal]         = useState(false);
   const [editando, setEditando]   = useState<Prenda | null>(null);
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
+  const [deletePending, startDeleteTransition] = useTransition();
 
   async function cargar(tid: string) {
     const supabase = createClient();
@@ -553,7 +554,8 @@ export default function InventarioPage() {
           description="Esta acción no se puede deshacer. La prenda será eliminada permanentemente de tu inventario."
           confirmLabel="Sí, eliminar"
           variant="danger"
-          onConfirm={() => eliminarPrenda(confirmDelete)}
+          loading={deletePending}
+          onConfirm={() => startDeleteTransition(() => eliminarPrenda(confirmDelete))}
           onClose={() => setConfirmDelete(null)}
         />
       )}

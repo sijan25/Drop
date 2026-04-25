@@ -10,6 +10,7 @@ interface ConfirmModalProps {
   description: string
   confirmLabel: string
   variant?: 'danger' | 'warning'
+  loading?: boolean
   onConfirm: () => void
   onClose: () => void
 }
@@ -19,6 +20,7 @@ export function ConfirmModal({
   description,
   confirmLabel,
   variant = 'danger',
+  loading = false,
   onConfirm,
   onClose,
 }: ConfirmModalProps) {
@@ -61,22 +63,25 @@ export function ConfirmModal({
         }}>
           <button
             onClick={onClose}
+            disabled={loading}
             className="btn btn-outline"
-            style={{ height: 40, fontSize: 13 }}
+            style={{ height: 40, fontSize: 13, opacity: loading ? 0.5 : 1 }}
           >
             No, volver
           </button>
           <button
             onClick={() => { onConfirm(); onClose() }}
+            disabled={loading}
             className="btn"
             style={{
               height: 40, fontSize: 13, fontWeight: 600,
               background: isDanger ? '#dc2626' : '#d97706',
               color: '#fff',
               border: 'none',
+              opacity: loading ? 0.7 : 1,
             }}
           >
-            {confirmLabel}
+            {loading ? 'Procesando…' : confirmLabel}
           </button>
         </div>
       </div>

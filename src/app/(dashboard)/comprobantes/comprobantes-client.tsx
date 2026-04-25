@@ -300,11 +300,11 @@ export default function ComprobantesClient({ comprobantes }: { comprobantes: Com
               </div>
             ) : (
               <>
-                <button onClick={handleConfirmar} disabled={pending} className="btn btn-primary btn-lg btn-block">
-                  <Icons.check width={16} height={16}/> Confirmar pago
+                <button onClick={handleConfirmar} disabled={pending} className="btn btn-primary btn-lg btn-block" style={{ opacity: pending ? 0.7 : 1 }}>
+                  <Icons.check width={16} height={16}/> {pending ? 'Procesando…' : 'Confirmar pago'}
                 </button>
-                <button onClick={handleRechazar} disabled={pending} className="btn btn-outline btn-lg btn-block" style={{ color: 'var(--urgent)', borderColor: '#fecaca' }}>
-                  Rechazar
+                <button onClick={handleRechazar} disabled={pending} className="btn btn-outline btn-lg btn-block" style={{ color: 'var(--urgent)', borderColor: '#fecaca', opacity: pending ? 0.5 : 1 }}>
+                  {pending ? 'Procesando…' : 'Rechazar'}
                 </button>
               </>
             )}
