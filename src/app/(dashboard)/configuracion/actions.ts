@@ -56,6 +56,7 @@ export async function guardarInfoTienda(data: {
   facebook: string;
   tiktok: string;
   ubicacion: string;
+  whatsapp: string;
   logo_url?: string | null;
   cover_url?: string | null;
 }): Promise<{ error?: string }> {
@@ -118,6 +119,7 @@ export async function guardarInfoTienda(data: {
     facebook: data.facebook || null,
     tiktok: data.tiktok || null,
     ubicacion: data.ubicacion || null,
+    whatsapp: data.whatsapp || null,
     ...(data.logo_url !== undefined ? { logo_url: data.logo_url } : {}),
     ...(data.cover_url !== undefined ? { cover_url: data.cover_url } : {}),
   };

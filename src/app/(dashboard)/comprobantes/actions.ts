@@ -3,6 +3,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
 import { notificarPagoConfirmado, notificarPagoRechazado } from '@/lib/resend/emails'
+import { wsPagoConfirmado, wsPagoRechazado } from '@/lib/whatsapp/notifications'
 import { guardServerMutation } from '@/lib/security/request'
 import { restaurarInventarioPedido } from '@/lib/orders/restore-stock'
 
@@ -11,6 +12,7 @@ type PedidoConItems = {
   numero: string
   comprador_nombre: string
   comprador_email: string | null
+  comprador_telefono: string | null
   monto_total: number
   metodo_envio: 'pickup' | 'domicilio' | null
   direccion: string | null
@@ -34,6 +36,7 @@ type TiendaContexto = {
   username: string
   user_id: string
   contact_email: string | null
+  whatsapp: string | null
 }
 
 type ContextoPago = {
@@ -74,7 +77,7 @@ async function getContextoAutorizado(comprobanteId: string, pedidoId: string) {
   const { data: pedidoData, error: pedidoError } = await supabase
     .from('pedidos')
     .select(`
-      id, numero, comprador_nombre, comprador_email, monto_total,
+      id, numero, comprador_nombre, comprador_email, comprador_telefono, monto_total,
       metodo_envio, direccion, tienda_id, estado, comprobante_estado, drop_id,
       pedido_items (
         prendas ( nombre )
@@ -91,7 +94,7 @@ async function getContextoAutorizado(comprobanteId: string, pedidoId: string) {
 
   const { data: tienda, error: tiendaError } = await supabase
     .from('tiendas')
-    .select('id, nombre, username, user_id, contact_email')
+    .select('id, nombre, username, user_id, contact_email, whatsapp')
     .eq('id', pedido.tienda_id)
     .maybeSingle()
 
@@ -164,18 +167,28 @@ export async function confirmarPago(comprobanteId: string, pedidoId: string) {
 
   if (pedidoUpdateError) return { error: 'Confirmamos el comprobante, pero no pudimos actualizar el pedido.' }
 
-  const email = await notificarPagoConfirmado({
-    compradorEmail: ctx.pedido.comprador_email,
-    compradorNombre: ctx.pedido.comprador_nombre,
-    pedidoId: ctx.pedido.id,
-    numeroPedido: ctx.pedido.numero,
-    prendaNombre: ctx.prendaNombre,
-    montoTotal: ctx.pedido.monto_total,
-    tiendaNombre: ctx.tienda.nombre,
-    tiendaEmail: ctx.tiendaEmail,
-    metodoEnvio: ctx.pedido.metodo_envio === 'domicilio' ? 'Envío a domicilio' : 'Pickup / Retiro en tienda',
-    direccion: ctx.pedido.direccion,
-  })
+  const [email] = await Promise.all([
+    notificarPagoConfirmado({
+      compradorEmail: ctx.pedido.comprador_email,
+      compradorNombre: ctx.pedido.comprador_nombre,
+      pedidoId: ctx.pedido.id,
+      numeroPedido: ctx.pedido.numero,
+      prendaNombre: ctx.prendaNombre,
+      montoTotal: ctx.pedido.monto_total,
+      tiendaNombre: ctx.tienda.nombre,
+      tiendaEmail: ctx.tiendaEmail,
+      metodoEnvio: ctx.pedido.metodo_envio === 'domicilio' ? 'Envío a domicilio' : 'Pickup / Retiro en tienda',
+      direccion: ctx.pedido.direccion,
+    }),
+    wsPagoConfirmado({
+      compradorWhatsApp: ctx.pedido.comprador_telefono,
+      compradorNombre: ctx.pedido.comprador_nombre,
+      numeroPedido: ctx.pedido.numero,
+      prendaNombre: ctx.prendaNombre,
+      montoTotal: ctx.pedido.monto_total,
+      tiendaNombre: ctx.tienda.nombre,
+    }).catch(() => {}),
+  ])
 
   revalidarContexto(ctx)
   return { ok: true, email }
@@ -224,15 +237,25 @@ export async function rechazarPago(comprobanteId: string, pedidoId: string, nota
 
   await restaurarInventarioPedido(db, pedidoId, ctx.tienda.id)
 
-  await notificarPagoRechazado({
-    compradorEmail: ctx.pedido.comprador_email,
-    compradorNombre: ctx.pedido.comprador_nombre,
-    numeroPedido: ctx.pedido.numero,
-    prendaNombre: ctx.prendaNombre,
-    tiendaNombre: ctx.tienda.nombre,
-    tiendaEmail: ctx.tiendaEmail,
-    notasRechazo: notas,
-  })
+  await Promise.all([
+    notificarPagoRechazado({
+      compradorEmail: ctx.pedido.comprador_email,
+      compradorNombre: ctx.pedido.comprador_nombre,
+      numeroPedido: ctx.pedido.numero,
+      prendaNombre: ctx.prendaNombre,
+      tiendaNombre: ctx.tienda.nombre,
+      tiendaEmail: ctx.tiendaEmail,
+      notasRechazo: notas,
+    }),
+    wsPagoRechazado({
+      compradorWhatsApp: ctx.pedido.comprador_telefono,
+      compradorNombre: ctx.pedido.comprador_nombre,
+      numeroPedido: ctx.pedido.numero,
+      prendaNombre: ctx.prendaNombre,
+      tiendaNombre: ctx.tienda.nombre,
+      notasRechazo: notas,
+    }).catch(() => {}),
+  ])
 
   revalidarContexto(ctx)
   return { ok: true }

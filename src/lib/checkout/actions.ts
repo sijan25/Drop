@@ -2,7 +2,8 @@
 
 import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
-import { notificarPedidoCreado } from '@/lib/resend/emails';
+import { notificarPedidoCreado } from '@/lib/resend/emails'
+import { wsNuevoPedido } from '@/lib/whatsapp/notifications';
 import { getProductSizes, isProductSizeInStock, normalizeSelectedProductSize } from '@/lib/product-sizes';
 import { buildOrderTrackingUrl } from '@/lib/security/order-access';
 import { guardServerMutation } from '@/lib/security/request';
@@ -237,6 +238,17 @@ export async function crearCheckoutPublico(input: CheckoutInput): Promise<{
         comprobanteUrl: data.comprobanteUrl ?? null,
       });
     }
+    const tiendaWa = await service.from('tiendas').select('whatsapp').eq('id', data.tiendaId).maybeSingle()
+    wsNuevoPedido({
+      tiendaWhatsApp: tiendaWa.data?.whatsapp,
+      tiendaNombre: checkout.tienda_nombre,
+      numeroPedido: checkout.numero,
+      compradorNombre: data.nombre,
+      compradorTelefono: data.whatsapp,
+      prendaNombre: checkout.prendas_count > 1 ? `${checkout.prendas_count} prendas` : checkout.prenda_nombre,
+      montoTotal: Number(checkout.monto_total),
+      metodoPago: metodoPagoLabelDesdeRpc(checkout),
+    }).catch(() => {});
   } catch (error) {
     console.error('[checkout] Error enviando notificación:', error);
   }

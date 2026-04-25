@@ -3,6 +3,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
 import { notificarCambioEstado, notificarPagoConfirmado } from '@/lib/resend/emails'
+import { wsCambioEstado } from '@/lib/whatsapp/notifications'
 import { guardServerMutation } from '@/lib/security/request'
 import { restaurarInventarioPedido } from '@/lib/orders/restore-stock'
 
@@ -31,7 +32,7 @@ async function getPedidoParaEmail(pedidoId: string, tiendaId: string) {
   const { data: pedido } = await supabase
     .from('pedidos')
     .select(`
-      numero, comprador_nombre, comprador_email, direccion, tienda_id,
+      numero, comprador_nombre, comprador_email, comprador_telefono, direccion, tienda_id,
       monto_total, metodo_envio, estado,
       pedido_items (
         prendas ( nombre )
@@ -45,7 +46,7 @@ async function getPedidoParaEmail(pedidoId: string, tiendaId: string) {
 
   const { data: tienda } = await supabase
     .from('tiendas')
-    .select('nombre, contact_email')
+    .select('nombre, contact_email, whatsapp')
     .eq('id', tiendaId)
     .single()
 
@@ -142,18 +143,28 @@ export async function avanzarEstado(pedidoId: string, estadoActual: string) {
   if (ESTADOS_CON_EMAIL.has(t.siguiente)) {
     const ctx = await getPedidoParaEmail(pedidoId, auth.tiendaId)
     if (ctx) {
-      await notificarCambioEstado({
-        compradorEmail: ctx.pedido.comprador_email,
-        compradorNombre: ctx.pedido.comprador_nombre,
-        pedidoId,
-        numeroPedido: ctx.pedido.numero,
-        prendaNombre: ctx.prendaNombre,
-        tiendaNombre: ctx.tiendaNombre,
-        tiendaEmail: ctx.tiendaEmail,
-        nuevoEstado: t.siguiente as 'empacado' | 'en_camino',
-        direccion: ctx.pedido.direccion,
-        metodoEnvio: ctx.pedido.metodo_envio,
-      })
+      await Promise.all([
+        notificarCambioEstado({
+          compradorEmail: ctx.pedido.comprador_email,
+          compradorNombre: ctx.pedido.comprador_nombre,
+          pedidoId,
+          numeroPedido: ctx.pedido.numero,
+          prendaNombre: ctx.prendaNombre,
+          tiendaNombre: ctx.tiendaNombre,
+          tiendaEmail: ctx.tiendaEmail,
+          nuevoEstado: t.siguiente as 'empacado' | 'en_camino',
+          direccion: ctx.pedido.direccion,
+          metodoEnvio: ctx.pedido.metodo_envio,
+        }),
+        wsCambioEstado({
+          compradorWhatsApp: ctx.pedido.comprador_telefono,
+          compradorNombre: ctx.pedido.comprador_nombre,
+          numeroPedido: ctx.pedido.numero,
+          prendaNombre: ctx.prendaNombre,
+          tiendaNombre: ctx.tiendaNombre,
+          nuevoEstado: t.siguiente as 'empacado' | 'en_camino',
+        }).catch(() => {}),
+      ])
     }
   }
 

@@ -356,6 +356,7 @@ export function ConfiguracionClient({
     tiktok: tienda.tiktok ?? '',
     ubicacion: tienda.ubicacion ?? '',
     contact_email: tienda.contact_email ?? ownerEmail,
+    whatsapp: (tienda as { whatsapp?: string | null }).whatsapp ?? '',
   });
   const usernamePreview = normalizeStoreUsername(infoForm.username);
   const usernameChanged = usernamePreview !== normalizeStoreUsername(tienda.username);
@@ -601,6 +602,19 @@ export function ConfiguracionClient({
                       placeholder="ventas@tutienda.com"
                     />
                     <div className="help">Se muestra en la tienda y se usa para avisarte de nuevos pedidos.</div>
+                  </div>
+                  <div style={{ gridColumn: 'span 2' }}>
+                    <label className="label" style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                      <Icons.whatsapp width={13} height={13}/> WhatsApp de la tienda
+                    </label>
+                    <input
+                      className="input"
+                      type="tel"
+                      value={infoForm.whatsapp}
+                      onChange={e => setInfoForm(f => ({ ...f, whatsapp: e.target.value }))}
+                      placeholder="+50499990000 o 99990000"
+                    />
+                    <div className="help">Número donde recibirás el aviso de nuevos pedidos por WhatsApp.</div>
                   </div>
                   <div style={{ gridColumn: 'span 2' }}><label className="label">Bio</label><textarea className="input" style={{ height: 72, padding: 10, resize: 'none' }} value={infoForm.bio} onChange={e => setInfoForm(f => ({ ...f, bio: e.target.value }))}/></div>
                   <div><label className="label">Ubicación</label><input className="input" value={infoForm.ubicacion} onChange={e => setInfoForm(f => ({ ...f, ubicacion: e.target.value }))}/></div>

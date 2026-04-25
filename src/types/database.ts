@@ -736,6 +736,7 @@ export type Database = {
           username: string
           username_change_count: number
           username_changed_at: string | null
+          whatsapp: string | null
         }
         Insert: {
           activa?: boolean | null
@@ -758,6 +759,7 @@ export type Database = {
           username: string
           username_change_count?: number
           username_changed_at?: string | null
+          whatsapp?: string | null
         }
         Update: {
           activa?: boolean | null
@@ -780,6 +782,7 @@ export type Database = {
           username?: string
           username_change_count?: number
           username_changed_at?: string | null
+          whatsapp?: string | null
         }
         Relationships: []
       }
