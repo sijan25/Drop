@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import {
   getCatalogDefaults,
@@ -9,9 +9,13 @@ import {
   type TipoNegocio,
 } from '@/lib/catalog-options';
 
+type CatalogCache = { tipoNegocio: TipoNegocio; custom: CatalogOptionInput[] };
+const catalogCache = new Map<string, CatalogCache>();
+
 export function useCatalogOptions(tiendaId?: string | null) {
   const [custom, setCustom] = useState<CatalogOptionInput[]>([]);
   const [tipoNegocio, setTipoNegocio] = useState<TipoNegocio>('ropa');
+  const fetchingRef = useRef(false);
 
   useEffect(() => {
     let active = true;
@@ -42,6 +46,16 @@ export function useCatalogOptions(tiendaId?: string | null) {
 
       if (!resolvedTiendaId) return;
 
+      const cacheKey = resolvedTiendaId;
+      const cached = catalogCache.get(cacheKey);
+      if (cached) {
+        if (active) { setTipoNegocio(cached.tipoNegocio); setCustom(cached.custom); }
+        return;
+      }
+
+      if (fetchingRef.current) return;
+      fetchingRef.current = true;
+
       const { data } = await supabase
         .from('opciones_catalogo')
         .select('tipo, nombre, activo, orden')
@@ -49,9 +63,13 @@ export function useCatalogOptions(tiendaId?: string | null) {
         .order('orden', { ascending: true })
         .order('nombre', { ascending: true });
 
+      fetchingRef.current = false;
       if (!active) return;
-      setTipoNegocio(resolvedTipo);
-      setCustom((data ?? []) as CatalogOptionInput[]);
+
+      const result = { tipoNegocio: resolvedTipo, custom: (data ?? []) as CatalogOptionInput[] };
+      catalogCache.set(cacheKey, result);
+      setTipoNegocio(result.tipoNegocio);
+      setCustom(result.custom);
     })();
 
     return () => { active = false; };

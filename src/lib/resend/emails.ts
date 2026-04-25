@@ -36,6 +36,9 @@ async function enviarEmail(opts: {
   replyTo?: string | null
   idempotencyKey?: string
 }): Promise<EmailSendResult> {
+  if (process.env.NODE_ENV === 'production' && process.env.RESEND_TEST_REDIRECT_TO) {
+    throw new Error('RESEND_TEST_REDIRECT_TO no debe estar configurado en producción.');
+  }
   const testRedirect = normalizarEmail(process.env.RESEND_TEST_REDIRECT_TO)
   const to = normalizarEmail(testRedirect ?? opts.to)
   const replyTo = normalizarEmail(opts.replyTo)

@@ -308,190 +308,190 @@ export function DropPageClient({
           </div>
         </div>
 
-        {/* ── GRID PRENDAS ── */}
-        {prendas.length === 0 ? (
-          <div style={{ textAlign: 'center', padding: '42px 16px', color: '#999', fontSize: 14, background: '#fff', border: '1px solid rgba(0,0,0,0.07)', borderRadius: 8 }}>
-            <div style={{ fontSize: 15, fontWeight: 800, color: '#222', marginBottom: 4 }}>Todavía no hay prendas publicadas</div>
-            <div>Cuando la tienda agregue prendas, aparecerán aquí.</div>
-          </div>
-        ) : (
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(170px, 1fr))', gap: 12 }}>
-            {prendas.map((p, i) => {
-              const tone = TONES[i % TONES.length];
-              const foto = p.fotos?.[0];
-              const disponible = p.estado === 'disponible';
-              const vendida = p.estado === 'vendida';
-              const apartada = p.estado === 'apartada';
-              const card = (
-                <div style={{
-                  borderRadius: 14, overflow: 'hidden', background: '#fff',
-                  border: '1px solid rgba(0,0,0,0.07)',
-                  transition: 'transform .18s',
-                  position: 'relative',
-                }}
-                  onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-2px)'; }}
-                  onMouseLeave={e => { e.currentTarget.style.transform = 'none'; }}
-                >
-                  {/* Imagen */}
-                  <div style={{ position: 'relative', aspectRatio: '3/4', overflow: 'hidden' }}>
-                    {foto ? (
-                      <Image
-                        src={foto}
-                        alt={p.nombre}
-                        fill
-                        sizes="(max-width: 640px) 50vw, 200px"
-                        style={{
-                          objectFit: 'cover', display: 'block',
-                          filter: !disponible ? 'grayscale(0.5) brightness(0.82)' : isPreview ? 'brightness(0.9)' : 'none',
-                        }}
-                      />
-                    ) : (
-                      <div style={{
-                        width: '100%', height: '100%',
-                        background: !disponible
-                          ? '#ece9e4'
-                          : undefined,
-                        backgroundImage: !disponible
-                          ? 'repeating-linear-gradient(45deg, transparent, transparent 10px, rgba(0,0,0,0.04) 10px, rgba(0,0,0,0.04) 11px)'
-                          : undefined,
-                      }}>
-                        {disponible && <Ph tone={tone} aspect="3/4" radius={0} />}
-                      </div>
-                    )}
-
-                    {isPreview && disponible && (
-                      <div style={{ position: 'absolute', left: 10, top: 10 }}>
-                        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, background: 'rgba(10,10,10,0.78)', color: '#fff', borderRadius: 20, padding: '5px 9px', fontSize: 10, fontWeight: 800, letterSpacing: '0.06em', textTransform: 'uppercase' }}>
-                          Preview
-                        </span>
-                      </div>
-                    )}
-
-                    {/* Badge estado */}
-                    {!disponible && (
-                      <div style={{
-                        position: 'absolute', inset: 0,
-                        display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      }}>
-                        <div style={{
-                          background: vendida ? 'rgba(10,10,10,0.85)' : 'rgba(120,60,0,0.85)',
-                          backdropFilter: 'blur(4px)', WebkitBackdropFilter: 'blur(4px)',
-                          color: '#fff', borderRadius: 8, padding: '7px 14px',
-                          fontSize: 11, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase',
-                        }}>
-                          {vendida ? 'Vendida' : 'Apartada'}
-                        </div>
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Info */}
-                  <div style={{ padding: '10px 12px 12px' }}>
-                    <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', color: disponible ? '#0a0a0a' : '#aaa' }}>
-                      {p.nombre}
-                    </div>
-                    <div style={{ fontSize: 11, color: '#aaa', marginBottom: 8 }}>
-                      {[p.marca, formatProductSizes(p), `${getProductTotalQuantity(p)} disp.`].filter(Boolean).join(' · ') || '\u00A0'}
-                    </div>
-
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                      <span className="mono tnum" style={{
-                        fontSize: 16, fontWeight: 700, letterSpacing: 0,
-                        color: !disponible ? '#bbb' : '#0a0a0a',
-                        textDecoration: !disponible ? 'line-through' : 'none',
-                      }}>
-                        L {p.precio.toLocaleString()}
-                      </span>
-                      <span style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 11, fontWeight: 500 }}>
-                        <span style={{
-                          width: 6, height: 6, borderRadius: 3, flexShrink: 0, display: 'inline-block',
-                          background: vendida ? '#ef4444' : apartada ? '#f59e0b' : isPreview ? '#888' : '#22c55e',
-                        }} />
-                        <span style={{ color: vendida ? '#ef4444' : apartada ? '#f59e0b' : isPreview ? '#777' : '#16a34a' }}>
-                          {vendida ? 'Vendida' : apartada ? 'Apartada' : isPreview ? 'Preview' : 'Disponible'}
-                        </span>
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              );
-
-              return esActivo ? (
-                <Link
-                  key={p.id}
-                  href={`/${tienda.username}/drop/${drop.id}/prenda/${p.id}`}
-                  style={{ textDecoration: 'none', color: 'inherit', display: 'block' }}
-                >
-                  {card}
-                </Link>
-              ) : (
-                <button
-                  key={p.id}
-                  onClick={() => setPreviewNoticeOpen(true)}
-                  style={{ width: '100%', appearance: 'none', border: 'none', padding: 0, margin: 0, background: 'transparent', color: 'inherit', textAlign: 'left', cursor: 'pointer', display: 'block', font: 'inherit' }}
-                >
-                  {card}
-                </button>
-              );
-            })}
-          </div>
-        )}
-
-        {esProgramado && <AnotarseSection dropId={drop.id} />}
-
-        {/* ── ACTIVIDAD ── */}
-        {esActivo && actividadLive.length > 0 && (
-          <div style={{ marginTop: 28 }}>
-            <div style={{ background: '#fff', borderRadius: 14, border: '1px solid rgba(0,0,0,0.07)', overflow: 'hidden' }}>
-              <div style={{
-                padding: '13px 16px', borderBottom: '1px solid rgba(0,0,0,0.07)',
-                display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-              }}>
-                <div style={{ fontSize: 13, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 6 }}>
-                  <span style={{ width: 7, height: 7, borderRadius: 4, background: '#ef4444', display: 'inline-block', animation: 'pulse 1.4s ease-in-out infinite' }} />
-                  Actividad
-                </div>
-                <span style={{ fontSize: 11, color: '#888', display: 'flex', alignItems: 'center', gap: 4 }}>
-                  <Icons.eye width={12} height={12} />
-                  {viewers} viendo
-                </span>
+        {/* ── LAYOUT: grid + actividad side-by-side when active ── */}
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: esActivo ? 'minmax(0,1fr) 280px' : '1fr',
+          gap: 16,
+          alignItems: 'start',
+        }}>
+          {/* ── GRID PRENDAS ── */}
+          <div>
+            {prendas.length === 0 ? (
+              <div style={{ textAlign: 'center', padding: '42px 16px', color: '#999', fontSize: 14, background: '#fff', border: '1px solid rgba(0,0,0,0.07)', borderRadius: 8 }}>
+                <div style={{ fontSize: 15, fontWeight: 800, color: '#222', marginBottom: 4 }}>Todavía no hay prendas publicadas</div>
+                <div>Cuando la tienda agregue prendas, aparecerán aquí.</div>
               </div>
-              <div style={{ padding: '10px 16px 14px', display: 'grid', gap: 12 }}>
-                {actividadLive.map(a => {
-                  const partes = a.texto.split('·');
-                  const nombreAccion = partes[0]?.trim() ?? '';
-                  const resto = partes.slice(1).join('·').trim();
-                  const esCompra = a.tipo === 'compra';
-                  const esApartado = a.tipo === 'apartado';
-                  const letraAvatar = nombreAccion.charAt(0).toUpperCase();
-
-                  return (
-                    <div key={a.id} style={{ display: 'flex', gap: 10, alignItems: 'flex-start' }}>
-                      <div style={{
-                        width: 30, height: 30, borderRadius: 15, flexShrink: 0,
-                        background: esCompra ? '#0a0a0a' : esApartado ? '#fef3c7' : '#f0efed',
-                        color: esCompra ? '#fff' : esApartado ? '#92400e' : '#888',
-                        display: 'flex', alignItems: 'center', justifyContent: 'center',
-                        fontSize: 11, fontWeight: 700,
-                      }}>
-                        {letraAvatar}
+            ) : (
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))', gap: 12 }}>
+                {prendas.map((p, i) => {
+                  const tone = TONES[i % TONES.length];
+                  const foto = p.fotos?.[0];
+                  const disponible = p.estado === 'disponible';
+                  const vendida = p.estado === 'vendida';
+                  const apartada = p.estado === 'apartada';
+                  const card = (
+                    <div style={{
+                      borderRadius: 14, overflow: 'hidden', background: '#fff',
+                      border: '1px solid rgba(0,0,0,0.07)',
+                      transition: 'transform .18s',
+                      position: 'relative',
+                    }}
+                      onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-2px)'; }}
+                      onMouseLeave={e => { e.currentTarget.style.transform = 'none'; }}
+                    >
+                      <div style={{ position: 'relative', aspectRatio: '3/4', overflow: 'hidden' }}>
+                        {foto ? (
+                          <Image
+                            src={foto}
+                            alt={p.nombre}
+                            fill
+                            sizes="(max-width: 640px) 50vw, 200px"
+                            style={{
+                              objectFit: 'cover', display: 'block',
+                              filter: !disponible ? 'grayscale(0.5) brightness(0.82)' : isPreview ? 'brightness(0.9)' : 'none',
+                            }}
+                          />
+                        ) : (
+                          <div style={{
+                            width: '100%', height: '100%',
+                            background: !disponible ? '#ece9e4' : undefined,
+                            backgroundImage: !disponible ? 'repeating-linear-gradient(45deg, transparent, transparent 10px, rgba(0,0,0,0.04) 10px, rgba(0,0,0,0.04) 11px)' : undefined,
+                          }}>
+                            {disponible && <Ph tone={tone} aspect="3/4" radius={0} />}
+                          </div>
+                        )}
+                        {isPreview && disponible && (
+                          <div style={{ position: 'absolute', left: 10, top: 10 }}>
+                            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, background: 'rgba(10,10,10,0.78)', color: '#fff', borderRadius: 20, padding: '5px 9px', fontSize: 10, fontWeight: 800, letterSpacing: '0.06em', textTransform: 'uppercase' }}>
+                              Preview
+                            </span>
+                          </div>
+                        )}
+                        {!disponible && (
+                          <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                            <div style={{
+                              background: vendida ? 'rgba(10,10,10,0.85)' : 'rgba(120,60,0,0.85)',
+                              backdropFilter: 'blur(4px)', WebkitBackdropFilter: 'blur(4px)',
+                              color: '#fff', borderRadius: 8, padding: '7px 14px',
+                              fontSize: 11, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase',
+                            }}>
+                              {vendida ? 'Vendida' : 'Apartada'}
+                            </div>
+                          </div>
+                        )}
                       </div>
-                      <div style={{ flex: 1 }}>
-                        <div style={{ fontSize: 13, lineHeight: 1.4 }}>
-                          <span style={{ fontWeight: 600 }}>{nombreAccion}</span>
-                          {esApartado && <span style={{ color: '#d97706', fontWeight: 500 }}> apartó</span>}
-                          {esCompra && <span style={{ fontWeight: 500 }}> compró</span>}
-                          {resto && <span style={{ color: '#888' }}> · {resto}</span>}
+                      <div style={{ padding: '10px 12px 12px' }}>
+                        <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', color: disponible ? '#0a0a0a' : '#aaa' }}>
+                          {p.nombre}
                         </div>
-                        <div className="mono" style={{ fontSize: 10, color: '#bbb', marginTop: 2 }}>{formatRelativo(a.created_at)}</div>
+                        <div style={{ fontSize: 11, color: '#aaa', marginBottom: 8 }}>
+                          {[p.marca, formatProductSizes(p), `${getProductTotalQuantity(p)} disp.`].filter(Boolean).join(' · ') || '\u00A0'}
+                        </div>
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                          <span className="mono tnum" style={{ fontSize: 16, fontWeight: 700, letterSpacing: 0, color: !disponible ? '#bbb' : '#0a0a0a', textDecoration: !disponible ? 'line-through' : 'none' }}>
+                            L {p.precio.toLocaleString()}
+                          </span>
+                          <span style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 11, fontWeight: 500 }}>
+                            <span style={{ width: 6, height: 6, borderRadius: 3, flexShrink: 0, display: 'inline-block', background: vendida ? '#ef4444' : apartada ? '#f59e0b' : isPreview ? '#888' : '#22c55e' }} />
+                            <span style={{ color: vendida ? '#ef4444' : apartada ? '#f59e0b' : isPreview ? '#777' : '#16a34a' }}>
+                              {vendida ? 'Vendida' : apartada ? 'Apartada' : isPreview ? 'Preview' : 'Disponible'}
+                            </span>
+                          </span>
+                        </div>
                       </div>
                     </div>
                   );
+
+                  return esActivo ? (
+                    <Link
+                      key={p.id}
+                      href={`/${tienda.username}/drop/${drop.id}/prenda/${p.id}`}
+                      style={{ textDecoration: 'none', color: 'inherit', display: 'block' }}
+                    >
+                      {card}
+                    </Link>
+                  ) : (
+                    <button
+                      key={p.id}
+                      onClick={() => setPreviewNoticeOpen(true)}
+                      style={{ width: '100%', appearance: 'none', border: 'none', padding: 0, margin: 0, background: 'transparent', color: 'inherit', textAlign: 'left', cursor: 'pointer', display: 'block', font: 'inherit' }}
+                    >
+                      {card}
+                    </button>
+                  );
                 })}
               </div>
-            </div>
+            )}
+
+            {esProgramado && <AnotarseSection dropId={drop.id} />}
           </div>
-        )}
+
+          {/* ── ACTIVIDAD EN VIVO ── */}
+          {esActivo && (
+            <div style={{ position: 'sticky', top: 68 }}>
+              <div style={{ background: '#fff', borderRadius: 14, border: '1px solid rgba(0,0,0,0.07)', overflow: 'hidden' }}>
+                <div style={{
+                  padding: '12px 14px', borderBottom: '1px solid rgba(0,0,0,0.07)',
+                  display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                }}>
+                  <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#999', display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <span style={{ width: 6, height: 6, borderRadius: 3, background: '#ef4444', display: 'inline-block', animation: 'pulse 1.4s ease-in-out infinite' }} />
+                    Actividad en vivo
+                  </div>
+                  <span style={{ fontSize: 11, color: '#aaa', display: 'flex', alignItems: 'center', gap: 4 }}>
+                    <Icons.eye width={11} height={11} />
+                    {viewers}
+                  </span>
+                </div>
+
+                {actividadLive.length === 0 ? (
+                  <div style={{ padding: '28px 16px', textAlign: 'center' }}>
+                    <div style={{ width: 36, height: 36, borderRadius: 18, background: '#f5f5f5', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 10px' }}>
+                      <Icons.eye width={16} height={16} style={{ color: '#bbb' }} />
+                    </div>
+                    <div style={{ fontSize: 12, fontWeight: 600, color: '#333', marginBottom: 4 }}>Esperando actividad</div>
+                    <div style={{ fontSize: 11, color: '#bbb', lineHeight: 1.5 }}>Las compras y apartados aparecerán aquí en tiempo real.</div>
+                  </div>
+                ) : (
+                  <div style={{ padding: '10px 14px 14px', display: 'grid', gap: 12, maxHeight: 520, overflowY: 'auto' }}>
+                    {actividadLive.map(a => {
+                      const partes = a.texto.split('·');
+                      const nombreAccion = partes[0]?.trim() ?? '';
+                      const resto = partes.slice(1).join('·').trim();
+                      const esCompra = a.tipo === 'compra';
+                      const esApartado = a.tipo === 'apartado';
+                      const letraAvatar = nombreAccion.charAt(0).toUpperCase();
+
+                      return (
+                        <div key={a.id} style={{ display: 'flex', gap: 10, alignItems: 'flex-start' }}>
+                          <div style={{
+                            width: 30, height: 30, borderRadius: 15, flexShrink: 0,
+                            background: esCompra ? '#0a0a0a' : esApartado ? '#fef3c7' : '#f0efed',
+                            color: esCompra ? '#fff' : esApartado ? '#92400e' : '#888',
+                            display: 'flex', alignItems: 'center', justifyContent: 'center',
+                            fontSize: 11, fontWeight: 700,
+                          }}>
+                            {letraAvatar}
+                          </div>
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            <div style={{ fontSize: 12, lineHeight: 1.4 }}>
+                              <span style={{ fontWeight: 600 }}>{nombreAccion}</span>
+                              {esApartado && <span style={{ color: '#d97706', fontWeight: 500 }}> apartó</span>}
+                              {esCompra && <span style={{ fontWeight: 500 }}> compró</span>}
+                              {resto && <span style={{ color: '#888' }}> · {resto}</span>}
+                            </div>
+                            <div className="mono" style={{ fontSize: 10, color: '#bbb', marginTop: 2 }}>{formatRelativo(a.created_at)}</div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+        </div>
       </div>
 
       {previewNoticeOpen && (

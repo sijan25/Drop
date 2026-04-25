@@ -92,7 +92,7 @@ export function requireTrustedRequestOrigin(request: NextRequest) {
   return validateOrigin(request.headers);
 }
 
-export async function checkServerRateLimit(scope: string, limit: number, windowSeconds: number, identity = '') {
+async function runRateLimit(headerSource: HeaderReader, scope: string, limit: number, windowSeconds: number, identity: string) {
   const serviceRoleError = getServiceRoleConfigError();
   if (serviceRoleError) {
     if (process.env.NODE_ENV !== 'production') {
@@ -102,8 +102,7 @@ export async function checkServerRateLimit(scope: string, limit: number, windowS
     return serviceRoleError;
   }
 
-  const headerStore = await headers();
-  const key = hashKey(`${scope}:${getClientIp(headerStore)}:${identity}`);
+  const key = hashKey(`${scope}:${getClientIp(headerSource)}:${identity}`);
   const service = await createServiceClient();
   const { data, error } = await (service as unknown as RateLimitRpcClient).rpc('check_rate_limit', {
     p_key: key,
@@ -119,30 +118,13 @@ export async function checkServerRateLimit(scope: string, limit: number, windowS
   return data === false ? RATE_LIMIT_ERROR : null;
 }
 
+export async function checkServerRateLimit(scope: string, limit: number, windowSeconds: number, identity = '') {
+  const headerStore = await headers();
+  return runRateLimit(headerStore, scope, limit, windowSeconds, identity);
+}
+
 export async function checkRequestRateLimit(request: NextRequest, scope: string, limit: number, windowSeconds: number, identity = '') {
-  const serviceRoleError = getServiceRoleConfigError();
-  if (serviceRoleError) {
-    if (process.env.NODE_ENV !== 'production') {
-      console.warn(`[security] Rate limit skipped in development: ${serviceRoleError}`);
-      return null;
-    }
-    return serviceRoleError;
-  }
-
-  const key = hashKey(`${scope}:${getClientIp(request.headers)}:${identity}`);
-  const service = await createServiceClient();
-  const { data, error } = await (service as unknown as RateLimitRpcClient).rpc('check_rate_limit', {
-    p_key: key,
-    p_limit: limit,
-    p_window_seconds: windowSeconds,
-  });
-
-  if (error) {
-    console.error('[security] Rate limit error:', error);
-    return 'No pudimos validar la seguridad de la solicitud. Intentá de nuevo.';
-  }
-
-  return data === false ? RATE_LIMIT_ERROR : null;
+  return runRateLimit(request.headers, scope, limit, windowSeconds, identity);
 }
 
 export async function guardServerMutation(scope: string, limit: number, windowSeconds: number, identity = '') {

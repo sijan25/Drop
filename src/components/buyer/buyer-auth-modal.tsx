@@ -2,8 +2,7 @@
 
 import { useState, type FormEvent } from 'react';
 import { Icons } from '@/components/shared/icons';
-import { prepararSesionComprador } from '@/lib/buyer/actions';
-import { createBuyerClient } from '@/lib/supabase/client';
+import { iniciarSesionComprador, registrarComprador } from '@/lib/buyer/actions';
 
 export type BuyerProfile = {
   nombre: string;
@@ -51,71 +50,40 @@ export function BuyerAuthModal({
     if (mode === 'register' && password.length < 8) { setError('La contraseña necesita mínimo 8 caracteres.'); return; }
 
     setLoading(true);
-    const supabase = createBuyerClient();
 
     try {
-      if (mode === 'register') {
-        const { data: ownerEmail } = await supabase
-          .from('tiendas')
-          .select('id')
-          .ilike('contact_email', cleanEmail)
-          .limit(1)
-          .maybeSingle();
-
-        if (ownerEmail) {
-          setError('Ese correo pertenece a una tienda. Usá otro correo para comprar o iniciá sesión como tienda.');
-          return;
-        }
-      }
-
       if (mode === 'login') {
-        const { data, error: err } = await supabase.auth.signInWithPassword({ email: cleanEmail, password });
-        if (err || !data.user) { setError('Correo o contraseña incorrectos.'); return; }
-
-        const prepared = await prepararSesionComprador();
-        if (prepared.error || !prepared.comprador) {
-          if (prepared.blockedOwner) await supabase.auth.signOut();
-          setError(prepared.error ?? 'Entraste, pero no pudimos preparar tu perfil. Intentá de nuevo.');
+        const result = await iniciarSesionComprador({ email: cleanEmail, password });
+        if (result.error || !result.comprador) {
+          setError(result.error ?? 'Entraste, pero no pudimos preparar tu perfil. Intentá de nuevo.');
           return;
         }
 
-        onSuccess(prepared.comprador);
+        onSuccess(result.comprador);
         return;
       }
 
-      const { data, error: err } = await supabase.auth.signUp({
+      const result = await registrarComprador({
+        nombre: cleanNombre,
+        telefono: cleanTelefono || null,
         email: cleanEmail,
         password,
-        options: {
-          data: {
-            full_name: cleanNombre,
-            buyer_phone: cleanTelefono || null,
-          },
-        },
       });
 
-      if (err) { setError(err.message.toLowerCase().includes('already') ? 'Ese correo ya tiene cuenta.' : err.message); return; }
-      if (data.user && data.user.identities && data.user.identities.length === 0) {
-        setError('Ese correo ya tiene cuenta. Iniciá sesión como comprador.');
+      if (result.error) {
+        setError(result.error);
         return;
       }
-      if (!data.user) {
-        setError('No pudimos crear la cuenta. Intentá de nuevo.');
+      if (result.notice) {
+        setNotice(result.notice);
         return;
       }
-      if (!data.session) {
-        setNotice('Te enviamos un correo de confirmación. Después de confirmarlo, iniciá sesión para guardar tu perfil.');
-        return;
-      }
-
-      const prepared = await prepararSesionComprador();
-      if (prepared.error || !prepared.comprador) {
-        if (prepared.blockedOwner) await supabase.auth.signOut();
-        setError(prepared.error ?? 'La cuenta se creó, pero no pudimos guardar el perfil. Iniciá sesión e intentá completar tus datos.');
+      if (!result.comprador) {
+        setError('La cuenta se creó, pero no pudimos guardar el perfil. Iniciá sesión e intentá completar tus datos.');
         return;
       }
 
-      onSuccess(prepared.comprador);
+      onSuccess(result.comprador);
     } finally {
       setLoading(false);
     }

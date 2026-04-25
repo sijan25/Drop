@@ -241,6 +241,28 @@ export async function crearCheckoutPublico(input: CheckoutInput): Promise<{
     console.error('[checkout] Error enviando notificación:', error);
   }
 
+  // Registrar actividad en vivo si el checkout fue de un drop
+  if (data.dropId) {
+    try {
+      const nombreCorto = data.nombre.trim().split(' ').slice(0, 2).map((p, i) =>
+        i === 1 ? p.charAt(0).toUpperCase() + '.' : p
+      ).join(' ');
+      const talla = itemsNormalizados.length === 1 && itemsNormalizados[0].talla
+        ? ` · ${itemsNormalizados[0].talla}`
+        : '';
+      const producto = checkout.prendas_count > 1
+        ? `${checkout.prendas_count} prendas`
+        : [checkout.prenda_nombre, checkout.prenda_marca].filter(Boolean).join(' ');
+      await service.from('actividad').insert({
+        drop_id: data.dropId,
+        tipo: 'compra',
+        texto: `${nombreCorto} · ${producto}${talla}`,
+      });
+    } catch {
+      // no-op: activity is non-critical
+    }
+  }
+
   revalidatePath(`/${checkout.tienda_username}`);
   revalidatePath('/pedidos');
   revalidatePath('/comprobantes');

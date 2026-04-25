@@ -20,6 +20,7 @@ type CarritoCtx = {
   total: number;
   count: number;
   hidratado: boolean;
+  errorHidratacion: boolean;
   agregarItem: (item: Omit<ItemCarrito, 'cantidad'>) => void;
   quitarItem: (prendaId: string, talla?: string | null) => void;
   tieneItem: (prendaId: string, talla?: string | null) => boolean;
@@ -39,6 +40,7 @@ export function carritoItemKey(prendaId: string, talla?: string | null) {
 export function CarritoProvider({ children }: { children: ReactNode }) {
   const [items, setItems] = useState<ItemCarrito[]>([]);
   const [hidratado, setHidratado] = useState(false);
+  const [errorHidratacion, setErrorHidratacion] = useState(false);
   const [drawerAbierto, setDrawerAbierto] = useState(false);
   const itemsRef = useRef<ItemCarrito[]>([]);
   const mutationVersion = useRef(0);
@@ -56,6 +58,9 @@ export function CarritoProvider({ children }: { children: ReactNode }) {
       void obtenerCarrito()
         .then(res => {
           if (!cancelado && mutationVersion.current === 0) commitItems(res.items);
+        })
+        .catch(() => {
+          if (!cancelado) setErrorHidratacion(true);
         })
         .finally(() => {
           if (!cancelado) setHidratado(true);
@@ -128,7 +133,7 @@ export function CarritoProvider({ children }: { children: ReactNode }) {
 
   return (
     <CarritoContext.Provider value={{
-      items, total, count, hidratado,
+      items, total, count, hidratado, errorHidratacion,
       agregarItem, quitarItem, tieneItem, limpiar,
       drawerAbierto,
       abrirDrawer: () => setDrawerAbierto(true),

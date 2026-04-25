@@ -5,9 +5,9 @@ const TOKEN_TTL_SECONDS = 60 * 60 * 24 * 30; // 30 días
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000';
 
 function getOrderTokenSecret() {
-  const secret = process.env.ORDER_ACCESS_TOKEN_SECRET?.trim() || process.env.SUPABASE_SERVICE_ROLE_KEY?.trim();
+  const secret = process.env.ORDER_ACCESS_TOKEN_SECRET?.trim();
   if (!secret || secret.length < 32) {
-    throw new Error('ORDER_ACCESS_TOKEN_SECRET no está configurado con un valor seguro.');
+    throw new Error('ORDER_ACCESS_TOKEN_SECRET debe configurarse con un valor seguro de al menos 32 caracteres.');
   }
   return secret;
 }

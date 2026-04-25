@@ -7,8 +7,16 @@ import { useRouter } from 'next/navigation';
 import { Ph } from '@/components/shared/image-placeholder';
 import { Icons } from '@/components/shared/icons';
 import { useCountdown, pad } from '@/hooks/use-countdown';
-import { guardarPerfilComprador, obtenerPerfilComprador, prepararSesionComprador } from '@/lib/buyer/actions';
-import { createBuyerClient, createClient } from '@/lib/supabase/client';
+import {
+  cerrarSesionComprador,
+  guardarPerfilComprador,
+  iniciarSesionComprador,
+  obtenerPedidosComprador,
+  obtenerPerfilComprador,
+  registrarComprador,
+  type CompradorPedidoResumen,
+} from '@/lib/buyer/actions';
+import { createClient } from '@/lib/supabase/client';
 import { formatProductSizes, getPrimaryProductSize, getProductSizes, getProductTotalQuantity } from '@/lib/product-sizes';
 import type { Database } from '@/types/database';
 import { useCarrito } from '@/hooks/use-carrito';
@@ -18,15 +26,7 @@ type Drop = Pick<Database['public']['Tables']['drops']['Row'], 'id' | 'nombre' |
 type Prenda = Pick<Database['public']['Tables']['prendas']['Row'], 'id' | 'nombre' | 'precio' | 'cantidad' | 'cantidades_por_talla' | 'categoria' | 'talla' | 'tallas' | 'marca' | 'fotos' | 'estado' | 'drop_id'>;
 type PrendaDrop = Pick<Database['public']['Tables']['prendas']['Row'], 'id' | 'drop_id' | 'talla' | 'tallas' | 'cantidad' | 'cantidades_por_talla' | 'estado'>;
 type Comprador = { nombre: string; email: string; telefono?: string | null; direccion?: string | null; ciudad?: string | null };
-type BuyerPedido = Pick<Database['public']['Tables']['pedidos']['Row'], 'id' | 'numero' | 'estado' | 'monto_total' | 'created_at' | 'metodo_envio' | 'apartado_expira_at'> & {
-  drop: { nombre: string | null } | null;
-  items: {
-    id: string;
-    precio: number;
-    talla_seleccionada: string | null;
-    prenda: { nombre: string | null; talla: string | null; marca: string | null; fotos: string[] | null } | null;
-  }[];
-};
+type BuyerPedido = CompradorPedidoResumen;
 
 const PEDIDO_LABELS: Record<string, { label: string; tone: string; bg: string }> = {
   apartado:    { label: 'Apartado',       tone: '#92400e', bg: '#fffbeb' },
@@ -112,7 +112,7 @@ function SubscribeModal({ drop, tienda, onClose, onViewDrop }: { drop: Drop; tie
     setError('');
     if (!nombre.trim() || !email.trim()) { setError('Completá tu nombre y correo.'); return; }
     setLoading(true);
-    const supabase = createBuyerClient();
+    const supabase = createClient();
     const { error: err } = await supabase.from('anotaciones').insert({
       drop_id: drop.id, nombre: nombre.trim(), apellido: apellido.trim() || null,
       email: email.trim(), telefono: telefono.trim() || null,
@@ -225,69 +225,40 @@ function BuyerAuthModal({ onClose, onSuccess }: { onClose: () => void; onSuccess
     if (mode === 'register' && password.length < 8) { setError('La contraseña necesita mínimo 8 caracteres.'); return; }
 
     setLoading(true);
-    const supabase = createBuyerClient();
 
     try {
-      if (mode === 'register') {
-        const { data: ownerEmail } = await supabase
-          .from('tiendas')
-          .select('id')
-          .ilike('contact_email', cleanEmail)
-          .limit(1)
-          .maybeSingle();
-        if (ownerEmail) {
-          setError('Ese correo pertenece a una tienda. Usá otro correo para comprar o iniciá sesión como tienda.');
-          return;
-        }
-      }
-
       if (mode === 'login') {
-        const { data, error: err } = await supabase.auth.signInWithPassword({ email: cleanEmail, password });
-        if (err || !data.user) { setError('Correo o contraseña incorrectos.'); return; }
-
-        const prepared = await prepararSesionComprador();
-        if (prepared.error || !prepared.comprador) {
-          if (prepared.blockedOwner) await supabase.auth.signOut();
-          setError(prepared.error ?? 'Entraste, pero no pudimos preparar tu perfil. Intentá de nuevo.');
+        const result = await iniciarSesionComprador({ email: cleanEmail, password });
+        if (result.error || !result.comprador) {
+          setError(result.error ?? 'Entraste, pero no pudimos preparar tu perfil. Intentá de nuevo.');
           return;
         }
 
-        onSuccess(prepared.comprador);
+        onSuccess(result.comprador);
         return;
       }
 
-      const { data, error: err } = await supabase.auth.signUp({
+      const result = await registrarComprador({
+        nombre: cleanNombre,
+        telefono: cleanTelefono || null,
         email: cleanEmail,
         password,
-        options: {
-          data: {
-            full_name: cleanNombre,
-            buyer_phone: cleanTelefono || null,
-          },
-        },
       });
-      if (err) { setError(err.message.toLowerCase().includes('already') ? 'Ese correo ya tiene cuenta.' : err.message); return; }
-      if (data.user && data.user.identities && data.user.identities.length === 0) {
-        setError('Ese correo ya tiene cuenta. Iniciá sesión como comprador.');
+
+      if (result.error) {
+        setError(result.error);
         return;
       }
-      if (!data.user) {
-        setError('No pudimos crear la cuenta. Intentá de nuevo.');
+      if (result.notice) {
+        setNotice(result.notice);
         return;
       }
-      if (!data.session) {
-        setNotice('Te enviamos un correo de confirmación. Después de confirmarlo, iniciá sesión para guardar tu perfil.');
+      if (!result.comprador) {
+        setError('La cuenta se creó, pero no pudimos guardar el perfil. Iniciá sesión e intentá completar tus datos.');
         return;
       }
 
-      const prepared = await prepararSesionComprador();
-      if (prepared.error || !prepared.comprador) {
-        if (prepared.blockedOwner) await supabase.auth.signOut();
-        setError(prepared.error ?? 'La cuenta se creó, pero no pudimos guardar el perfil. Iniciá sesión e intentá completar tus datos.');
-        return;
-      }
-
-      onSuccess(prepared.comprador);
+      onSuccess(result.comprador);
     } finally {
       setLoading(false);
     }
@@ -407,19 +378,17 @@ function BuyerProfileSheet({
   useEffect(() => {
     let active = true;
     (async () => {
-      const supabase = createBuyerClient();
-      const { data } = await supabase
-        .from('pedidos')
-        .select(`id, numero, estado, monto_total, created_at, metodo_envio, apartado_expira_at, drop:drops(nombre), items:pedido_items(id, precio, talla_seleccionada, prenda:prendas(nombre, talla, marca, fotos))`)
-        .eq('comprador_email', comprador.email)
-        .order('created_at', { ascending: false })
-        .limit(6);
+      const res = await obtenerPedidosComprador();
       if (!active) return;
-      setPedidos((data ?? []) as unknown as BuyerPedido[]);
+      if (res.blockedOwner) {
+        onLogout();
+        return;
+      }
+      setPedidos(res.pedidos ?? []);
       setLoadingPedidos(false);
     })();
     return () => { active = false; };
-  }, [comprador.email]);
+  }, [comprador.email, onLogout]);
 
   async function handleSaveProfile(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -790,8 +759,7 @@ export function TiendaPageClient(props: {
   }, [popupDrop, popupSeenKey]);
 
   async function handleLogout() {
-    const supabase = createBuyerClient();
-    await supabase.auth.signOut();
+    await cerrarSesionComprador();
     setComprador(null);
     setShowAuth(false);
   }
@@ -922,35 +890,59 @@ export function TiendaPageClient(props: {
 
       {/* ── BANNER DROP EN VIVO (1 solo) o CARRUSEL DROPS PROGRAMADOS ── */}
       {liveDrop && (
-        <div style={{ background: 'linear-gradient(135deg, #5b3d31 0%, #3c2720 55%, #2a1c16 100%)', padding: '14px 20px', cursor: 'pointer' }}
+        <div
+          style={{
+            position: 'relative', overflow: 'hidden', cursor: 'pointer',
+            background: 'linear-gradient(135deg, #5b3d31 0%, #3c2720 55%, #2a1c16 100%)',
+          }}
           onClick={() => router.push(`/${tienda.username}/drop/${liveDrop.id}`)}
         >
-          <div className="store-live-inner">
-            <div className="store-live-left" style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-              <div style={{ width: 38, height: 38, borderRadius: 19, background: '#C96442', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                <span style={{ width: 8, height: 8, borderRadius: 4, background: '#fff', display: 'inline-block', animation: 'pulse 1.4s ease-in-out infinite' }} />
-              </div>
+          {liveDrop.foto_portada_url && (
+            <div style={{ position: 'absolute', inset: 0 }}>
+              <Image
+                src={liveDrop.foto_portada_url}
+                alt={liveDrop.nombre}
+                fill
+                sizes="100vw"
+                style={{ objectFit: 'cover', opacity: 0.18 }}
+              />
+            </div>
+          )}
+          <div style={{ position: 'relative', maxWidth: 1100, margin: '0 auto', padding: '28px 20px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 20, flexWrap: 'wrap' }}>
               <div>
-                <span style={{ fontSize: 10, fontWeight: 800, color: '#C96442', textTransform: 'uppercase', letterSpacing: '0.1em', fontFamily: 'var(--font-mono)', background: 'rgba(201,100,66,0.15)', padding: '2px 8px', borderRadius: 4 }}>● EN VIVO</span>
-                <div style={{ fontSize: 15, fontWeight: 700, color: '#fff', marginTop: 2 }}>{liveDrop.nombre}</div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 8, flexWrap: 'wrap' }}>
-                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, borderRadius: 999, border: '1px solid rgba(255,255,255,0.14)', background: 'rgba(255,255,255,0.08)', color: '#fff', padding: '5px 10px', fontSize: 11, fontWeight: 700 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
+                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: '#C96442', borderRadius: 20, padding: '4px 10px', fontSize: 10, fontWeight: 800, color: '#fff', letterSpacing: '0.1em', textTransform: 'uppercase' }}>
+                    <span style={{ width: 5, height: 5, borderRadius: 3, background: '#fff', display: 'inline-block', animation: 'pulse 1.4s ease-in-out infinite' }} />
+                    EN VIVO
+                  </span>
+                </div>
+                <div style={{ fontSize: 26, fontWeight: 900, color: '#fff', letterSpacing: '-0.01em', lineHeight: 1.1, marginBottom: 12 }}>
+                  {liveDrop.nombre}
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, borderRadius: 999, border: '1px solid rgba(255,255,255,0.14)', background: 'rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.85)', padding: '5px 12px', fontSize: 12, fontWeight: 600 }}>
                     <Icons.box width={12} height={12} />
                     {liveDropAvailableUnits} disponibles
                   </span>
-                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, borderRadius: 999, border: '1px solid rgba(255,255,255,0.14)', background: 'rgba(255,255,255,0.08)', color: '#fff', padding: '5px 10px', fontSize: 11, fontWeight: 700 }}>
+                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, borderRadius: 999, border: '1px solid rgba(255,255,255,0.14)', background: 'rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.85)', padding: '5px 12px', fontSize: 12, fontWeight: 600 }}>
                     <Icons.eye width={12} height={12} />
                     {liveDrop.viewers_count ?? 0} viendo
                   </span>
                 </div>
               </div>
-            </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 16, flexShrink: 0 }}>
-              <CountdownBlocks target={liveDropTarget} />
-              <button onClick={e => { e.stopPropagation(); router.push(`/${tienda.username}/drop/${liveDrop.id}`); }}
-                style={{ height: 40, borderRadius: 8, background: '#fff', color: '#111', border: 'none', padding: '0 20px', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>
-                Ver drop
-              </button>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 20, flexShrink: 0 }}>
+                <div>
+                  <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.46)', textTransform: 'uppercase', letterSpacing: '0.1em', fontFamily: 'var(--font-mono)', marginBottom: 6 }}>Cierra en</div>
+                  <CountdownBlocks target={liveDropTarget} />
+                </div>
+                <button
+                  onClick={e => { e.stopPropagation(); router.push(`/${tienda.username}/drop/${liveDrop.id}`); }}
+                  style={{ height: 48, borderRadius: 10, background: '#fff', color: '#111', border: 'none', padding: '0 24px', fontSize: 14, fontWeight: 800, cursor: 'pointer', whiteSpace: 'nowrap' }}
+                >
+                  Ver drop
+                </button>
+              </div>
             </div>
           </div>
         </div>

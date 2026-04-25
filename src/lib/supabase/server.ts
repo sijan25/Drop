@@ -76,6 +76,12 @@ export async function createServiceClient() {
 
 export async function createBuyerClient() {
   const cookieStore = await cookies();
+  const buyerCookieDefaults = {
+    path: "/",
+    httpOnly: true,
+    sameSite: "lax" as const,
+    secure: process.env.NODE_ENV === "production",
+  };
 
   return createServerClient<Database>(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -83,9 +89,7 @@ export async function createBuyerClient() {
     {
       cookieOptions: {
         name: BUYER_AUTH_COOKIE,
-        path: "/",
-        sameSite: "lax",
-        secure: process.env.NODE_ENV === "production",
+        ...buyerCookieDefaults,
       },
       cookies: {
         getAll() {
@@ -94,7 +98,10 @@ export async function createBuyerClient() {
         setAll(cookiesToSet) {
           try {
             cookiesToSet.forEach(({ name, value, options }) =>
-              cookieStore.set(name, value, options)
+              cookieStore.set(name, value, {
+                ...options,
+                ...buyerCookieDefaults,
+              })
             );
           } catch {
             // Called from Server Component — cookies set by browser/client flows.

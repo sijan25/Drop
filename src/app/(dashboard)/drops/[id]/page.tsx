@@ -9,6 +9,7 @@ import { Ph } from '@/components/shared/image-placeholder';
 import { SizeSelector } from '@/components/shared/size-selector';
 import { useDropViewerCount } from '@/hooks/use-drop-viewer-count';
 import { createClient } from '@/lib/supabase/client';
+import { useCountdown } from '@/hooks/use-countdown';
 import { formatProductSizes, getProductTotalQuantity } from '@/lib/product-sizes';
 import { useCatalogOptions } from '@/hooks/use-catalog-options';
 import {
@@ -376,6 +377,16 @@ export default function DropDetallePage() {
     trackSelf: false,
   });
   const target = drop?.cierra_at ? new Date(drop.cierra_at).getTime() : null;
+
+  const autoClosedRef = useRef(false);
+  const { done: countdownDone } = useCountdown(target ?? 0);
+  useEffect(() => {
+    if (target && countdownDone && drop?.estado === 'activo' && !autoClosedRef.current) {
+      autoClosedRef.current = true;
+      cerrarDrop();
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [target, countdownDone, drop?.estado]);
 
   const accentColor = drop?.estado === 'activo' ? 'var(--urgent)' : drop?.estado === 'programado' ? '#3b82f6' : 'var(--line)';
 

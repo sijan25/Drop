@@ -1,7 +1,9 @@
 'use client'
 
-import { useEffect } from 'react'
 import { Icons } from './icons'
+import { ModalOverlay } from './modal-overlay'
+
+// useEffect was removed — ModalOverlay handles Escape key internally
 
 interface ConfirmModalProps {
   title: string
@@ -20,35 +22,11 @@ export function ConfirmModal({
   onConfirm,
   onClose,
 }: ConfirmModalProps) {
-  useEffect(() => {
-    function onKey(e: KeyboardEvent) {
-      if (e.key === 'Escape') onClose()
-    }
-    document.addEventListener('keydown', onKey)
-    return () => document.removeEventListener('keydown', onKey)
-  }, [onClose])
-
   const isDanger = variant === 'danger'
 
   return (
-    <div
-      style={{
-        position: 'fixed', inset: 0, zIndex: 100,
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
-        background: 'rgba(0,0,0,0.45)',
-        backdropFilter: 'blur(2px)',
-      }}
-      onClick={e => { if (e.target === e.currentTarget) onClose() }}
-    >
-      <div style={{
-        background: '#fff',
-        borderRadius: 16,
-        width: '100%',
-        maxWidth: 400,
-        margin: '0 16px',
-        boxShadow: '0 24px 64px rgba(0,0,0,0.18)',
-        overflow: 'hidden',
-      }}>
+    <ModalOverlay onClose={onClose} zIndex={100} maxWidth={400} blur="2px" bg="rgba(0,0,0,0.45)">
+      <div style={{ overflow: 'hidden', borderRadius: 18 }}>
         {/* Icon */}
         <div style={{ padding: '28px 28px 0', display: 'flex', justifyContent: 'center' }}>
           <div style={{
@@ -102,6 +80,6 @@ export function ConfirmModal({
           </button>
         </div>
       </div>
-    </div>
+    </ModalOverlay>
   )
 }

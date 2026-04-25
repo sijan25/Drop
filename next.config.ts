@@ -1,18 +1,45 @@
 import type { NextConfig } from "next";
 
+const supabaseOrigin = (() => {
+  try {
+    return process.env.NEXT_PUBLIC_SUPABASE_URL
+      ? new URL(process.env.NEXT_PUBLIC_SUPABASE_URL).origin
+      : null;
+  } catch {
+    return null;
+  }
+})();
+
+const supabaseHostname = (() => {
+  try {
+    return process.env.NEXT_PUBLIC_SUPABASE_URL
+      ? new URL(process.env.NEXT_PUBLIC_SUPABASE_URL).hostname
+      : null;
+  } catch {
+    return null;
+  }
+})();
+
 const csp = [
   "default-src 'self'",
   "base-uri 'self'",
   "frame-ancestors 'none'",
   "object-src 'none'",
   "form-action 'self'",
-  "img-src 'self' data: blob: https://res.cloudinary.com https://*.supabase.co",
+  ["img-src 'self' data: blob: https://res.cloudinary.com", supabaseOrigin].filter(Boolean).join(" "),
   "font-src 'self' data:",
   "style-src 'self' 'unsafe-inline'",
   process.env.NODE_ENV === "production"
     ? "script-src 'self' 'unsafe-inline'"
     : "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
-  "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://api.cloudinary.com https://res.cloudinary.com https://api.resend.com",
+  [
+    "connect-src 'self'",
+    supabaseOrigin,
+    supabaseHostname ? `wss://${supabaseHostname}` : null,
+    "https://api.cloudinary.com",
+    "https://res.cloudinary.com",
+    "https://api.resend.com",
+  ].filter(Boolean).join(" "),
   process.env.NODE_ENV === "production" ? "upgrade-insecure-requests" : "",
 ].filter(Boolean).join("; ");
 
@@ -31,7 +58,7 @@ const nextConfig: NextConfig = {
   images: {
     remotePatterns: [
       { protocol: "https", hostname: "res.cloudinary.com" },
-      { protocol: "https", hostname: "*.supabase.co" },
+      ...(supabaseHostname ? [{ protocol: "https" as const, hostname: supabaseHostname }] : []),
     ],
   },
   async headers() {

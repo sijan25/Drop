@@ -6,7 +6,7 @@ import { Icons } from '@/components/shared/icons';
 
 export function CarritoDrawer() {
   const router = useRouter();
-  const { items, total, count, quitarItem, cerrarDrawer, drawerAbierto, limpiar } = useCarrito();
+  const { items, total, count, quitarItem, cerrarDrawer, drawerAbierto, limpiar, errorHidratacion } = useCarrito();
 
   if (!drawerAbierto) return null;
 
@@ -74,7 +74,12 @@ export function CarritoDrawer() {
 
         {/* Items */}
         <div style={{ flex: 1, overflowY: 'auto', padding: '16px 24px' }}>
-          {count === 0 ? (
+          {errorHidratacion ? (
+            <div style={{ textAlign: 'center', padding: '60px 0', color: 'var(--ink-3)' }}>
+              <div style={{ fontSize: 14, color: 'var(--urgent)', marginBottom: 12 }}>No se pudo cargar el carrito.</div>
+              <button onClick={() => window.location.reload()} className="btn btn-outline" style={{ height: 36, fontSize: 13 }}>Reintentar</button>
+            </div>
+          ) : count === 0 ? (
             <div style={{ textAlign: 'center', padding: '60px 0', color: 'var(--ink-3)' }}>
               <div style={{ width: 56, height: 56, borderRadius: 16, background: 'var(--surface-2)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
                 <Icons.bag width={26} height={26} style={{ color: 'var(--ink-3)' }} />

@@ -89,8 +89,50 @@ function firstParam(value: string | string[] | undefined) {
   return Array.isArray(value) ? value[0] : value;
 }
 
-async function canSeeOrder(pedido: Pedido, token?: string) {
-  if (verifyOrderAccessToken(token, { id: pedido.id, numero: pedido.numero })) return true;
+type OrderAccessScope = 'seller' | 'buyer' | 'token' | 'none';
+
+function maskEmail(value: string | null) {
+  if (!value) return null;
+
+  const [localPart, domain = ''] = value.split('@');
+  if (!localPart) return 'Protegido';
+
+  const localVisible = localPart.length <= 2
+    ? `${localPart[0] ?? '*'}*`
+    : `${localPart.slice(0, 2)}***`;
+
+  if (!domain) return `${localVisible}@***`;
+
+  const [domainName, ...rest] = domain.split('.');
+  const maskedDomain = domainName
+    ? `${domainName.slice(0, 1)}***`
+    : '***';
+
+  return `${localVisible}@${[maskedDomain, ...rest].filter(Boolean).join('.')}`;
+}
+
+function maskPhone(value: string) {
+  const digits = value.replace(/\D/g, '');
+  if (!digits) return 'Protegido';
+  return `••• ••• ${digits.slice(-4)}`;
+}
+
+function maskAddress(value: string | null, metodoEnvio: Pedido['metodo_envio']) {
+  if (metodoEnvio !== 'domicilio') return 'Se confirma al coordinar el retiro';
+  if (!value?.trim()) return 'Protegida en este enlace';
+  return 'Protegida en este enlace';
+}
+
+function redactOrderForTokenViewer(pedido: Pedido): Pedido {
+  return {
+    ...pedido,
+    comprador_email: maskEmail(pedido.comprador_email),
+    comprador_telefono: maskPhone(pedido.comprador_telefono),
+    direccion: maskAddress(pedido.direccion, pedido.metodo_envio),
+  };
+}
+
+async function getOrderAccessScope(pedido: Pedido, token?: string): Promise<OrderAccessScope> {
 
   const buyer = await createBuyerClient();
   const { data: buyerAuth } = await buyer.auth.getUser();
@@ -99,12 +141,20 @@ async function canSeeOrder(pedido: Pedido, token?: string) {
     pedido.comprador_email &&
     buyerAuth.user.email.toLowerCase() === pedido.comprador_email.toLowerCase()
   ) {
-    return true;
+    return 'buyer';
   }
 
   const seller = await createClient();
   const { data: sellerAuth } = await seller.auth.getUser();
-  return Boolean(sellerAuth.user?.id && pedido.tienda?.user_id === sellerAuth.user.id);
+  if (sellerAuth.user?.id && pedido.tienda?.user_id === sellerAuth.user.id) {
+    return 'seller';
+  }
+
+  if (verifyOrderAccessToken(token, { id: pedido.id, numero: pedido.numero })) {
+    return 'token';
+  }
+
+  return 'none';
 }
 
 export default async function PedidoPublicoPage({
@@ -138,12 +188,15 @@ export default async function PedidoPublicoPage({
   if (!data) notFound();
 
   const pedido = data as unknown as Pedido;
-  if (!(await canSeeOrder(pedido, token))) notFound();
+  const accessScope = await getOrderAccessScope(pedido, token);
+  if (accessScope === 'none') notFound();
 
-  const estado = STATUS_META[pedido.estado ?? 'apartado'] ?? STATUS_META.apartado;
-  const timeline = buildTimeline(pedido);
-  const firstItem = pedido.items?.[0];
-  const tiendaHref = pedido.tienda?.username ? `/${pedido.tienda.username}` : '/';
+  const visiblePedido = accessScope === 'token' ? redactOrderForTokenViewer(pedido) : pedido;
+  const hasMaskedPersonalData = accessScope === 'token';
+  const estado = STATUS_META[visiblePedido.estado ?? 'apartado'] ?? STATUS_META.apartado;
+  const timeline = buildTimeline(visiblePedido);
+  const firstItem = visiblePedido.items?.[0];
+  const tiendaHref = visiblePedido.tienda?.username ? `/${visiblePedido.tienda.username}` : '/';
 
   return (
     <main style={{ minHeight: '100vh', background: '#f7f7f6', padding: '28px 16px 40px' }}>
@@ -161,10 +214,10 @@ export default async function PedidoPublicoPage({
         <section style={{ background: '#fff', border: '1px solid rgba(0,0,0,0.08)', borderRadius: 8, overflow: 'hidden' }}>
           <div style={{ padding: '26px 28px', borderBottom: '1px solid rgba(0,0,0,0.07)' }}>
             <div className="mono tnum" style={{ fontSize: 30, fontWeight: 900, color: '#111', marginBottom: 5 }}>
-              {pedido.numero}
+              {visiblePedido.numero}
             </div>
             <div style={{ fontSize: 14, color: '#777' }}>
-              Pedido en {pedido.tienda?.nombre ?? 'tienda'}{pedido.drop?.nombre ? ` · ${pedido.drop.nombre}` : ''}
+              Pedido en {visiblePedido.tienda?.nombre ?? 'tienda'}{visiblePedido.drop?.nombre ? ` · ${visiblePedido.drop.nombre}` : ''}
             </div>
           </div>
 
@@ -172,7 +225,7 @@ export default async function PedidoPublicoPage({
             <div style={{ padding: 24, borderRight: '1px solid rgba(0,0,0,0.07)' }}>
               <div style={{ fontSize: 14, fontWeight: 800, marginBottom: 16 }}>Prendas</div>
               <div style={{ display: 'grid', gap: 12 }}>
-                {(pedido.items?.length ? pedido.items : [{ id: pedido.id, precio: pedido.monto_total, talla_seleccionada: null, prenda: null }]).map(item => (
+                {(visiblePedido.items?.length ? visiblePedido.items : [{ id: visiblePedido.id, precio: visiblePedido.monto_total, talla_seleccionada: null, prenda: null }]).map(item => (
                   <div key={item.id} style={{ display: 'grid', gridTemplateColumns: '62px 1fr auto', gap: 12, alignItems: 'center' }}>
                     <div style={{ width: 62, height: 78, borderRadius: 8, overflow: 'hidden', background: '#eeeeee' }}>
                       {item.prenda?.fotos?.[0] ? (
@@ -187,7 +240,7 @@ export default async function PedidoPublicoPage({
                         {item.prenda?.nombre ?? firstItem?.prenda?.nombre ?? 'Pedido registrado'}
                       </div>
                       <div style={{ fontSize: 12, color: '#888', marginTop: 3 }}>
-                        {[item.prenda?.marca, (item.talla_seleccionada ?? item.prenda?.talla) && `T. ${item.talla_seleccionada ?? item.prenda?.talla}`].filter(Boolean).join(' · ') || pedido.drop?.nombre || 'Detalle del pedido'}
+                        {[item.prenda?.marca, (item.talla_seleccionada ?? item.prenda?.talla) && `T. ${item.talla_seleccionada ?? item.prenda?.talla}`].filter(Boolean).join(' · ') || visiblePedido.drop?.nombre || 'Detalle del pedido'}
                       </div>
                     </div>
                     <div className="mono tnum" style={{ fontSize: 14, fontWeight: 900 }}>
@@ -199,7 +252,7 @@ export default async function PedidoPublicoPage({
 
               <div style={{ marginTop: 22, paddingTop: 18, borderTop: '1px solid rgba(0,0,0,0.07)', display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
                 <span style={{ fontSize: 14, fontWeight: 800 }}>Total</span>
-                <span className="mono tnum" style={{ fontSize: 24, fontWeight: 900 }}>L {pedido.monto_total.toLocaleString()}</span>
+                <span className="mono tnum" style={{ fontSize: 24, fontWeight: 900 }}>L {visiblePedido.monto_total.toLocaleString()}</span>
               </div>
             </div>
 
@@ -230,12 +283,17 @@ export default async function PedidoPublicoPage({
         <section style={{ marginTop: 14, background: '#fff', border: '1px solid rgba(0,0,0,0.08)', borderRadius: 8, padding: '18px 20px' }}>
           <div style={{ fontSize: 14, fontWeight: 800, marginBottom: 12 }}>Detalles de entrega</div>
           <div style={{ display: 'grid', gap: 9, fontSize: 13 }}>
-            <InfoRow label="Compradora" value={pedido.comprador_nombre} />
-            <InfoRow label="WhatsApp" value={pedido.comprador_telefono} />
-            <InfoRow label="Entrega" value={pedido.metodo_envio === 'domicilio' ? 'Envío a domicilio' : 'Pickup / retiro'} />
-            <InfoRow label="Dirección" value={pedido.direccion ?? 'Pendiente'} />
-            <InfoRow label="Pago" value={pedido.metodo_pago === 'transferencia' ? `Transferencia · ${pedido.comprobante_estado ?? 'pendiente'}` : 'Tarjeta'} />
+            <InfoRow label="Compradora" value={visiblePedido.comprador_nombre} />
+            <InfoRow label="WhatsApp" value={visiblePedido.comprador_telefono} />
+            <InfoRow label="Entrega" value={visiblePedido.metodo_envio === 'domicilio' ? 'Envío a domicilio' : 'Pickup / retiro'} />
+            <InfoRow label="Dirección" value={visiblePedido.direccion ?? 'Pendiente'} />
+            <InfoRow label="Pago" value={visiblePedido.metodo_pago === 'transferencia' ? `Transferencia · ${visiblePedido.comprobante_estado ?? 'pendiente'}` : 'Tarjeta'} />
           </div>
+          {hasMaskedPersonalData && (
+            <div style={{ marginTop: 12, fontSize: 12, color: '#888' }}>
+              Los datos personales se muestran protegidos en enlaces compartidos.
+            </div>
+          )}
         </section>
       </div>
     </main>

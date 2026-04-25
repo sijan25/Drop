@@ -162,7 +162,19 @@ export default function DropsPage() {
         .order('inicia_at', { ascending: false })
         .limit(80);
 
-      const loadedDrops = (dropsData ?? []) as Drop[];
+      let loadedDrops = (dropsData ?? []) as Drop[];
+
+      // Auto-activate programado drops whose inicia_at has already passed
+      const now = Date.now();
+      const expired = loadedDrops.filter(d =>
+        d.estado === 'programado' && new Date(d.inicia_at).getTime() < now
+      );
+      if (expired.length > 0) {
+        await supabase.from('drops').update({ estado: 'activo' }).in('id', expired.map(d => d.id));
+        const expiredIds = new Set(expired.map(d => d.id));
+        loadedDrops = loadedDrops.map(d => expiredIds.has(d.id) ? { ...d, estado: 'activo' } : d);
+      }
+
       setDrops(loadedDrops);
 
       if (loadedDrops.length) {
@@ -382,7 +394,12 @@ export default function DropsPage() {
                 activos.map((d, i) => {
                   const s = statusInfo(d.estado);
                   const resumen = resumenes.get(d.id) ?? resumenVacio();
-                  const target = d.estado === 'activo' && d.cierra_at ? new Date(d.cierra_at).getTime() : new Date(d.inicia_at).getTime();
+                  const targetMs = d.estado === 'activo' && d.cierra_at
+                    ? new Date(d.cierra_at).getTime()
+                    : d.estado === 'programado'
+                      ? new Date(d.inicia_at).getTime()
+                      : null;
+                  const showCountdown = targetMs !== null && targetMs > Date.now();
                   return (
                     <div
                       key={d.id}
@@ -400,7 +417,13 @@ export default function DropsPage() {
                         </div>
                       </div>
                       <div className="mono tnum" style={{ fontSize: 12, color: s.tone, minWidth: 78, textAlign: 'right' }}>
-                        <CountdownTimer target={target} size="sm"/>
+                        {showCountdown && targetMs !== null && (
+                          <CountdownTimer
+                            target={targetMs}
+                            size="sm"
+                            onExpire={d.estado === 'programado' ? () => activarDrop(d.id) : undefined}
+                          />
+                        )}
                       </div>
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
