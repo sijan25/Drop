@@ -15,6 +15,8 @@ interface StepOneData {
   nombre: string;
   username: string;
   instagram: string;
+  tiktok: string;
+  facebook: string;
   password: string;
   passwordConfirm: string;
   tipo_negocio: 'ropa' | 'zapatos' | 'mixto';
@@ -44,7 +46,7 @@ export default function OnboardingPage() {
   const [showPass, setShowPass] = useState(false);
   const [needsConfirmation, setNeedsConfirmation] = useState(false);
   const [one, setOne] = useState<StepOneData>({
-    email: '', nombre: '', username: '', instagram: '', password: '', passwordConfirm: '', tipo_negocio: 'ropa',
+    email: '', nombre: '', username: '', instagram: '', tiktok: '', facebook: '', password: '', passwordConfirm: '', tipo_negocio: 'ropa',
   });
   const [two, setTwo] = useState<StepTwoData>({
     ciudad: 'San Pedro Sula', direccion: '', envios: { domicilio: true, nacional: false },
@@ -113,6 +115,8 @@ export default function OnboardingPage() {
       username: one.username.toLowerCase().trim(),
       nombre: one.nombre.trim(),
       instagram: one.instagram.trim() || null,
+      tiktok: one.tiktok.trim() || null,
+      facebook: one.facebook.trim() || null,
       ubicacion: ubicacion || null,
       tipo_negocio: one.tipo_negocio,
     });
@@ -323,6 +327,26 @@ export default function OnboardingPage() {
                     value={one.instagram}
                     onChange={e => setOne(o => ({ ...o, instagram: e.target.value }))}
                   />
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
+                  <div>
+                    <label className="label">TikTok <span className="t-mute" style={{ fontWeight: 400 }}>(opcional)</span></label>
+                    <input
+                      className="input input-lg"
+                      placeholder="@miciclita"
+                      value={one.tiktok}
+                      onChange={e => setOne(o => ({ ...o, tiktok: e.target.value }))}
+                    />
+                  </div>
+                  <div>
+                    <label className="label">Facebook <span className="t-mute" style={{ fontWeight: 400 }}>(opcional)</span></label>
+                    <input
+                      className="input input-lg"
+                      placeholder="miciclita.paca"
+                      value={one.facebook}
+                      onChange={e => setOne(o => ({ ...o, facebook: e.target.value }))}
+                    />
+                  </div>
                 </div>
               </div>
 

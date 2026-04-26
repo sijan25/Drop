@@ -184,6 +184,9 @@ async function loadCartItems(service: ServiceClient, cart: CartRow | null): Prom
 }
 
 export async function obtenerCarrito(): Promise<{ items: CartItemDTO[]; error?: string }> {
+  const guardError = await guardServerMutation('cart:get', 120, 10 * 60);
+  if (guardError) return { items: [], error: guardError };
+
   const service = await createServiceClient();
   const sessionId = await getSessionId(false);
   const buyerUserId = await getBuyerUserId();

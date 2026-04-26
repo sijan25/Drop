@@ -162,7 +162,7 @@ export function EnvioPanel({ prenda, tallaSeleccionada, nombre, email, whatsapp,
 }
 
 /* ──────── PANEL PAGO ──────── */
-export function PagoPanel({ prenda, tallaSeleccionada, metodosPago, metodoPagoId, tiendaEmail, costoEnvio, total, dropTarget, uploading, comprobanteUrl, errorMsg, loading, fileRef, onChange, onSubirComprobante, onConfirmar, onVolver }: {
+export function PagoPanel({ prenda, tallaSeleccionada, metodosPago, metodoPagoId, tiendaEmail, costoEnvio, total, dropTarget, uploading, comprobanteUrl, errorMsg, loading, fileRef, compradorNombre, onChange, onSubirComprobante, onConfirmar, onVolver }: {
   prenda: CheckoutPrenda;
   tallaSeleccionada: string | null;
   metodosPago: MetodoPago[];
@@ -170,6 +170,7 @@ export function PagoPanel({ prenda, tallaSeleccionada, metodosPago, metodoPagoId
   dropTarget?: number;
   uploading: boolean; comprobanteUrl: string | null; errorMsg: string; loading: boolean;
   fileRef: React.RefObject<HTMLInputElement | null>;
+  compradorNombre?: string;
   onChange: (f: string, v: string) => void;
   onSubirComprobante: (file: File) => void;
   onConfirmar: () => void;
@@ -177,7 +178,7 @@ export function PagoPanel({ prenda, tallaSeleccionada, metodosPago, metodoPagoId
 }) {
   const metodoPago = metodosPago.find(m => m.id === metodoPagoId);
   const esTransferencia = metodoPago?.tipo === 'transferencia';
-  const refPedido = `HN-${prenda.id.slice(0, 4).toUpperCase()}`;
+  const refPedido = compradorNombre ? compradorNombre.trim().split(' ').slice(0, 2).join(' ') : 'tu nombre completo';
 
   return (
     <div className="buyer-checkout-panel" style={{ padding: '24px 28px' }}>
@@ -234,7 +235,7 @@ export function PagoPanel({ prenda, tallaSeleccionada, metodosPago, metodoPagoId
         <div style={{ background: 'var(--surface-2)', borderRadius: 12, padding: '16px 18px', marginBottom: 16 }}>
           <div style={{ fontSize: 12, color: 'var(--ink-3)', marginBottom: 8 }}>Transferí este monto exacto:</div>
           <div className="mono tnum" style={{ fontSize: 32, fontWeight: 700, letterSpacing: '-0.04em' }}>L {total}</div>
-          <div style={{ fontSize: 13, color: 'var(--ink-3)', marginTop: 6 }}>Ref: {refPedido}</div>
+          <div style={{ fontSize: 13, color: 'var(--ink-3)', marginTop: 6 }}>Concepto: <strong>{refPedido}</strong></div>
         </div>
       )}
       {esTransferencia && (

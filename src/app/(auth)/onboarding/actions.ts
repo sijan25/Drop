@@ -10,6 +10,8 @@ export async function createAccount(data: {
   username: string;
   nombre: string;
   instagram: string | null;
+  tiktok: string | null;
+  facebook: string | null;
   ubicacion: string | null;
   tipo_negocio: 'ropa' | 'zapatos' | 'mixto';
 }): Promise<{ error?: string; needsConfirmation?: boolean }> {
@@ -75,6 +77,8 @@ export async function createAccount(data: {
     nombre,
     contact_email: email,
     instagram: data.instagram,
+    tiktok: data.tiktok,
+    facebook: data.facebook,
     ubicacion: data.ubicacion,
     plan: 'starter',
     activa: true,

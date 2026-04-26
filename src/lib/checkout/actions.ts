@@ -66,7 +66,7 @@ function publicUrlIsAllowed(url: string | null | undefined) {
 
     const cloudName = process.env.CLOUDINARY_CLOUD_NAME ?? process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME;
     if (cloudName && parsed.origin === 'https://res.cloudinary.com') {
-      return parsed.pathname.startsWith(`/${cloudName}/`);
+      return parsed.pathname.startsWith(`/${cloudName}/fardodrops/comprobantes/`);
     }
 
     return false;

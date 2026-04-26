@@ -24,7 +24,7 @@ import { useCarrito } from '@/hooks/use-carrito';
 
 type Tienda = Database['public']['Tables']['tiendas']['Row'];
 type Drop = Pick<Database['public']['Tables']['drops']['Row'], 'id' | 'nombre' | 'descripcion' | 'estado' | 'inicia_at' | 'cierra_at' | 'duracion_minutos' | 'foto_portada_url' | 'vendidas_count' | 'viewers_count'> & { prendas?: { count: number }[] };
-type Prenda = Pick<Database['public']['Tables']['prendas']['Row'], 'id' | 'nombre' | 'precio' | 'cantidad' | 'cantidades_por_talla' | 'categoria' | 'talla' | 'tallas' | 'marca' | 'fotos' | 'estado' | 'drop_id'>;
+type Prenda = Pick<Database['public']['Tables']['prendas']['Row'], 'id' | 'nombre' | 'precio' | 'cantidad' | 'cantidades_por_talla' | 'categoria' | 'talla' | 'tallas' | 'marca' | 'fotos' | 'estado' | 'drop_id' | 'created_at'>;
 type PrendaDrop = Pick<Database['public']['Tables']['prendas']['Row'], 'id' | 'drop_id' | 'talla' | 'tallas' | 'cantidad' | 'cantidades_por_talla' | 'estado' | 'nombre' | 'precio' | 'fotos' | 'marca'>;
 type Comprador = { nombre: string; email: string; telefono?: string | null; direccion?: string | null; ciudad?: string | null };
 type BuyerPedido = CompradorPedidoResumen;
@@ -486,7 +486,10 @@ function BuyerProfileSheet({
 }) {
   const router = useRouter();
   const [pedidos, setPedidos] = useState<BuyerPedido[]>([]);
+  const [pedidosCursor, setPedidosCursor] = useState<string | undefined>(undefined);
+  const [hayMasPedidos, setHayMasPedidos] = useState(false);
   const [loadingPedidos, setLoadingPedidos] = useState(true);
+  const [loadingMasPedidos, setLoadingMasPedidos] = useState(false);
   const [activeTab, setActiveTab] = useState<'orders' | 'profile'>('orders');
   const [profileForm, setProfileForm] = useState({
     nombre: comprador.nombre,
@@ -508,10 +511,23 @@ function BuyerProfileSheet({
         return;
       }
       setPedidos(res.pedidos ?? []);
+      setPedidosCursor(res.nextCursor);
+      setHayMasPedidos(!!res.nextCursor);
       setLoadingPedidos(false);
     })();
     return () => { active = false; };
   }, [comprador.email, onLogout]);
+
+  async function cargarMasPedidos() {
+    if (!pedidosCursor || loadingMasPedidos) return;
+    setLoadingMasPedidos(true);
+    const res = await obtenerPedidosComprador(pedidosCursor);
+    if (res.blockedOwner) { onLogout(); return; }
+    setPedidos(prev => [...prev, ...(res.pedidos ?? [])]);
+    setPedidosCursor(res.nextCursor);
+    setHayMasPedidos(!!res.nextCursor);
+    setLoadingMasPedidos(false);
+  }
 
   async function handleSaveProfile(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -651,6 +667,11 @@ function BuyerProfileSheet({
                       </button>
                     );
                   })}
+                  {hayMasPedidos && (
+                    <button onClick={cargarMasPedidos} disabled={loadingMasPedidos} style={{ width: '100%', marginTop: 10, height: 40, borderRadius: 10, border: '1px solid rgba(0,0,0,0.1)', background: '#fff', fontSize: 13, fontWeight: 700, cursor: 'pointer', color: '#555' }}>
+                      {loadingMasPedidos ? 'Cargando...' : 'Cargar más pedidos'}
+                    </button>
+                  )}
                 </div>
               )}
             </div>
@@ -726,6 +747,7 @@ export function TiendaPageClient(props: {
   const { tienda, drops, prendasDisponibles, prendasDrops, categoriasCatalogo, tiendaEmail, isOwnerPreview = false } = props;
   const router = useRouter();
   const [catFilter, setCatFilter] = useState<string | null>(null);
+  const [visibleCount, setVisibleCount] = useState(12);
   const [showAuth, setShowAuth] = useState(false);
   const [subscribeDrop, setSubscribeDrop] = useState<Drop | null>(null);
   const [comprador, setComprador] = useState<Comprador | null>(null);
@@ -845,6 +867,9 @@ export function TiendaPageClient(props: {
   const prendasFiltradas = catFilter && catFilter !== 'Todo'
     ? prendasDisponibles.filter(p => (p.categoria ?? '').trim().toLowerCase() === catFilter.trim().toLowerCase())
     : prendasDisponibles;
+  const prendasVisibles = prendasFiltradas.slice(0, visibleCount);
+  const hayMasPrendas = prendasFiltradas.length > visibleCount;
+  const NUEVO_THRESHOLD_MS = 7 * 24 * 60 * 60 * 1000;
   const estaDisponible = (e: Prenda['estado']) => !e || e === 'disponible' || e === 'remanente';
   const totalUnidades = prendasDisponibles.reduce((s, p) => s + getProductTotalQuantity(p), 0);
   const unidadesFiltradas = prendasFiltradas.reduce((s, p) => s + getProductTotalQuantity(p), 0);
@@ -853,6 +878,7 @@ export function TiendaPageClient(props: {
   const scrollToCatalog = () => document.getElementById('catalogo')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   const selectCategory = (category: string | null) => {
     setCatFilter(category);
+    setVisibleCount(12);
     setShowCategoryMenu(false);
     setCategoryMenuRect(null);
   };
@@ -1264,9 +1290,10 @@ export function TiendaPageClient(props: {
             ) : (
               <>
                 <div className="store-product-grid">
-                  {prendasFiltradas.map((p, i) => {
+                  {prendasVisibles.map((p) => {
                 const disponible = estaDisponible(p.estado);
                 const vistas = p.drop_id ? (dropsWithLiveState.find(d => d.id === p.drop_id)?.viewers_count ?? 0) : null;
+                const esNueva = p.created_at ? (Date.now() - new Date(p.created_at).getTime() < NUEVO_THRESHOLD_MS) : false;
                 const tallaLabel = formatProductSizes(p);
                 const tallaCarrito = getPrimaryProductSize(p);
                 const tieneVariantes = getProductSizes(p).length > 1;
@@ -1288,7 +1315,7 @@ export function TiendaPageClient(props: {
 
                       {/* Badges NUEVO / HOT */}
                       <div style={{ position: 'absolute', top: 10, left: 10, display: 'flex', gap: 5, flexWrap: 'wrap' }}>
-                        {i % 5 === 0 && (
+                        {esNueva && (
                           <span style={{ background: 'var(--dark)', color: '#fff', fontSize: 10, fontWeight: 700, padding: '3px 8px', borderRadius: 6, letterSpacing: '0.04em' }}>NUEVO</span>
                         )}
                         {vistas !== null && vistas > 600 && (
@@ -1384,10 +1411,10 @@ export function TiendaPageClient(props: {
                 </div>
 
                 {/* Ver más */}
-                {prendasFiltradas.length >= 6 && (
+                {hayMasPrendas && (
                   <div style={{ textAlign: 'center', marginTop: 32 }}>
-                    <button style={{ height: 44, padding: '0 32px', borderRadius: 22, border: '1px solid #E8E4DF', background: '#fff', fontSize: 14, fontWeight: 600, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 8, color: '#4A4540' }}>
-                      Ver más productos
+                    <button onClick={() => setVisibleCount(c => c + 12)} style={{ height: 44, padding: '0 32px', borderRadius: 22, border: '1px solid #E8E4DF', background: '#fff', fontSize: 14, fontWeight: 600, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 8, color: '#4A4540' }}>
+                      Ver más productos ({prendasFiltradas.length - visibleCount} restantes)
                       <svg width="14" height="14" viewBox="0 0 20 20" fill="none"><path d="M10 3v14M3 10l7 7 7-7" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/></svg>
                     </button>
                   </div>

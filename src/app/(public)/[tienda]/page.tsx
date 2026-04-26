@@ -34,7 +34,7 @@ export default async function TiendaPage({ params }: { params: Promise<{ tienda:
   // Inventario público: prendas con unidades disponibles para catálogo.
   const { data: prendasDisponibles } = await supabase
     .from('prendas')
-    .select('id, nombre, precio, cantidad, cantidades_por_talla, categoria, talla, tallas, marca, fotos, estado, drop_id')
+    .select('id, nombre, precio, cantidad, cantidades_por_talla, categoria, talla, tallas, marca, fotos, estado, drop_id, created_at')
     .eq('tienda_id', tienda.id)
     .is('drop_id', null)
     .gt('cantidad', 0)

@@ -168,6 +168,19 @@ export default async function PedidoPublicoPage({
   const token = firstParam((await searchParams).t);
   const supabase = await createServiceClient();
 
+  // Read minimal fields first to verify access without exposing full buyer data
+  const { data: minimal } = await supabase
+    .from('pedidos')
+    .select('id, numero, comprador_email, tienda:tiendas(user_id)')
+    .eq('numero', numero)
+    .single();
+
+  if (!minimal) notFound();
+
+  const minimalPedido = minimal as unknown as Pick<Pedido, 'id' | 'numero' | 'comprador_email'> & { tienda: { user_id: string } | null };
+  const accessScope = await getOrderAccessScope(minimalPedido as unknown as Pedido, token);
+  if (accessScope === 'none') notFound();
+
   const { data } = await supabase
     .from('pedidos')
     .select(`
@@ -188,8 +201,6 @@ export default async function PedidoPublicoPage({
   if (!data) notFound();
 
   const pedido = data as unknown as Pedido;
-  const accessScope = await getOrderAccessScope(pedido, token);
-  if (accessScope === 'none') notFound();
 
   const visiblePedido = accessScope === 'token' ? redactOrderForTokenViewer(pedido) : pedido;
   const hasMaskedPersonalData = accessScope === 'token';

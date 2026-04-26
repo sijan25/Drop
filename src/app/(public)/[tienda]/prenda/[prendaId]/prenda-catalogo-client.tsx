@@ -564,6 +564,7 @@ export function PrendaCatalogoClient({
                 tiendaEmail={tiendaEmail} costoEnvio={costoEnvio} total={total}
                 uploading={uploading} comprobanteUrl={comprobanteUrl}
                 errorMsg={errorMsg} loading={loadingPedido} fileRef={fileRef}
+                compradorNombre={nombre}
                 onChange={(f, v) => { if (f === 'metodoPagoId') setMetodoPagoId(v); setErrorMsg(''); }}
                 onSubirComprobante={subirComprobante}
                 onConfirmar={confirmarApartado}

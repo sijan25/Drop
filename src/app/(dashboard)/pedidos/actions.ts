@@ -1,6 +1,6 @@
 'use server'
 
-import { createClient } from '@/lib/supabase/server'
+import { createClient, createServiceClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
 import { notificarCambioEstado, notificarPagoConfirmado } from '@/lib/resend/emails'
 import { wsCambioEstado } from '@/lib/whatsapp/notifications'
@@ -112,6 +112,10 @@ export async function cancelarPedido(pedidoId: string) {
   if (cancelError) return { error: cancelError.message }
 
   await restaurarInventarioPedido(supabase, pedidoId, auth.tiendaId)
+
+  // Delete items so drop counter triggers fire and decrement vendidas_count/recaudado_total
+  const service = await createServiceClient()
+  await service.from('pedido_items').delete().eq('pedido_id', pedidoId)
 
   revalidatePath('/pedidos')
   revalidatePath('/inventario')

@@ -28,8 +28,7 @@ export function formatRelativeTime(date: Date | string): string {
 
 export function generateOrderNumber(): string {
   const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
-  const random = Array.from({ length: 4 }, () =>
+  return Array.from({ length: 8 }, () =>
     chars[Math.floor(Math.random() * chars.length)]
   ).join("");
-  return `HN-${random}`;
 }

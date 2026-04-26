@@ -654,6 +654,7 @@ export function PrendaPageClient({
                 errorMsg={errorMsg}
                 loading={loadingPedido}
                 fileRef={fileRef}
+                compradorNombre={nombre}
                 onChange={(f, v) => { if (f === 'metodoPagoId') setMetodoPagoId(v); setErrorMsg(''); }}
                 onSubirComprobante={subirComprobante}
                 onConfirmar={confirmarApartado}
