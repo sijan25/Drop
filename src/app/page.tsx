@@ -542,17 +542,17 @@ export default function Home() {
         <div className="landing-shell">
           <div className="landing-section-kicker landing-section-kicker-center">Empezá hoy</div>
           <h2 className="landing-final-title">
-            Creá tu tienda
+            Tu audiencia ya existe.
             <br />
-            de la manera más sencilla.
+            Lo que faltaba era una forma
             <br />
-            <span>Empezá a vender hoy.</span>
+            <span>simple de venderle.</span>
           </h2>
           <p className="landing-final-copy">
-            Cientos de tiendas de ropa en Honduras ya venden con Droppi. Configurate en minutos y lanzá tu primer drop sin complicaciones.
+            Publicá tus prendas, compartí tu link y empezá a vender hoy — sin montar una web, sin comisión por venta.
           </p>
           <div className="landing-final-actions">
-            <PrimaryButton href="/login">Crear mi tienda gratis</PrimaryButton>
+            <PrimaryButton href="/login">Empezar mi link de ventas</PrimaryButton>
             <a className="landing-btn-secondary landing-btn-secondary-plain" href="mailto:hola@droppi.app">
               Hablar con el equipo
             </a>
@@ -567,7 +567,7 @@ export default function Home() {
               <BrandLockup />
             </div>
             <p>
-              La plataforma para tiendas de ropa en Honduras. Vende con drops en vivo, checkout integrado y gestión completa.
+              La plataforma para vender desde tu audiencia. Drops, checkout y gestión en un solo link.
             </p>
             <span className="landing-footer-tag">Hecho en Honduras 🇭🇳</span>
           </div>

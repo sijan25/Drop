@@ -36,7 +36,6 @@ function LoginContent() {
       setError('Correo o contraseña incorrectos.');
     } else {
       router.push('/dashboard');
-      router.refresh();
     }
     setLoading(false);
   }

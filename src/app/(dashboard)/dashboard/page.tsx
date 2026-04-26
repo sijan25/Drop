@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { CountdownTimer } from '@/components/drops/countdown-timer';
 import { Icons } from '@/components/shared/icons';
@@ -80,7 +80,8 @@ function estadoBadge(e: string | null) {
     por_verificar: 'Por verificar',
     pagado: 'Pagado',
     empacado: 'Empacado',
-    en_camino: 'En camino',
+    en_camino: 'Enviado',
+    enviado: 'Enviado',
     entregado: 'Entregado',
     cancelado: 'Cancelado',
   };
@@ -184,8 +185,11 @@ export default function DashboardPage() {
   const [stats, setStats] = useState<Stats>({ ventasMes: 0, dropsActivos: 0, inventarioActivo: 0, comprobantesP: 0 });
   const [loading, setLoading] = useState(true);
   const [headerDate, setHeaderDate] = useState({ saludo: '', fecha: '' });
+  const checked = useRef(false);
 
   useEffect(() => {
+    if (checked.current) return;
+    checked.current = true;
     async function cargar() {
       const now = new Date();
       setHeaderDate({ saludo: saludo(now), fecha: fechaLabel(now) });
@@ -194,12 +198,13 @@ export default function DashboardPage() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) { router.push('/login'); return; }
 
-      const { data: t } = await supabase
+      const { data: t, error: tiendaError } = await supabase
         .from('tiendas')
         .select('id, nombre, username')
         .eq('user_id', user.id)
-        .single();
+        .maybeSingle();
 
+      if (tiendaError) { console.error('[dashboard] tienda query error:', tiendaError.message); return; }
       if (!t) { router.push('/onboarding'); return; }
       setTienda(t);
 

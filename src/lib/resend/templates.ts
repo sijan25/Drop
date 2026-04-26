@@ -137,14 +137,6 @@ export function emailPedidoConfirmado(opts: {
       Te avisaremos por email cuando haya actualizaciones en tu pedido. Si tenés dudas, escribinos por WhatsApp.
     </p>
 
-    ${opts.trackingUrl
-      ? `<div style="margin-top:22px;">
-          <a href="${escapeHtml(opts.trackingUrl)}" style="display:inline-block;background:#0a0a0a;color:#fff;font-size:14px;font-weight:600;padding:13px 22px;border-radius:10px;text-decoration:none;">
-            Ver seguimiento
-          </a>
-        </div>`
-      : ''
-    }
   `
 
   return {
@@ -257,12 +249,6 @@ export function emailPagoConfirmado(opts: {
       </p>
     </div>
 
-    ${opts.trackingUrl
-      ? `<a href="${escapeHtml(opts.trackingUrl)}" style="display:inline-block;background:#0a0a0a;color:#fff;font-size:14px;font-weight:600;padding:13px 22px;border-radius:10px;text-decoration:none;">
-          Ver seguimiento
-        </a>`
-      : ''
-    }
   `
 
   return {
@@ -324,9 +310,21 @@ export function emailActualizacionEstado(opts: {
   direccion?: string | null
   metodoEnvio?: string | null
   trackingUrl?: string | null
+  trackingNumero?: string | null
+  trackingUrlEnvio?: string | null
 }) {
   const esPickup = opts.metodoEnvio === 'pickup'
   const diasEstimados = esPickup ? null : '3 a 5 días hábiles'
+
+  const trackingExtra = opts.nuevoEstado === 'en_camino' && opts.trackingNumero
+    ? `<div style="background:#f0fdf4;border-radius:10px;padding:16px 20px;margin-top:12px;border-left:3px solid #22c55e;">
+        <p style="margin:0 0 6px;font-size:12px;color:#166534;text-transform:uppercase;letter-spacing:0.06em;font-weight:700;">Número de guía</p>
+        <p style="margin:0;font-size:18px;font-weight:700;font-family:monospace;color:#14532d;letter-spacing:0.04em;">${escapeHtml(opts.trackingNumero)}</p>
+        ${opts.trackingUrlEnvio
+          ? `<a href="${escapeHtml(opts.trackingUrlEnvio)}" style="display:inline-block;margin-top:10px;font-size:13px;color:#16a34a;font-weight:600;text-decoration:underline;">Rastrear envío →</a>`
+          : ''}
+      </div>`
+    : null
 
   const ESTADOS = {
     empacado: {
@@ -341,13 +339,16 @@ export function emailActualizacionEstado(opts: {
       descripcion: esPickup
         ? 'Tu pedido ya está listo para retirar en tienda.'
         : `Tu pedido ya salió para entrega. Llegará en aproximadamente <strong>${diasEstimados}</strong>.`,
-      extra: opts.direccion && !esPickup
-        ? `<div style="background:#eff6ff;border-radius:10px;padding:16px 20px;margin-top:12px;border-left:3px solid #3b82f6;">
-            <p style="margin:0;font-size:14px;color:#1e40af;line-height:1.6;">
-              📍 <strong>Dirección de entrega:</strong> ${escapeHtml(opts.direccion)}
-            </p>
-          </div>`
-        : null,
+      extra: [
+        opts.direccion && !esPickup
+          ? `<div style="background:#eff6ff;border-radius:10px;padding:16px 20px;margin-top:12px;border-left:3px solid #3b82f6;">
+              <p style="margin:0;font-size:14px;color:#1e40af;line-height:1.6;">
+                📍 <strong>Dirección de entrega:</strong> ${escapeHtml(opts.direccion)}
+              </p>
+            </div>`
+          : null,
+        trackingExtra,
+      ].filter(Boolean).join('') || null,
     },
   }
 
@@ -382,14 +383,6 @@ export function emailActualizacionEstado(opts: {
 
     ${estado.extra ?? ''}
 
-    ${opts.trackingUrl
-      ? `<div style="margin-top:20px;">
-          <a href="${escapeHtml(opts.trackingUrl)}" style="display:inline-block;background:#0a0a0a;color:#fff;font-size:14px;font-weight:600;padding:13px 22px;border-radius:10px;text-decoration:none;">
-            Ver seguimiento
-          </a>
-        </div>`
-      : ''
-    }
   `
 
   return {

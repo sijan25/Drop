@@ -2,6 +2,7 @@
 
 import Image from 'next/image';
 
+import { cld } from '@/lib/cloudinary/client';
 import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
@@ -64,12 +65,13 @@ export function DropPageClient({
   const router = useRouter();
   const [prendas, setPrendas] = useState<Prenda[]>(prendasInit);
   const [actividadLive, setActividadLive] = useState<Actividad[]>(actividadInit);
+  const [dropEstado, setDropEstado] = useState(drop.estado);
   const [heroImageFailedFor, setHeroImageFailedFor] = useState<string | null>(null);
   const [previewNoticeOpen, setPreviewNoticeOpen] = useState(false);
   const [, setTick] = useState(0);
   const supabaseRef = useRef(createClient());
-  const esActivo = drop.estado === 'activo';
-  const esProgramado = drop.estado === 'programado';
+  const esActivo = dropEstado === 'activo';
+  const esProgramado = dropEstado === 'programado';
   const viewers = useDropViewerCount(drop.id, {
     initialCount: drop.viewers_count,
     trackSelf: esActivo,
@@ -79,6 +81,19 @@ export function DropPageClient({
     const t = setInterval(() => setTick(n => n + 1), 10000);
     return () => clearInterval(t);
   }, []);
+
+  // Real-time estado del drop
+  useEffect(() => {
+    const sb = supabaseRef.current;
+    const ch = sb.channel(`drop-estado-${drop.id}`)
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'drops', filter: `id=eq.${drop.id}` },
+        (payload) => {
+          const nuevo = (payload.new as { estado?: string }).estado;
+          if (nuevo) setDropEstado(nuevo);
+        })
+      .subscribe();
+    return () => { sb.removeChannel(ch); };
+  }, [drop.id]);
 
   // Real-time actividad
   useEffect(() => {
@@ -186,25 +201,25 @@ export function DropPageClient({
         <div style={{
           maxWidth: 1100,
           margin: '0 auto',
-          background: '#0b0b0b',
-          border: '1px solid rgba(255,255,255,0.12)',
+          background: 'var(--dark)',
+          border: '1px solid rgba(255,255,255,0.10)',
           borderRadius: 8,
           overflow: 'hidden',
           display: 'grid',
           gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
-          boxShadow: '0 22px 60px rgba(0,0,0,0.16)',
+          boxShadow: '0 22px 60px rgba(26,23,20,0.22)',
         }}>
           <div style={{
             position: 'relative',
             minHeight: 240,
             maxHeight: 360,
             aspectRatio: '16/10',
-            background: '#111',
+            background: 'var(--dark-2)',
             overflow: 'hidden',
           }}>
             {showHeroImage ? (
               <Image
-                src={drop.foto_portada_url!}
+                src={cld(drop.foto_portada_url, 'cover')}
                 alt={drop.nombre}
                 fill
                 sizes="(max-width: 768px) 100vw, 50vw"
@@ -215,7 +230,7 @@ export function DropPageClient({
               <div style={{
                 position: 'absolute',
                 inset: 0,
-                backgroundImage: 'linear-gradient(145deg, #111 0%, #201f1c 55%, #090909 100%), repeating-linear-gradient(-45deg, transparent, transparent 18px, rgba(255,255,255,0.035) 18px, rgba(255,255,255,0.035) 19px)',
+                backgroundImage: 'linear-gradient(145deg, var(--dark-2) 0%, var(--dark-3) 55%, var(--dark) 100%), repeating-linear-gradient(-45deg, transparent, transparent 18px, rgba(255,255,255,0.035) 18px, rgba(255,255,255,0.035) 19px)',
               }} />
             )}
             <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to bottom, rgba(0,0,0,0.04), rgba(0,0,0,0.74))' }} />
@@ -284,7 +299,7 @@ export function DropPageClient({
       {/* ── TICKER ACTIVIDAD ── */}
       {esActivo && ultimaActividad && (
         <div style={{
-          background: '#0a0a0a', color: '#fff', padding: '8px 16px',
+          background: 'var(--dark)', color: '#fff', padding: '8px 16px',
           fontSize: 12, display: 'flex', alignItems: 'center', gap: 8,
           borderBottom: '1px solid rgba(255,255,255,0.06)',
         }}>
@@ -343,7 +358,7 @@ export function DropPageClient({
                       <div style={{ position: 'relative', aspectRatio: '3/4', overflow: 'hidden' }}>
                         {foto ? (
                           <Image
-                            src={foto}
+                            src={cld(foto, 'card')}
                             alt={p.nombre}
                             fill
                             sizes="(max-width: 640px) 50vw, 200px"
@@ -571,7 +586,7 @@ function AnotarseSection({ dropId }: { dropId: string }) {
 
   if (done) {
     return (
-      <div id="drop-aviso" style={{ marginBottom: 16, background: '#fff', borderRadius: 8, border: '1px solid rgba(0,0,0,0.07)', padding: '28px 20px', textAlign: 'center' }}>
+      <div id="drop-aviso" style={{ marginTop: 20, marginBottom: 16, background: '#fff', borderRadius: 8, border: '1px solid rgba(0,0,0,0.07)', padding: '28px 20px', textAlign: 'center' }}>
         <div style={{ width: 52, height: 52, borderRadius: 26, background: '#ecfdf5', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22, margin: '0 auto 14px' }}>✓</div>
         <div style={{ fontSize: 16, fontWeight: 700, letterSpacing: 0, marginBottom: 6 }}>¡Listo, te anotaste!</div>
         <div style={{ fontSize: 13, color: '#888', lineHeight: 1.6 }}>
@@ -582,7 +597,7 @@ function AnotarseSection({ dropId }: { dropId: string }) {
   }
 
   return (
-    <div id="drop-aviso" style={{ marginBottom: 16, background: '#fff', borderRadius: 8, border: '1px solid rgba(0,0,0,0.07)', padding: '22px 20px' }}>
+    <div id="drop-aviso" style={{ marginTop: 20, marginBottom: 16, background: '#fff', borderRadius: 8, border: '1px solid rgba(0,0,0,0.07)', padding: '22px 20px' }}>
       <div style={{ fontSize: 16, fontWeight: 700, letterSpacing: 0, marginBottom: 4 }}>
         ¿Querés que te avisemos?
       </div>

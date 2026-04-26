@@ -118,7 +118,11 @@ export async function cancelarPedido(pedidoId: string) {
   return { ok: true }
 }
 
-export async function avanzarEstado(pedidoId: string, estadoActual: string) {
+export async function avanzarEstado(
+  pedidoId: string,
+  estadoActual: string,
+  tracking?: { numero?: string; url?: string },
+) {
   const t = TRANSITIONS[estadoActual]
   if (!t) return { error: 'Transición no válida' }
 
@@ -129,6 +133,11 @@ export async function avanzarEstado(pedidoId: string, estadoActual: string) {
   const now = new Date().toISOString()
   const update = { estado: t.siguiente } as Record<string, unknown>
   update[t.campo] = now
+
+  if (t.siguiente === 'en_camino') {
+    update.tracking_numero = tracking?.numero?.trim() || null
+    update.tracking_url = tracking?.url?.trim() || null
+  }
 
   const { error } = await supabase
     .from('pedidos')
@@ -143,6 +152,8 @@ export async function avanzarEstado(pedidoId: string, estadoActual: string) {
   if (ESTADOS_CON_EMAIL.has(t.siguiente)) {
     const ctx = await getPedidoParaEmail(pedidoId, auth.tiendaId)
     if (ctx) {
+      const trackingNumero = t.siguiente === 'en_camino' ? (tracking?.numero?.trim() || null) : null
+      const trackingUrlEnvio = t.siguiente === 'en_camino' ? (tracking?.url?.trim() || null) : null
       await Promise.all([
         notificarCambioEstado({
           compradorEmail: ctx.pedido.comprador_email,
@@ -155,6 +166,8 @@ export async function avanzarEstado(pedidoId: string, estadoActual: string) {
           nuevoEstado: t.siguiente as 'empacado' | 'en_camino',
           direccion: ctx.pedido.direccion,
           metodoEnvio: ctx.pedido.metodo_envio,
+          trackingNumero,
+          trackingUrlEnvio,
         }),
         wsCambioEstado({
           compradorWhatsApp: ctx.pedido.comprador_telefono,
@@ -163,6 +176,8 @@ export async function avanzarEstado(pedidoId: string, estadoActual: string) {
           prendaNombre: ctx.prendaNombre,
           tiendaNombre: ctx.tiendaNombre,
           nuevoEstado: t.siguiente as 'empacado' | 'en_camino',
+          trackingNumero,
+          trackingUrlEnvio,
         }).catch(() => {}),
       ])
     }

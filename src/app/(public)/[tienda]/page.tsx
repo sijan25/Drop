@@ -42,13 +42,13 @@ export default async function TiendaPage({ params }: { params: Promise<{ tienda:
     .order('created_at', { ascending: false });
 
   let prendasDrops = [] as Array<
-    Pick<Database['public']['Tables']['prendas']['Row'], 'id' | 'drop_id' | 'talla' | 'tallas' | 'cantidad' | 'cantidades_por_talla' | 'estado'>
+    Pick<Database['public']['Tables']['prendas']['Row'], 'id' | 'drop_id' | 'talla' | 'tallas' | 'cantidad' | 'cantidades_por_talla' | 'estado' | 'nombre' | 'precio' | 'fotos' | 'marca'>
   >;
 
   if (dropIds.length > 0) {
     const { data } = await supabase
       .from('prendas')
-      .select('id, drop_id, talla, tallas, cantidad, cantidades_por_talla, estado')
+      .select('id, drop_id, talla, tallas, cantidad, cantidades_por_talla, estado, nombre, precio, fotos, marca')
       .eq('tienda_id', tienda.id)
       .in('drop_id', dropIds)
       .gt('cantidad', 0)

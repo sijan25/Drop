@@ -25,6 +25,7 @@ export default async function PedidosPage() {
       id, numero, comprador_nombre, comprador_telefono, direccion,
       metodo_envio, monto_total, estado, created_at,
       pagado_at, empacado_at, en_camino_at,
+      tracking_numero, tracking_url,
       drop:drops(nombre),
       items:pedido_items(
         id, precio, talla_seleccionada,

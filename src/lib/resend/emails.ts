@@ -241,6 +241,8 @@ export async function notificarCambioEstado(opts: {
   nuevoEstado: 'empacado' | 'en_camino'
   direccion?: string | null
   metodoEnvio?: string | null
+  trackingNumero?: string | null
+  trackingUrlEnvio?: string | null
 }) {
   if (!opts.compradorEmail) return
 
@@ -253,6 +255,8 @@ export async function notificarCambioEstado(opts: {
     direccion: opts.direccion,
     metodoEnvio: opts.metodoEnvio,
     trackingUrl: buildOrderTrackingUrl({ id: opts.pedidoId, numero: opts.numeroPedido }),
+    trackingNumero: opts.trackingNumero,
+    trackingUrlEnvio: opts.trackingUrlEnvio,
   })
   await enviarEmail({
     to: opts.compradorEmail,

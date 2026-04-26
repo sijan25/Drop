@@ -2,6 +2,7 @@
 
 import Image from 'next/image';
 
+import { cld } from '@/lib/cloudinary/client';
 import { useState, useEffect, type FormEvent } from 'react';
 import { useRouter } from 'next/navigation';
 import { Ph } from '@/components/shared/image-placeholder';
@@ -24,7 +25,7 @@ import { useCarrito } from '@/hooks/use-carrito';
 type Tienda = Database['public']['Tables']['tiendas']['Row'];
 type Drop = Pick<Database['public']['Tables']['drops']['Row'], 'id' | 'nombre' | 'descripcion' | 'estado' | 'inicia_at' | 'cierra_at' | 'duracion_minutos' | 'foto_portada_url' | 'vendidas_count' | 'viewers_count'> & { prendas?: { count: number }[] };
 type Prenda = Pick<Database['public']['Tables']['prendas']['Row'], 'id' | 'nombre' | 'precio' | 'cantidad' | 'cantidades_por_talla' | 'categoria' | 'talla' | 'tallas' | 'marca' | 'fotos' | 'estado' | 'drop_id'>;
-type PrendaDrop = Pick<Database['public']['Tables']['prendas']['Row'], 'id' | 'drop_id' | 'talla' | 'tallas' | 'cantidad' | 'cantidades_por_talla' | 'estado'>;
+type PrendaDrop = Pick<Database['public']['Tables']['prendas']['Row'], 'id' | 'drop_id' | 'talla' | 'tallas' | 'cantidad' | 'cantidades_por_talla' | 'estado' | 'nombre' | 'precio' | 'fotos' | 'marca'>;
 type Comprador = { nombre: string; email: string; telefono?: string | null; direccion?: string | null; ciudad?: string | null };
 type BuyerPedido = CompradorPedidoResumen;
 
@@ -86,6 +87,128 @@ function CountdownInline({ target }: { target: number }) {
   );
 }
 
+/* ── Live Drop Hero ─── */
+function LiveDropHero({
+  drop, prendas, tiendaUsername, closeTarget, availableUnits, viewers,
+  onVerDrop, onVerPrenda,
+}: {
+  drop: Drop;
+  prendas: PrendaDrop[];
+  tiendaUsername: string;
+  closeTarget: number;
+  availableUnits: number;
+  viewers: number;
+  onVerDrop: () => void;
+  onVerPrenda: (id: string) => void;
+}) {
+  const disponibles = prendas.filter(p => !p.estado || p.estado === 'disponible' || p.estado === 'remanente');
+  const [idx, setIdx] = useState(0);
+
+  useEffect(() => {
+    if (disponibles.length < 2) return;
+    const t = setInterval(() => setIdx(i => (i + 1) % disponibles.length), 3500);
+    return () => clearInterval(t);
+  }, [disponibles.length]);
+
+  const featured = disponibles.length > 0 ? disponibles[idx] : null;
+
+  return (
+    <div
+      style={{ position: 'relative', overflow: 'hidden', background: 'var(--dark)', cursor: 'pointer' }}
+      onClick={onVerDrop}
+    >
+      {drop.foto_portada_url && (
+        <div style={{ position: 'absolute', inset: 0 }}>
+          <Image src={cld(drop.foto_portada_url, 'cover')} alt={drop.nombre} fill sizes="100vw" style={{ objectFit: 'cover', opacity: 0.12 }} />
+        </div>
+      )}
+      <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(135deg, rgba(42,28,22,0.96) 0%, rgba(58,39,32,0.80) 100%)' }} />
+
+      <div style={{ position: 'relative', maxWidth: 1100, margin: '0 auto', padding: '0 20px' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: featured ? '1fr auto' : '1fr', gap: 0, alignItems: 'stretch' }}>
+
+          {/* LEFT: info */}
+          <div style={{ padding: '28px 0 24px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: 'var(--accent)', borderRadius: 20, padding: '4px 11px', fontSize: 10, fontWeight: 800, color: '#fff', letterSpacing: '0.1em', textTransform: 'uppercase' }}>
+                <span style={{ width: 5, height: 5, borderRadius: 3, background: '#fff', display: 'inline-block', animation: 'pulse 1.4s ease-in-out infinite' }} />
+                EN VIVO
+              </span>
+            </div>
+            <div style={{ fontSize: 28, fontWeight: 900, color: '#fff', letterSpacing: '-0.01em', lineHeight: 1.08, marginBottom: 10 }}>
+              {drop.nombre}
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginBottom: 20 }}>
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, borderRadius: 999, border: '1px solid rgba(255,255,255,0.14)', background: 'rgba(255,255,255,0.07)', color: 'rgba(255,255,255,0.80)', padding: '5px 11px', fontSize: 12, fontWeight: 600 }}>
+                <Icons.box width={12} height={12} />{availableUnits} disponibles
+              </span>
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, borderRadius: 999, border: '1px solid rgba(255,255,255,0.14)', background: 'rgba(255,255,255,0.07)', color: 'rgba(255,255,255,0.80)', padding: '5px 11px', fontSize: 12, fontWeight: 600 }}>
+                <Icons.eye width={12} height={12} />{viewers} viendo
+              </span>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 20, flexWrap: 'wrap' }}>
+              <div>
+                <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.44)', textTransform: 'uppercase', letterSpacing: '0.1em', fontFamily: 'var(--font-mono)', marginBottom: 6 }}>Cierra en</div>
+                <CountdownBlocks target={closeTarget} />
+              </div>
+              <button
+                onClick={e => { e.stopPropagation(); onVerDrop(); }}
+                style={{ height: 46, borderRadius: 10, background: '#fff', color: 'var(--dark)', border: 'none', padding: '0 24px', fontSize: 14, fontWeight: 800, cursor: 'pointer', whiteSpace: 'nowrap', marginTop: 20 }}
+              >
+                Entrar al drop →
+              </button>
+            </div>
+
+            {/* Indicator dots */}
+            {disponibles.length > 1 && (
+              <div style={{ display: 'flex', gap: 5, marginTop: 22 }}>
+                {disponibles.slice(0, 8).map((_, i) => (
+                  <button
+                    key={i}
+                    onClick={e => { e.stopPropagation(); setIdx(i); }}
+                    style={{ width: i === idx % Math.min(disponibles.length, 8) ? 18 : 6, height: 6, borderRadius: 3, background: i === idx % Math.min(disponibles.length, 8) ? '#fff' : 'rgba(255,255,255,0.22)', border: 'none', padding: 0, cursor: 'pointer', transition: 'all .25s' }}
+                  />
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* RIGHT: featured product card cycling */}
+          {featured && (
+            <div
+              style={{ display: 'flex', alignItems: 'center', padding: '16px 0 16px 24px' }}
+              onClick={e => { e.stopPropagation(); onVerPrenda(featured.id); }}
+            >
+              <div style={{ width: 160, background: 'rgba(255,255,255,0.05)', borderRadius: 14, overflow: 'hidden', border: '1px solid rgba(255,255,255,0.10)', cursor: 'pointer', transition: 'border-color .25s' }}
+                onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = 'rgba(201,100,66,0.6)'; }}
+                onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,255,255,0.10)'; }}
+              >
+                <div style={{ position: 'relative', aspectRatio: '3/4', background: 'var(--dark-2)' }}>
+                  {featured.fotos?.[0]
+                    ? <Image src={cld(featured.fotos[0], 'thumb')} alt={featured.nombre ?? ''} fill sizes="160px" style={{ objectFit: 'cover' }} />
+                    : <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(135deg, var(--dark-3) 0%, var(--dark-2) 100%)' }} />
+                  }
+                  <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top, rgba(30,18,13,0.7) 0%, transparent 50%)' }} />
+                  <div style={{ position: 'absolute', bottom: 10, left: 10, right: 10 }}>
+                    <div style={{ display: 'inline-flex', alignItems: 'center', gap: 4, background: 'rgba(201,100,66,0.9)', borderRadius: 6, padding: '3px 8px', fontSize: 10, fontWeight: 800, color: '#fff' }}>
+                      Disponible
+                    </div>
+                  </div>
+                </div>
+                <div style={{ padding: '10px 12px 12px' }}>
+                  {featured.marca && <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.45)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 3 }}>{featured.marca}</div>}
+                  <div style={{ fontSize: 13, fontWeight: 700, color: '#fff', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', marginBottom: 6 }}>{featured.nombre}</div>
+                  <div className="mono tnum" style={{ fontSize: 15, fontWeight: 900, color: '#fff', letterSpacing: 0 }}>L {featured.precio.toLocaleString()}</div>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function formatDropDate(value: string | null) {
   if (!value) return 'Fecha por anunciar';
   return new Intl.DateTimeFormat('es-HN', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }).format(new Date(value));
@@ -143,7 +266,7 @@ function SubscribeModal({ drop, tienda, onClose, onViewDrop }: { drop: Drop; tie
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))' }}>
             <div style={{ minHeight: 390, position: 'relative', background: 'linear-gradient(145deg, #6a4738 0%, #3f2a22 100%)', overflow: 'hidden' }}>
               {drop.foto_portada_url
-                ? <Image src={drop.foto_portada_url} alt={drop.nombre} fill sizes="(max-width: 920px) 100vw, 460px" style={{ objectFit: 'cover' }} />
+                ? <Image src={cld(drop.foto_portada_url, 'card')} alt={drop.nombre} fill sizes="(max-width: 920px) 100vw, 460px" style={{ objectFit: 'cover' }} />
                 : <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(135deg, #181818 0%, #2a211f 100%)' }} />}
               <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to bottom, rgba(35,22,17,0.08), rgba(35,22,17,0.72))' }} />
               <div style={{ position: 'absolute', left: 22, right: 22, top: 22, display: 'flex', justifyContent: 'space-between', gap: 10, alignItems: 'center' }}>
@@ -510,7 +633,7 @@ function BuyerProfileSheet({
                         style={{ width: '100%', border: '1px solid rgba(0,0,0,0.08)', borderRadius: 14, background: '#fff', padding: 12, display: 'grid', gridTemplateColumns: '58px 1fr auto', gap: 12, textAlign: 'left', cursor: 'pointer', alignItems: 'center', boxShadow: '0 1px 2px rgba(0,0,0,0.03)' }}>
                         <div style={{ width: 58, height: 66, borderRadius: 10, overflow: 'hidden', background: '#f1f1f1', position: 'relative' }}>
                           {prenda?.fotos?.[0]
-                            ? <Image src={prenda.fotos[0]} alt="" fill sizes="58px" style={{ objectFit: 'cover' }} />
+                            ? <Image src={cld(prenda.fotos[0], 'mini')} alt="" fill sizes="58px" style={{ objectFit: 'cover' }} />
                             : <div style={{ width: '100%', height: '100%', background: 'linear-gradient(135deg, #eeeeee, #dddddd)' }} />}
                         </div>
                         <div style={{ minWidth: 0 }}>
@@ -804,7 +927,7 @@ export function TiendaPageClient(props: {
           <div style={{ display: 'flex', alignItems: 'center', gap: 12, flex: 1, minWidth: 0 }}>
             <div style={{ position: 'relative', flexShrink: 0 }}>
               {tienda.logo_url
-                ? <Image src={tienda.logo_url} alt={tienda.nombre} width={44} height={44} style={{ borderRadius: 22, objectFit: 'cover', border: '2px solid #eee' }} />
+                ? <Image src={cld(tienda.logo_url, 'logo')} alt={tienda.nombre} width={44} height={44} style={{ borderRadius: 22, objectFit: 'cover', border: '2px solid #eee' }} />
                 : <div style={{ width: 44, height: 44, borderRadius: 22, background: 'linear-gradient(135deg, var(--accent) 0%, var(--accent-3) 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14, fontWeight: 800, color: '#fff', border: '2px solid rgba(255,255,255,0.9)' }}>{initials}</div>}
               {liveDrops.length > 0 && (
                 <div style={{ position: 'absolute', bottom: 0, right: 0, width: 12, height: 12, borderRadius: 6, background: '#C96442', border: '2px solid #fff', animation: 'pulse 1.4s ease-in-out infinite' }} />
@@ -890,62 +1013,16 @@ export function TiendaPageClient(props: {
 
       {/* ── BANNER DROP EN VIVO (1 solo) o CARRUSEL DROPS PROGRAMADOS ── */}
       {liveDrop && (
-        <div
-          style={{
-            position: 'relative', overflow: 'hidden', cursor: 'pointer',
-            background: 'linear-gradient(135deg, #5b3d31 0%, #3c2720 55%, #2a1c16 100%)',
-          }}
-          onClick={() => router.push(`/${tienda.username}/drop/${liveDrop.id}`)}
-        >
-          {liveDrop.foto_portada_url && (
-            <div style={{ position: 'absolute', inset: 0 }}>
-              <Image
-                src={liveDrop.foto_portada_url}
-                alt={liveDrop.nombre}
-                fill
-                sizes="100vw"
-                style={{ objectFit: 'cover', opacity: 0.18 }}
-              />
-            </div>
-          )}
-          <div style={{ position: 'relative', maxWidth: 1100, margin: '0 auto', padding: '28px 20px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 20, flexWrap: 'wrap' }}>
-              <div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
-                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: '#C96442', borderRadius: 20, padding: '4px 10px', fontSize: 10, fontWeight: 800, color: '#fff', letterSpacing: '0.1em', textTransform: 'uppercase' }}>
-                    <span style={{ width: 5, height: 5, borderRadius: 3, background: '#fff', display: 'inline-block', animation: 'pulse 1.4s ease-in-out infinite' }} />
-                    EN VIVO
-                  </span>
-                </div>
-                <div style={{ fontSize: 26, fontWeight: 900, color: '#fff', letterSpacing: '-0.01em', lineHeight: 1.1, marginBottom: 12 }}>
-                  {liveDrop.nombre}
-                </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, borderRadius: 999, border: '1px solid rgba(255,255,255,0.14)', background: 'rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.85)', padding: '5px 12px', fontSize: 12, fontWeight: 600 }}>
-                    <Icons.box width={12} height={12} />
-                    {liveDropAvailableUnits} disponibles
-                  </span>
-                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, borderRadius: 999, border: '1px solid rgba(255,255,255,0.14)', background: 'rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.85)', padding: '5px 12px', fontSize: 12, fontWeight: 600 }}>
-                    <Icons.eye width={12} height={12} />
-                    {liveDrop.viewers_count ?? 0} viendo
-                  </span>
-                </div>
-              </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 20, flexShrink: 0 }}>
-                <div>
-                  <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.46)', textTransform: 'uppercase', letterSpacing: '0.1em', fontFamily: 'var(--font-mono)', marginBottom: 6 }}>Cierra en</div>
-                  <CountdownBlocks target={liveDropTarget} />
-                </div>
-                <button
-                  onClick={e => { e.stopPropagation(); router.push(`/${tienda.username}/drop/${liveDrop.id}`); }}
-                  style={{ height: 48, borderRadius: 10, background: '#fff', color: '#111', border: 'none', padding: '0 24px', fontSize: 14, fontWeight: 800, cursor: 'pointer', whiteSpace: 'nowrap' }}
-                >
-                  Ver drop
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
+        <LiveDropHero
+          drop={liveDrop}
+          prendas={prendasDrops.filter(p => p.drop_id === liveDrop.id)}
+          tiendaUsername={tienda.username}
+          closeTarget={liveDropTarget}
+          availableUnits={liveDropAvailableUnits}
+          viewers={liveDrop.viewers_count ?? 0}
+          onVerDrop={() => router.push(`/${tienda.username}/drop/${liveDrop.id}`)}
+          onVerPrenda={(prendaId) => router.push(`/${tienda.username}/drop/${liveDrop.id}/prenda/${prendaId}`)}
+        />
       )}
 
       {/* ── SECCIÓN DROPS EN VIVO (2+) ── */}
@@ -1198,7 +1275,7 @@ export function TiendaPageClient(props: {
 
                 return (
                   <div key={p.id}
-                    style={{ background: '#fff', borderRadius: 16, overflow: 'hidden', cursor: 'pointer', border: '1px solid #E8E4DF', transition: 'transform .18s, box-shadow .18s', position: 'relative' }}
+                    style={{ background: '#fff', borderRadius: 16, overflow: 'hidden', cursor: 'pointer', border: '1px solid #E8E4DF', transition: 'transform .18s, box-shadow .18s', position: 'relative', display: 'flex', flexDirection: 'column', height: '100%' }}
                     onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-3px)'; e.currentTarget.style.boxShadow = '0 8px 24px rgba(0,0,0,0.10)'; }}
                     onMouseLeave={e => { e.currentTarget.style.transform = 'none'; e.currentTarget.style.boxShadow = 'none'; }}>
 
@@ -1206,7 +1283,7 @@ export function TiendaPageClient(props: {
                     <div style={{ position: 'relative', aspectRatio: '3/4', overflow: 'hidden', background: '#F2F0EC' }}
                       onClick={() => router.push(`/${tienda.username}/prenda/${p.id}`)}>
                       {p.fotos?.[0]
-                        ? <Image src={p.fotos[0]} alt={p.nombre} fill sizes="(max-width: 640px) 50vw, 220px" style={{ objectFit: 'cover', display: 'block', filter: !disponible ? 'brightness(0.72)' : 'none' }} />
+                        ? <Image src={cld(p.fotos[0], 'card')} alt={p.nombre} fill sizes="(max-width: 640px) 50vw, 220px" style={{ objectFit: 'cover', display: 'block', filter: !disponible ? 'brightness(0.72)' : 'none' }} />
                         : <Ph tone={(['rose', 'sand', 'sage'] as const)[i % 3]} aspect="3/4" radius={0} />}
 
                       {/* Badges NUEVO / HOT */}
@@ -1233,7 +1310,7 @@ export function TiendaPageClient(props: {
                     </div>
 
                     {/* Info */}
-                    <div style={{ padding: '10px 12px 12px' }} onClick={() => router.push(`/${tienda.username}/prenda/${p.id}`)}>
+                    <div style={{ padding: '10px 12px 12px', flex: 1 }} onClick={() => router.push(`/${tienda.username}/prenda/${p.id}`)}>
                       {p.marca && <div style={{ fontSize: 10, fontWeight: 600, color: '#999', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 3 }}>{p.marca}</div>}
                       <div style={{ fontSize: 13, fontWeight: 600, color: disponible ? '#111' : '#aaa', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', marginBottom: 5 }}>{p.nombre}</div>
 

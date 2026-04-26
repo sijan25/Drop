@@ -2,6 +2,7 @@
 
 import Image from 'next/image';
 
+import { cld } from '@/lib/cloudinary/client';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
@@ -263,7 +264,7 @@ export function PrendaPageClient({
             </div>
           )}
           {tienda.logo_url ? (
-            <Image src={tienda.logo_url} alt={tienda.nombre} width={28} height={28} style={{ borderRadius: 14, objectFit: 'cover' }} />
+            <Image src={cld(tienda.logo_url, 'logo')} alt={tienda.nombre} width={28} height={28} style={{ borderRadius: 14, objectFit: 'cover' }} />
           ) : (
             <div style={{ width: 28, height: 28, borderRadius: 14, background: '#e4d4d0', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 700 }}>{initials}</div>
           )}
@@ -287,7 +288,7 @@ export function PrendaPageClient({
                   outlineOffset: 2, transition: 'outline .12s', position: 'relative',
                 }}
               >
-                <Image src={f} alt="" fill sizes="72px" style={{ objectFit: 'cover' }} />
+                <Image src={cld(f, 'mini')} alt="" fill sizes="72px" style={{ objectFit: 'cover' }} />
               </button>
             )) : [0, 1, 2].map(i => (
               <div key={i} style={{ width: 72, height: 90, borderRadius: 8, overflow: 'hidden', outline: i === fotoIdx ? '2px solid var(--ink)' : '2px solid transparent', outlineOffset: 2 }}>
@@ -300,7 +301,7 @@ export function PrendaPageClient({
           <div className="buyer-product-media" style={{ position: 'relative', borderRadius: 16, overflow: 'hidden', background: '#f5f5f5' }}>
             {fotos.length > 0 ? (
               <Image
-                src={fotos[fotoIdx]}
+                src={cld(fotos[fotoIdx], 'detail')}
                 alt={prenda.nombre}
                 fill
                 sizes="(max-width: 1024px) 100vw, 600px"
@@ -572,7 +573,7 @@ export function PrendaPageClient({
                 <div style={{ cursor: 'pointer' }}>
                   <div style={{ borderRadius: 12, overflow: 'hidden', marginBottom: 10, position: 'relative', aspectRatio: '3/4' }}>
                     {p.fotos?.[0] ? (
-                      <Image src={p.fotos[0]} alt={p.nombre} fill sizes="(max-width: 1024px) 25vw, 200px" style={{ objectFit: 'cover', display: 'block' }} />
+                      <Image src={cld(p.fotos[0], 'card')} alt={p.nombre} fill sizes="(max-width: 1024px) 25vw, 200px" style={{ objectFit: 'cover', display: 'block' }} />
                     ) : (
                       <Ph tone={TONES[i % TONES.length]} aspect="3/4" radius={0} />
                     )}
@@ -588,7 +589,7 @@ export function PrendaPageClient({
       )}
 
       {/* ── CHECKOUT PANEL ── */}
-      {checkoutOpen && puedeComprar && (
+      {(checkoutStep === 'confirmado' || (checkoutOpen && puedeComprar)) && (
         <div
           className="buyer-checkout-overlay"
           style={{ position: 'fixed', inset: 0, zIndex: 50, display: 'flex' }}

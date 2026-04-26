@@ -92,6 +92,8 @@ export async function wsCambioEstado(opts: {
   tiendaNombre: string
   nuevoEstado: 'empacado' | 'en_camino'
   trackingUrl?: string | null
+  trackingNumero?: string | null
+  trackingUrlEnvio?: string | null
 }): Promise<WhatsAppSendResult> {
   const ESTADOS = {
     empacado: { emoji: '📦', texto: 'Tu pedido está empacado y listo.' },
@@ -106,8 +108,10 @@ export async function wsCambioEstado(opts: {
     ``,
     `Pedido: *${opts.numeroPedido}*`,
     `Prenda: ${opts.prendaNombre}`,
+    opts.nuevoEstado === 'en_camino' && opts.trackingNumero ? `Guía de envío: *${opts.trackingNumero}*` : '',
+    opts.nuevoEstado === 'en_camino' && opts.trackingUrlEnvio ? `Rastrear: ${opts.trackingUrlEnvio}` : '',
     ``,
-    opts.trackingUrl ? `🔍 Seguimiento: ${opts.trackingUrl}` : '',
+    opts.trackingUrl ? `🔍 Seguimiento pedido: ${opts.trackingUrl}` : '',
   ].filter(Boolean).join('\n')
 
   return sendWhatsAppText(opts.compradorWhatsApp, msg)

@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import { ArrowLeft, ArrowRight, Shirt, ShoppingBag, SportShoe } from 'lucide-react';
@@ -50,8 +50,11 @@ export default function OnboardingPage() {
     ciudad: 'San Pedro Sula', direccion: '', envios: { domicilio: true, nacional: false },
   });
   const router = useRouter();
+  const checked = useRef(false);
 
   useEffect(() => {
+    if (checked.current) return;
+    checked.current = true;
     async function checkAuth() {
       const supabase = createClient();
       const { data: { user } } = await supabase.auth.getUser();

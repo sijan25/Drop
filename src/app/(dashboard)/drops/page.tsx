@@ -426,35 +426,37 @@ export default function DropsPage() {
                           />
                         )}
                       </div>
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <button className="btn btn-ghost btn-sm" onClick={e => e.stopPropagation()}>
-                            <Icons.more width={14} height={14}/>
-                          </button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuItem onSelect={() => router.push(`/drops/${d.id}`)}>
-                            <Icons.eye width={14} height={14}/> Ver detalle
-                          </DropdownMenuItem>
-                          <DropdownMenuItem onSelect={() => copiarLink(d.id)}>
-                            <Icons.share width={14} height={14}/> Copiar link
-                          </DropdownMenuItem>
-                          {d.estado === 'programado' && (
-                            <DropdownMenuItem onSelect={() => activarDrop(d.id)}>
-                              <Icons.sparkle width={14} height={14}/> Activar ahora
+                      <div onClick={e => e.stopPropagation()}>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <button className="btn btn-ghost btn-sm">
+                              <Icons.more width={14} height={14}/>
+                            </button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem onSelect={() => router.push(`/drops/${d.id}`)}>
+                              <Icons.eye width={14} height={14}/> Ver detalle
                             </DropdownMenuItem>
-                          )}
-                          {d.estado === 'activo' && (
-                            <DropdownMenuItem onSelect={() => cerrarDrop(d.id)}>
-                              <Icons.clock width={14} height={14}/> Cerrar drop
+                            <DropdownMenuItem onSelect={() => copiarLink(d.id)}>
+                              <Icons.share width={14} height={14}/> Copiar link
                             </DropdownMenuItem>
-                          )}
-                          <DropdownMenuSeparator/>
-                          <DropdownMenuItem variant="destructive" onSelect={() => setConfirmDeleteDrop(d.id)}>
-                            <Icons.trash width={14} height={14}/> Eliminar
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
+                            {d.estado === 'programado' && (
+                              <DropdownMenuItem onSelect={() => activarDrop(d.id)}>
+                                <Icons.sparkle width={14} height={14}/> Activar ahora
+                              </DropdownMenuItem>
+                            )}
+                            {d.estado === 'activo' && (
+                              <DropdownMenuItem onSelect={() => cerrarDrop(d.id)}>
+                                <Icons.clock width={14} height={14}/> Cerrar drop
+                              </DropdownMenuItem>
+                            )}
+                            <DropdownMenuSeparator/>
+                            <DropdownMenuItem variant="destructive" onSelect={() => setConfirmDeleteDrop(d.id)}>
+                              <Icons.trash width={14} height={14}/> Eliminar
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </div>
                     </div>
                   );
                 })
@@ -620,40 +622,42 @@ export default function DropsPage() {
                     <div className="mono tnum">{r.sinVender}</div>
                     <div className="mono tnum">{(d.viewers_count ?? 0).toLocaleString()}</div>
                     <div className="mono tnum" style={{ fontWeight: 700 }}>{dinero(d.recaudado_total)}</div>
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <button className="btn-ghost" style={{ height: 28, display: 'flex', alignItems: 'center', justifyContent: 'center' }} onClick={e => e.stopPropagation()}>
-                          <Icons.more width={13} height={13} style={{ color: 'var(--ink-3)' }}/>
-                        </button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuItem onSelect={() => router.push(`/drops/${d.id}`)}>
-                          <Icons.eye width={14} height={14}/> Ver detalle
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onSelect={() => copiarLink(d.id)}>
-                          <Icons.share width={14} height={14}/> Copiar link
-                        </DropdownMenuItem>
-                        {d.estado === 'cerrado' && (
-                          <DropdownMenuItem onSelect={() => exportarResumen(d)}>
-                            <Icons.upload width={14} height={14}/> Exportar resumen
+                    <div onClick={e => e.stopPropagation()}>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <button className="btn-ghost" style={{ height: 28, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                            <Icons.more width={13} height={13} style={{ color: 'var(--ink-3)' }}/>
+                          </button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem onSelect={() => router.push(`/drops/${d.id}`)}>
+                            <Icons.eye width={14} height={14}/> Ver detalle
                           </DropdownMenuItem>
-                        )}
-                        {d.estado === 'programado' && (
-                          <DropdownMenuItem onSelect={() => activarDrop(d.id)}>
-                            <Icons.sparkle width={14} height={14}/> Activar ahora
+                          <DropdownMenuItem onSelect={() => copiarLink(d.id)}>
+                            <Icons.share width={14} height={14}/> Copiar link
                           </DropdownMenuItem>
-                        )}
-                        {d.estado === 'activo' && (
-                          <DropdownMenuItem onSelect={() => cerrarDrop(d.id)}>
-                            <Icons.clock width={14} height={14}/> Cerrar drop
+                          {d.estado === 'cerrado' && (
+                            <DropdownMenuItem onSelect={() => exportarResumen(d)}>
+                              <Icons.upload width={14} height={14}/> Exportar resumen
+                            </DropdownMenuItem>
+                          )}
+                          {d.estado === 'programado' && (
+                            <DropdownMenuItem onSelect={() => activarDrop(d.id)}>
+                              <Icons.sparkle width={14} height={14}/> Activar ahora
+                            </DropdownMenuItem>
+                          )}
+                          {d.estado === 'activo' && (
+                            <DropdownMenuItem onSelect={() => cerrarDrop(d.id)}>
+                              <Icons.clock width={14} height={14}/> Cerrar drop
+                            </DropdownMenuItem>
+                          )}
+                          <DropdownMenuSeparator/>
+                          <DropdownMenuItem variant="destructive" onSelect={() => setConfirmDeleteDrop(d.id)}>
+                            <Icons.trash width={14} height={14}/> Eliminar
                           </DropdownMenuItem>
-                        )}
-                        <DropdownMenuSeparator/>
-                        <DropdownMenuItem variant="destructive" onSelect={() => setConfirmDeleteDrop(d.id)}>
-                          <Icons.trash width={14} height={14}/> Eliminar
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </div>
                   </div>
                 );
               })

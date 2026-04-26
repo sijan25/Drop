@@ -523,6 +523,8 @@ export type Database = {
           numero: string
           pagado_at: string | null
           tienda_id: string
+          tracking_numero: string | null
+          tracking_url: string | null
         }
         Insert: {
           apartado_expira_at?: string | null
@@ -547,6 +549,8 @@ export type Database = {
           numero: string
           pagado_at?: string | null
           tienda_id: string
+          tracking_numero?: string | null
+          tracking_url?: string | null
         }
         Update: {
           apartado_expira_at?: string | null
@@ -571,6 +575,8 @@ export type Database = {
           numero?: string
           pagado_at?: string | null
           tienda_id?: string
+          tracking_numero?: string | null
+          tracking_url?: string | null
         }
         Relationships: [
           {

@@ -4,7 +4,64 @@ import { useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import { Icons } from '@/components/shared/icons'
 import { ConfirmModal } from '@/components/shared/confirm-modal'
+import { ModalOverlay } from '@/components/shared/modal-overlay'
 import { avanzarEstado, cancelarPedido, reenviarCorreoPagoConfirmado } from './actions'
+
+function TrackingModal({
+  onConfirm, onClose, loading,
+}: {
+  onConfirm: (tracking: { numero: string; url: string }) => void
+  onClose: () => void
+  loading: boolean
+}) {
+  const [numero, setNumero] = useState('')
+  const [url, setUrl] = useState('')
+  return (
+    <ModalOverlay onClose={onClose} maxWidth={420}>
+      <div style={{ padding: 24 }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 18 }}>
+          <div style={{ fontSize: 16, fontWeight: 700 }}>Marcar como enviado</div>
+          <button onClick={onClose} style={{ color: 'var(--ink-3)', background: 'none', border: 'none', cursor: 'pointer' }}>
+            <Icons.close width={16} height={16} />
+          </button>
+        </div>
+        <div style={{ display: 'grid', gap: 14 }}>
+          <div>
+            <label className="label">Número de guía <span style={{ color: 'var(--ink-3)', fontWeight: 400 }}>(opcional)</span></label>
+            <input
+              className="input mono"
+              placeholder="ej. 1234567890"
+              value={numero}
+              onChange={e => setNumero(e.target.value)}
+            />
+          </div>
+          <div>
+            <label className="label">Link de rastreo <span style={{ color: 'var(--ink-3)', fontWeight: 400 }}>(opcional)</span></label>
+            <input
+              className="input"
+              placeholder="https://..."
+              value={url}
+              onChange={e => setUrl(e.target.value)}
+            />
+          </div>
+        </div>
+        <p style={{ fontSize: 12, color: 'var(--ink-3)', marginTop: 12, marginBottom: 18, lineHeight: 1.5 }}>
+          Si ingresás estos datos, el comprador los recibirá por email y WhatsApp.
+        </p>
+        <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+          <button onClick={onClose} className="btn btn-outline btn-sm">Cancelar</button>
+          <button
+            onClick={() => onConfirm({ numero, url })}
+            disabled={loading}
+            className="btn btn-primary btn-sm"
+          >
+            {loading ? 'Guardando…' : 'Confirmar envío'}
+          </button>
+        </div>
+      </div>
+    </ModalOverlay>
+  )
+}
 
 type Prenda = { nombre: string; talla: string | null; marca: string | null }
 type Item = { id: string; precio: number; talla_seleccionada: string | null; prenda: Prenda | null }
@@ -23,6 +80,8 @@ type Pedido = {
   pagado_at: string | null
   empacado_at: string | null
   en_camino_at: string | null
+  tracking_numero: string | null
+  tracking_url: string | null
   drop: Drop | null
   items: Item[]
 }
@@ -76,13 +135,31 @@ export default function PedidosClient({
   const [message, setMessage] = useState<{ pedidoId: string; tone: 'ok' | 'error'; text: string } | null>(null)
   const [pending, startTransition] = useTransition()
   const [confirmCancelar, setConfirmCancelar] = useState<string | null>(null)
+  const [trackingPedido, setTrackingPedido] = useState<{ id: string; estado: string } | null>(null)
 
   function handleAvanzar(pedidoId: string, estado: string) {
+    if (estado === 'empacado') {
+      setTrackingPedido({ id: pedidoId, estado })
+      return
+    }
     startTransition(async () => {
       setMessage(null)
       const result = await avanzarEstado(pedidoId, estado)
       if (result && 'error' in result) {
         setMessage({ pedidoId, tone: 'error', text: result.error ?? 'No se pudo avanzar el estado.' })
+      }
+    })
+  }
+
+  function confirmarTracking(tracking: { numero: string; url: string }) {
+    if (!trackingPedido) return
+    const { id, estado } = trackingPedido
+    setTrackingPedido(null)
+    startTransition(async () => {
+      setMessage(null)
+      const result = await avanzarEstado(id, estado, tracking)
+      if (result && 'error' in result) {
+        setMessage({ pedidoId: id, tone: 'error', text: result.error ?? 'No se pudo avanzar el estado.' })
       }
     })
   }
@@ -132,6 +209,14 @@ export default function PedidosClient({
           <button className="btn btn-outline btn-sm">Exportar</button>
         </div>
       </div>
+
+      {trackingPedido && (
+        <TrackingModal
+          loading={pending}
+          onConfirm={confirmarTracking}
+          onClose={() => setTrackingPedido(null)}
+        />
+      )}
 
       {confirmCancelar && (
         <ConfirmModal
@@ -204,6 +289,15 @@ export default function PedidosClient({
                           <div><span className="t-mute">WhatsApp:</span> <span className="mono">{r.comprador_telefono}</span></div>
                           {r.direccion && <div><span className="t-mute">Dirección:</span> {r.direccion}</div>}
                           <div><span className="t-mute">Método:</span> {r.metodo_envio === 'domicilio' ? 'Envío a domicilio' : 'Pickup en tienda'}</div>
+                          {r.tracking_numero && (
+                            <div style={{ marginTop: 6 }}>
+                              <span className="t-mute">Guía:</span>{' '}
+                              {r.tracking_url
+                                ? <a href={r.tracking_url} target="_blank" rel="noreferrer" className="mono" style={{ color: '#16a34a', fontWeight: 600 }}>{r.tracking_numero}</a>
+                                : <span className="mono" style={{ fontWeight: 600 }}>{r.tracking_numero}</span>
+                              }
+                            </div>
+                          )}
                         </div>
                         <div style={{ display: 'flex', gap: 8, marginTop: 14 }}>
                           {r.estado === 'por_verificar' ? (
@@ -215,7 +309,7 @@ export default function PedidosClient({
                             </button>
                           ) : actionLabel[r.estado ?? ''] ? (
                             <button
-                              onClick={() => handleAvanzar(r.id, r.estado!)}
+                              onClick={(e) => { e.stopPropagation(); handleAvanzar(r.id, r.estado!) }}
                               disabled={pending}
                               className="btn btn-primary btn-sm"
                             >

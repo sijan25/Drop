@@ -42,6 +42,7 @@ export async function uploadToCloudinary(
 
   const params: Record<string, string> = {
     folder,
+    quality: 'auto',
     timestamp,
   };
 
@@ -63,6 +64,7 @@ export async function uploadToCloudinary(
   formData.append("api_key", API_KEY);
   formData.append("timestamp", timestamp);
   formData.append("folder", folder);
+  formData.append("quality", "auto");
   formData.append("signature", signature);
 
   const response = await fetch(

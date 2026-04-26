@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { Logo } from '@/components/shared/logo';
 import { Icons } from '@/components/shared/icons';
@@ -29,20 +29,23 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const router = useRouter();
   const [tienda, setTienda] = useState<Tienda | null>(null);
   const [counts, setCounts] = useState<Counts>({ drops: 0, pedidos: 0, comprobantes: 0 });
+  const checked = useRef(false);
 
   useEffect(() => {
+    if (checked.current) return;
+    checked.current = true;
     async function cargarTienda() {
       const supabase = createClient();
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) { router.push('/login'); return; }
 
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from('tiendas')
         .select('id, nombre, username, plan, logo_url')
         .eq('user_id', user.id)
-        .single();
+        .maybeSingle();
 
-      if (!data) { router.replace('/onboarding'); return; }
+      if (error || !data) return; // el dashboard page maneja la redirección a onboarding
       setTienda(data);
 
       const [{ count: dropsCount }, { count: pedidosCount }, { count: comprobantesCount }] = await Promise.all([
