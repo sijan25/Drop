@@ -14,6 +14,8 @@ function LoginContent() {
   const [sent, setSent] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [forgotMode, setForgotMode] = useState(false);
+  const [forgotSent, setForgotSent] = useState(false);
   const router = useRouter();
   const searchParams = useSearchParams();
   const authError = searchParams.get('error');
@@ -66,34 +68,136 @@ function LoginContent() {
     });
   }
 
+  async function handleForgotPassword() {
+    const emailErr = validateEmail(email);
+    if (emailErr) { setError(emailErr); return; }
+    setLoading(true);
+    setError('');
+    const supabase = createClient();
+    const { error: resetError } = await supabase.auth.resetPasswordForEmail(email.trim(), {
+      redirectTo: `${window.location.origin}/auth/callback?next=/auth/reset-password`,
+    });
+    if (resetError) {
+      setError('No pudimos enviar el correo. Intentá de nuevo.');
+    } else {
+      setForgotSent(true);
+    }
+    setLoading(false);
+  }
+
+  const leftPanel = (
+    <div className={s.left}>
+      <Logo size={20} white />
+      <div>
+        <div className={s.headline}>Vende tu ropa de la manera más sencilla.</div>
+        <div className={s.sub}>Drops en vivo, checkout integrado y verificación automática de comprobantes.</div>
+        <div className={s.features}>
+          {[
+            ['Drops en vivo', 'Countdown, feed de actividad y contador de viewers en tiempo real'],
+            ['Cobro automático', 'Tarjeta con PixelPay o transferencia con verificación instantánea'],
+            ['Gestión completa', 'Inventario, pedidos, envíos y reportes en un solo lugar'],
+          ].map(([t, d]) => (
+            <div key={t} className={s.featureItem}>
+              <div className={s.featureDot} />
+              <div>
+                <div className={s.featureTitle}>{t}</div>
+                <div className={s.featureDesc}>{d}</div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+      <div className={s.leftFooter}>© 2026 Droppi · Honduras</div>
+    </div>
+  );
+
+  /* ── Forgot password view ── */
+  if (forgotMode) {
+    return (
+      <div className={s.page}>
+        <div className={s.card}>
+          {leftPanel}
+          <div className={s.right}>
+            <div className={s.mobileLogo}><Logo size={18} /></div>
+
+            {forgotSent ? (
+              <>
+                <div className={s.sentIcon}>
+                  <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                    <path d="M2 4.5A1.5 1.5 0 013.5 3h13A1.5 1.5 0 0118 4.5v11a1.5 1.5 0 01-1.5 1.5h-13A1.5 1.5 0 012 15.5v-11zM3.5 4.5L10 9.5l6.5-5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                </div>
+                <div className={s.formTitle}>Revisá tu bandeja</div>
+                <div className={s.formSub}>
+                  Enviamos un link a <strong style={{ color: '#0a0a0a' }}>{email}</strong>. Hacé click para restablecer tu contraseña.
+                </div>
+                <div className={s.sentNote}>
+                  El link vence en 15 min. ¿No llegó? Revisá spam o{' '}
+                  <button onClick={() => setForgotSent(false)} style={{ textDecoration: 'underline', fontWeight: 500, background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'inherit' }}>
+                    reenviar
+                  </button>.
+                </div>
+                <button
+                  onClick={() => { setForgotMode(false); setForgotSent(false); setError(''); }}
+                  className="btn btn-ghost btn-sm"
+                  style={{ marginTop: 20, color: '#737373' }}
+                >
+                  ← Volver al inicio de sesión
+                </button>
+              </>
+            ) : (
+              <>
+                <div className={s.formTitle}>Restablecer contraseña</div>
+                <div className={s.formSub}>
+                  Ingresá tu correo y te enviamos un link para crear una nueva contraseña.
+                </div>
+
+                <div className={s.fields}>
+                  <div>
+                    <label className="label">Correo electrónico</label>
+                    <input
+                      className="input input-lg"
+                      type="email"
+                      placeholder="mariela@miciclita.hn"
+                      value={email}
+                      onChange={e => { setEmail(e.target.value); setError(''); }}
+                      onKeyDown={e => e.key === 'Enter' && handleForgotPassword()}
+                      autoFocus
+                    />
+                  </div>
+                </div>
+
+                {error && <div className={s.fieldError}>{error}</div>}
+
+                <button
+                  onClick={handleForgotPassword}
+                  disabled={loading}
+                  className="btn btn-primary btn-lg btn-block"
+                  style={{ marginTop: 20, opacity: loading ? 0.6 : 1 }}
+                >
+                  {loading ? 'Enviando…' : 'Enviar link de recuperación'}
+                </button>
+
+                <button
+                  onClick={() => { setForgotMode(false); setError(''); }}
+                  className="btn btn-ghost btn-sm btn-block"
+                  style={{ marginTop: 10, color: '#737373' }}
+                >
+                  ← Volver al inicio de sesión
+                </button>
+              </>
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className={s.page}>
       <div className={s.card}>
 
-        {/* Left — branding */}
-        <div className={s.left}>
-          <Logo size={20} white />
-          <div>
-            <div className={s.headline}>Vende tu ropa de la manera más sencilla.</div>
-            <div className={s.sub}>Drops en vivo, checkout integrado y verificación automática de comprobantes.</div>
-            <div className={s.features}>
-              {[
-                ['Drops en vivo', 'Countdown, feed de actividad y contador de viewers en tiempo real'],
-                ['Cobro automático', 'Tarjeta con PixelPay o transferencia con verificación instantánea'],
-                ['Gestión completa', 'Inventario, pedidos, envíos y reportes en un solo lugar'],
-              ].map(([t, d]) => (
-                <div key={t} className={s.featureItem}>
-                  <div className={s.featureDot} />
-                  <div>
-                    <div className={s.featureTitle}>{t}</div>
-                    <div className={s.featureDesc}>{d}</div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-          <div className={s.leftFooter}>© 2026 Droppi · Honduras</div>
-        </div>
+        {leftPanel}
 
         {/* Right — form */}
         <div className={s.right}>
@@ -185,7 +289,11 @@ function LoginContent() {
                   <div>
                     <div className={s.passLabelRow}>
                       <label className="label" style={{ margin: 0 }}>Contraseña</label>
-                      <button className="t-mute" style={{ fontSize: 12, background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'inherit' }}>
+                      <button
+                        onClick={() => { setForgotMode(true); setError(''); }}
+                        className="t-mute"
+                        style={{ fontSize: 12, background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'inherit' }}
+                      >
                         ¿Olvidaste la contraseña?
                       </button>
                     </div>

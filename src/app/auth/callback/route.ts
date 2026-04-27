@@ -36,6 +36,11 @@ export async function GET(request: NextRequest) {
     return NextResponse.redirect(`${origin}/login?error=exchange_failed`);
   }
 
+  // For password recovery, go directly to reset page without tienda check
+  if (next === '/auth/reset-password') {
+    return NextResponse.redirect(`${origin}/auth/reset-password`);
+  }
+
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) {
     return NextResponse.redirect(`${origin}/login?error=no_user`);
