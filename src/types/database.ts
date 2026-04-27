@@ -729,7 +729,11 @@ export type Database = {
           next_order_number: number
           nombre: string
           order_prefix: string
+          paypal_plan_id: string | null
+          paypal_sub_id: string | null
           plan: string | null
+          plan_status: string | null
+          plan_vence_at: string | null
           tiktok: string | null
           tipo_negocio: string
           ubicacion: string | null
@@ -752,7 +756,11 @@ export type Database = {
           next_order_number?: number
           nombre: string
           order_prefix?: string
+          paypal_plan_id?: string | null
+          paypal_sub_id?: string | null
           plan?: string | null
+          plan_status?: string | null
+          plan_vence_at?: string | null
           tiktok?: string | null
           tipo_negocio?: string
           ubicacion?: string | null
@@ -775,7 +783,11 @@ export type Database = {
           next_order_number?: number
           nombre?: string
           order_prefix?: string
+          paypal_plan_id?: string | null
+          paypal_sub_id?: string | null
           plan?: string | null
+          plan_status?: string | null
+          plan_vence_at?: string | null
           tiktok?: string | null
           tipo_negocio?: string
           ubicacion?: string | null

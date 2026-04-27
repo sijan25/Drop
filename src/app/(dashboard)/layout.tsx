@@ -77,11 +77,13 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     { id: 'pedidos', label: 'Pedidos', icon: Icons.bag, href: '/pedidos', badge: counts.pedidos },
     { id: 'comprobantes', label: 'Comprobantes', icon: Icons.inbox, href: '/comprobantes', badge: counts.comprobantes },
     { id: 'configuracion', label: 'Configuración', icon: Icons.settings, href: '/configuracion', badge: 0 },
+    { id: 'billing', label: 'Suscripción', icon: Icons.card, href: '/billing', badge: 0 },
   ];
 
   function isActive(item: typeof navItems[number]) {
     if (item.id === 'dashboard') return pathname.startsWith('/dashboard');
     if (item.id === 'drops') return pathname.startsWith('/drops');
+    if (item.id === 'billing') return pathname.startsWith('/billing');
     return pathname === item.href || pathname.startsWith(item.href + '/');
   }
 
@@ -94,7 +96,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const GROUPS = [
     ['dashboard', 'drops'],
     ['inventario', 'pedidos', 'comprobantes'],
-    ['configuracion'],
+    ['configuracion', 'billing'],
   ];
 
   return (

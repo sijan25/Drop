@@ -826,10 +826,18 @@ export function ConfiguracionClient({
                 <div className="t-mute" style={{ fontSize: 12, marginBottom: 20 }}>Plan actual y uso este mes.</div>
                 <div style={{ padding: 16, background: 'var(--surface-2)', borderRadius: 10, marginBottom: 12, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <div>
-                    <div className="mono" style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: 0.08, color: 'var(--ink-3)' }}>Plan {tienda.plan ?? 'Starter'}</div>
-                    <div style={{ fontSize: 22, fontWeight: 600, letterSpacing: '-0.02em', marginTop: 2 }} className="mono tnum">L 490/mes</div>
+                    <div className="mono" style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: 0.08, color: 'var(--ink-3)' }}>
+                      Plan {tienda.plan ?? 'Starter'}
+                    </div>
+                    <div style={{ fontSize: 15, fontWeight: 600, marginTop: 2, color: 'var(--ink-2)' }}>
+                      {(tienda as { plan_status?: string | null }).plan_status === 'active'
+                        ? 'Suscripción activa'
+                        : tienda.plan === 'pro' ? 'Período de gracia' : 'Plan gratuito'}
+                    </div>
                   </div>
-                  <button className="btn btn-outline">Cambiar plan</button>
+                  <button className="btn btn-outline" onClick={() => router.push('/billing')}>
+                    {tienda.plan === 'pro' ? 'Gestionar plan' : 'Mejorar a Pro'}
+                  </button>
                 </div>
               </div>
             )}

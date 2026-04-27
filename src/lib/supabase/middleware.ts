@@ -41,7 +41,8 @@ export async function updateSession(request: NextRequest) {
     pathname.startsWith("/inventario") ||
     pathname.startsWith("/pedidos") ||
     pathname.startsWith("/comprobantes") ||
-    pathname.startsWith("/configuracion");
+    pathname.startsWith("/configuracion") ||
+    pathname.startsWith("/billing");
 
   if (isDashboard && !user) {
     const url = request.nextUrl.clone();
