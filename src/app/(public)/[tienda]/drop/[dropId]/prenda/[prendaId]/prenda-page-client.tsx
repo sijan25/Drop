@@ -3,9 +3,10 @@
 import Image from 'next/image';
 
 import { cld } from '@/lib/cloudinary/client';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState, type MouseEvent as ReactMouseEvent } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { toast } from 'sonner';
 import { Icons } from '@/components/shared/icons';
 import { CountdownTimer } from '@/components/drops/countdown-timer';
 import { Ph } from '@/components/shared/image-placeholder';
@@ -75,6 +76,8 @@ export function PrendaPageClient({
   const [pedidoNumero, setPedidoNumero] = useState('');
   const [pedidoTrackingUrl, setPedidoTrackingUrl] = useState('');
   const [tallaSeleccionada, setTallaSeleccionada] = useState(getAvailableProductSizes(prenda)[0] ?? getPrimaryProductSize(prenda) ?? '');
+  const [zoomActivo, setZoomActivo] = useState(false);
+  const [zoomPos, setZoomPos] = useState({ x: 50, y: 50 });
 
   const [prendaEstado, setPrendaEstado] = useState(prenda.estado);
   const [prendaCantidad, setPrendaCantidad] = useState(getProductTotalQuantity(prenda));
@@ -157,6 +160,36 @@ export function PrendaPageClient({
     }
     setCheckoutStep('envio');
     setErrorMsg('');
+  }
+
+  async function compartirPrenda() {
+    const url = window.location.href;
+
+    if (navigator.share) {
+      try {
+        await navigator.share({ title: prenda.nombre, url });
+        return;
+      } catch {
+        // Si el usuario cancela o el navegador falla, intentamos copiar el link.
+      }
+    }
+
+    try {
+      await navigator.clipboard.writeText(url);
+      toast.success('Link copiado al portapapeles');
+    } catch {
+      toast.error('No se pudo compartir la prenda');
+    }
+  }
+
+  function actualizarZoom(event: ReactMouseEvent<HTMLDivElement>) {
+    const rect = event.currentTarget.getBoundingClientRect();
+    const x = ((event.clientX - rect.left) / rect.width) * 100;
+    const y = ((event.clientY - rect.top) / rect.height) * 100;
+    setZoomPos({
+      x: Math.min(100, Math.max(0, x)),
+      y: Math.min(100, Math.max(0, y)),
+    });
   }
 
   async function subirComprobante(file: File) {
@@ -298,18 +331,56 @@ export function PrendaPageClient({
           </div>
 
           {/* Foto principal */}
-          <div className="buyer-product-media" style={{ position: 'relative', borderRadius: 16, overflow: 'hidden', background: '#f5f5f5' }}>
+          <div
+            className="buyer-product-media"
+            style={{ position: 'relative', borderRadius: 16, overflow: 'hidden', background: '#f5f5f5', cursor: zoomActivo ? 'zoom-out' : 'zoom-in' }}
+            onMouseEnter={() => setZoomActivo(true)}
+            onMouseLeave={() => setZoomActivo(false)}
+            onMouseMove={actualizarZoom}
+          >
             {fotos.length > 0 ? (
               <Image
                 src={cld(fotos[fotoIdx], 'detail')}
                 alt={prenda.nombre}
                 fill
                 sizes="(max-width: 1024px) 100vw, 600px"
-                style={{ objectFit: 'cover', display: 'block' }}
+                style={{
+                  objectFit: 'cover',
+                  display: 'block',
+                  transform: zoomActivo ? 'scale(2.1)' : 'scale(1)',
+                  transformOrigin: `${zoomPos.x}% ${zoomPos.y}%`,
+                  transition: zoomActivo ? 'transform .08s ease-out' : 'transform .22s ease-out',
+                }}
               />
             ) : (
               <Ph tone={TONES[0]} aspect="4/5" radius={0} />
             )}
+            <button
+              type="button"
+              aria-label="Compartir prenda"
+              onClick={compartirPrenda}
+              style={{
+                position: 'absolute',
+                top: 16,
+                right: 16,
+                width: 56,
+                height: 56,
+                borderRadius: 28,
+                border: '1px solid rgba(26,23,20,0.06)',
+                background: 'rgba(255,255,255,0.94)',
+                color: 'var(--ink)',
+                boxShadow: '0 12px 30px rgba(26,23,20,0.12)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                cursor: 'pointer',
+                zIndex: 2,
+                backdropFilter: 'blur(10px)',
+                WebkitBackdropFilter: 'blur(10px)',
+              }}
+            >
+              <Icons.share width={24} height={24} />
+            </button>
 
             {/* Nav arrows */}
             {fotos.length > 1 && (
@@ -346,7 +417,7 @@ export function PrendaPageClient({
               <>
                 <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.22)', backdropFilter: 'grayscale(0.5)' }} />
                 <div style={{
-                  position: 'absolute', top: 16, right: 16,
+                  position: 'absolute', top: 82, right: 16,
                   background: prendaEstado === 'vendida' ? 'rgba(10,10,10,0.88)' : 'rgba(180,100,0,0.88)',
                   backdropFilter: 'blur(8px)',
                   WebkitBackdropFilter: 'blur(8px)',

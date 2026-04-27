@@ -32,12 +32,14 @@ export default async function TiendaPage({ params }: { params: Promise<{ tienda:
     .eq('tienda_id', tienda.id);
 
   // Inventario público: prendas con unidades disponibles para catálogo.
+  // Se incluyen prendas con cantidad > 0 O con cantidades_por_talla definido
+  // (productos multi-talla donde el stock real está en cantidades_por_talla, no en cantidad).
   const { data: prendasDisponibles } = await supabase
     .from('prendas')
     .select('id, nombre, precio, cantidad, cantidades_por_talla, categoria, talla, tallas, marca, fotos, estado, drop_id, created_at')
     .eq('tienda_id', tienda.id)
     .is('drop_id', null)
-    .gt('cantidad', 0)
+    .or('cantidad.gt.0,cantidades_por_talla.not.is.null')
     .or('estado.is.null,estado.eq.disponible,estado.eq.remanente')
     .order('created_at', { ascending: false });
 

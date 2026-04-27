@@ -29,6 +29,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const router = useRouter();
   const [tienda, setTienda] = useState<Tienda | null>(null);
   const [counts, setCounts] = useState<Counts>({ drops: 0, pedidos: 0, comprobantes: 0 });
+  const [ready, setReady] = useState(false);
   const checked = useRef(false);
 
   useEffect(() => {
@@ -45,7 +46,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         .eq('user_id', user.id)
         .maybeSingle();
 
-      if (error || !data) return; // el dashboard page maneja la redirección a onboarding
+      if (error || !data) { setReady(true); return; }
       setTienda(data);
 
       const [{ count: dropsCount }, { count: pedidosCount }, { count: comprobantesCount }] = await Promise.all([
@@ -62,6 +63,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         pedidos: pedidosCount ?? 0,
         comprobantes: comprobantesCount ?? 0,
       });
+      setReady(true);
     }
     cargarTienda();
   }, [router]);
@@ -76,6 +78,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     { id: 'inventario', label: 'Inventario', icon: Icons.grid, href: '/inventario', badge: 0 },
     { id: 'pedidos', label: 'Pedidos', icon: Icons.bag, href: '/pedidos', badge: counts.pedidos },
     { id: 'comprobantes', label: 'Comprobantes', icon: Icons.inbox, href: '/comprobantes', badge: counts.comprobantes },
+    { id: 'analiticas', label: 'Analíticas', icon: Icons.chart, href: '/analiticas', badge: 0 },
     { id: 'configuracion', label: 'Configuración', icon: Icons.settings, href: '/configuracion', badge: 0 },
     { id: 'billing', label: 'Suscripción', icon: Icons.card, href: '/billing', badge: 0 },
   ];
@@ -84,6 +87,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     if (item.id === 'dashboard') return pathname.startsWith('/dashboard');
     if (item.id === 'drops') return pathname.startsWith('/drops');
     if (item.id === 'billing') return pathname.startsWith('/billing');
+    if (item.id === 'analiticas') return pathname.startsWith('/analiticas');
     return pathname === item.href || pathname.startsWith(item.href + '/');
   }
 
@@ -96,8 +100,11 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const GROUPS = [
     ['dashboard', 'drops'],
     ['inventario', 'pedidos', 'comprobantes'],
+    ['analiticas'],
     ['configuracion', 'billing'],
   ];
+
+  if (!ready) return null;
 
   return (
     <div style={{

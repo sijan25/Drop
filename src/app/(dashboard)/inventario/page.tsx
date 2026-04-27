@@ -320,12 +320,14 @@ function ModalPrenda({ tiendaId, drops, prenda, onClose, onSaved }: ModalProps) 
 
 /* ─── Página principal ───────────────────────────────────── */
 export default function InventarioPage() {
-  const [tiendaId, setTiendaId]   = useState<string | null>(null);
-  const [prendas, setPrendas]     = useState<Prenda[]>([]);
-  const [drops, setDrops]         = useState<Drop[]>([]);
-  const [loading, setLoading]     = useState(true);
-  const [filtro, setFiltro]       = useState('Todas');
-  const [busqueda, setBusqueda]   = useState('');
+  const [tiendaId, setTiendaId]         = useState<string | null>(null);
+  const [prendas, setPrendas]           = useState<Prenda[]>([]);
+  const [drops, setDrops]               = useState<Drop[]>([]);
+  const [loading, setLoading]           = useState(true);
+  const [filtro, setFiltro]             = useState('Todas');
+  const [filtroCategoria, setFiltroCat] = useState<string | null>(null);
+  const [flyoutOpen, setFlyoutOpen]     = useState(false);
+  const [busqueda, setBusqueda]         = useState('');
   const [modal, setModal]         = useState(false);
   const [editando, setEditando]   = useState<Prenda | null>(null);
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
@@ -381,6 +383,8 @@ export default function InventarioPage() {
     toast.success(`Marcada como ${ESTADO_MAP[estado].label.toLowerCase()}`);
   }
 
+  const categoriasDisponibles = [...new Set(prendas.map(p => p.categoria).filter(Boolean) as string[])].sort();
+
   const filtradas = prendas.filter(p => {
     const matchFiltro =
       filtro === 'Todas'      ? true :
@@ -389,11 +393,13 @@ export default function InventarioPage() {
       filtro === 'Vendidas'   ? p.estado === 'vendida' :
       filtro === 'Remanentes' ? p.estado === 'remanente' : true;
 
+    const matchCat = !filtroCategoria || p.categoria === filtroCategoria;
+
     const q = busqueda.toLowerCase();
     const tallasTexto = formatProductSizes(p)?.toLowerCase() ?? '';
     const matchBusqueda = !q || p.nombre.toLowerCase().includes(q) || (p.categoria ?? '').toLowerCase().includes(q) || tallasTexto.includes(q);
 
-    return matchFiltro && matchBusqueda;
+    return matchFiltro && matchCat && matchBusqueda;
   });
   const unidadesDisponibles = prendas
     .filter(p => p.estado === 'disponible' || p.estado === 'remanente')
@@ -417,21 +423,93 @@ export default function InventarioPage() {
       </div>
 
       {/* Barra búsqueda + filtros */}
-      <div style={{ padding: '12px 28px', borderBottom: '1px solid var(--line)', background: '#fff', display: 'flex', gap: 8, alignItems: 'center', flexShrink: 0 }}>
+      <div style={{ padding: '12px 28px', borderBottom: '1px solid var(--line)', background: '#fff', display: 'flex', gap: 8, alignItems: 'center', flexShrink: 0, position: 'relative', zIndex: 10 }}>
         <div style={{ position: 'relative', flex: 1, maxWidth: 320 }}>
           <Icons.search width={14} height={14} style={{ position: 'absolute', left: 12, top: 11, color: 'var(--ink-3)' }}/>
           <input className="input" style={{ paddingLeft: 34, height: 36 }} placeholder="Buscar por nombre, categoría, talla…"
             value={busqueda} onChange={e => setBusqueda(e.target.value)}/>
         </div>
         <div style={{ display: 'flex', gap: 4 }}>
-          {FILTROS.map(f => (
-            <button key={f} onClick={() => setFiltro(f)} style={{
-              padding: '6px 12px', borderRadius: 8, fontSize: 12,
-              fontWeight: filtro === f ? 500 : 400,
-              background: filtro === f ? 'var(--surface-2)' : 'transparent',
-              color: filtro === f ? 'var(--ink)' : 'var(--ink-3)',
-            }}>{f}</button>
-          ))}
+          {FILTROS.map(f => {
+            if (f !== 'Todas') {
+              return (
+                <button key={f} onClick={() => { setFiltro(f); setFiltroCat(null); }} style={{
+                  padding: '6px 12px', borderRadius: 8, fontSize: 12,
+                  fontWeight: filtro === f ? 500 : 400,
+                  background: filtro === f ? 'var(--surface-2)' : 'transparent',
+                  color: filtro === f ? 'var(--ink)' : 'var(--ink-3)',
+                }}>{f}</button>
+              );
+            }
+            const isTodasActive = filtro === 'Todas';
+            return (
+              <div
+                key={f}
+                style={{ position: 'relative' }}
+                onMouseEnter={() => setFlyoutOpen(true)}
+                onMouseLeave={() => setFlyoutOpen(false)}
+              >
+                <button
+                  onClick={() => { setFiltro('Todas'); setFiltroCat(null); }}
+                  style={{
+                    padding: '6px 12px', borderRadius: 8, fontSize: 12,
+                    fontWeight: isTodasActive ? 500 : 400,
+                    background: isTodasActive ? 'var(--surface-2)' : 'transparent',
+                    color: isTodasActive ? 'var(--ink)' : 'var(--ink-3)',
+                    display: 'flex', alignItems: 'center', gap: 4,
+                  }}
+                >
+                  {filtroCategoria ? filtroCategoria : 'Todas'}
+                  {filtroCategoria && (
+                    <span
+                      onClick={e => { e.stopPropagation(); setFiltroCat(null); }}
+                      style={{ marginLeft: 2, opacity: 0.5, lineHeight: 1, fontSize: 13 }}
+                    >×</span>
+                  )}
+                </button>
+
+                {flyoutOpen && categoriasDisponibles.length > 0 && (
+                  <div style={{
+                    position: 'absolute', top: 'calc(100% + 6px)', left: 0, zIndex: 50,
+                    background: '#fff', border: '1px solid rgba(26,23,20,0.1)',
+                    borderRadius: 12, boxShadow: '0 8px 32px rgba(26,23,20,0.12)',
+                    minWidth: 180, padding: '8px 0', overflow: 'hidden',
+                  }}>
+                    <div style={{ padding: '4px 14px 8px', fontSize: 10, fontWeight: 700, color: 'var(--ink-3)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                      Categorías
+                    </div>
+                    {categoriasDisponibles.map(cat => (
+                      <button
+                        key={cat}
+                        onClick={() => { setFiltro('Todas'); setFiltroCat(cat); setFlyoutOpen(false); }}
+                        style={{
+                          display: 'block', width: '100%', textAlign: 'left',
+                          padding: '7px 14px', fontSize: 13,
+                          fontWeight: filtroCategoria === cat ? 600 : 400,
+                          color: filtroCategoria === cat ? 'var(--accent-3)' : 'var(--ink)',
+                          background: filtroCategoria === cat ? 'rgba(201,100,66,0.07)' : 'transparent',
+                          borderLeft: `2px solid ${filtroCategoria === cat ? 'var(--accent)' : 'transparent'}`,
+                        }}
+                      >
+                        {cat}
+                      </button>
+                    ))}
+                    {filtroCategoria && (
+                      <>
+                        <div style={{ height: 1, background: 'var(--line)', margin: '6px 0' }}/>
+                        <button
+                          onClick={() => { setFiltroCat(null); setFlyoutOpen(false); }}
+                          style={{ display: 'block', width: '100%', textAlign: 'left', padding: '7px 14px', fontSize: 12, color: 'var(--ink-3)' }}
+                        >
+                          Ver todas
+                        </button>
+                      </>
+                    )}
+                  </div>
+                )}
+              </div>
+            );
+          })}
         </div>
       </div>
 
