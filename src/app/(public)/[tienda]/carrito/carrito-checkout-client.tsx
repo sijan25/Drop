@@ -9,6 +9,7 @@ import type { BuyerProfile } from '@/components/buyer/buyer-auth-modal';
 import { carritoItemKey, useCarrito } from '@/hooks/use-carrito';
 import { obtenerPerfilComprador } from '@/lib/buyer/actions';
 import { crearCheckoutPublico } from '@/lib/checkout/actions';
+import { obtenerCarrito } from '@/lib/cart/actions';
 import { uploadImage } from '@/lib/cloudinary/client';
 import type { Database } from '@/types/database';
 
@@ -122,6 +123,23 @@ export function CarritoCheckoutClient({
     setFieldErrors({});
     setServerError('');
     setLoading(true);
+
+    // Verify stock freshness before submitting — purges stale items server-side
+    const freshCart = await obtenerCarrito();
+    if (freshCart.error) {
+      setServerError('No pudimos verificar el stock. Intentá de nuevo.');
+      setLoading(false);
+      return;
+    }
+    const freshKeys = new Set(freshCart.items.map(i => carritoItemKey(i.prendaId, i.talla)));
+    const staleItems = items.filter(i => !freshKeys.has(carritoItemKey(i.prendaId, i.talla)));
+    if (staleItems.length > 0) {
+      const nombres = staleItems.map(i => `"${i.nombre}"`).join(', ');
+      setServerError(`${nombres} ${staleItems.length === 1 ? 'ya no está disponible' : 'ya no están disponibles'}. Volvé al carrito para ver las prendas actualizadas.`);
+      setLoading(false);
+      return;
+    }
+
     const res = await crearCheckoutPublico({
       tiendaId: tienda.id,
       dropId: null,
