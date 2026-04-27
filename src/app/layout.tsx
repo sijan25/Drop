@@ -33,6 +33,9 @@ export default function RootLayout({
       lang="es"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
+      <head>
+        <style dangerouslySetInnerHTML={{ __html: `html,body{background:#FAF9F7}` }} />
+      </head>
       <body className="min-h-full flex flex-col">
         {children}
         <Toaster position="bottom-right" richColors/>
