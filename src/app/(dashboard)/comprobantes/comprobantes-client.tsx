@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useTransition } from 'react'
+import { useRouter } from 'next/navigation'
 import { Icons } from '@/components/shared/icons'
 import { Ph } from '@/components/shared/image-placeholder'
 import { confirmarPago, rechazarPago } from './actions'
@@ -55,6 +56,7 @@ function fmt(iso: string | null | undefined) {
 }
 
 export default function ComprobantesClient({ comprobantes, historial }: { comprobantes: Comprobante[]; historial: Comprobante[] }) {
+  const router = useRouter()
   const [tab, setTab] = useState<'pendientes' | 'historial'>('pendientes')
   const [idx, setIdx] = useState(0)
   const [decided, setDecided] = useState<'ok' | 'no' | null>(null)
@@ -84,6 +86,8 @@ export default function ComprobantesClient({ comprobantes, historial }: { compro
         return
       }
       setDecided('ok')
+      window.dispatchEvent(new Event('fd-dashboard-counts-refresh'))
+      router.refresh()
       if (result.email?.status === 'sent') {
         setNotice('Correo de confirmación enviado al comprador.')
       } else if (result.email?.status === 'failed') {
@@ -104,6 +108,8 @@ export default function ComprobantesClient({ comprobantes, historial }: { compro
         return
       }
       setDecided('no')
+      window.dispatchEvent(new Event('fd-dashboard-counts-refresh'))
+      router.refresh()
       avanzarTras(1800)
     })
   }

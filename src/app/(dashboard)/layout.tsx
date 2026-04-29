@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { Logo } from '@/components/shared/logo';
 import { Icons } from '@/components/shared/icons';
@@ -30,11 +30,26 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const [tienda, setTienda] = useState<Tienda | null>(null);
   const [counts, setCounts] = useState<Counts>({ drops: 0, pedidos: 0, comprobantes: 0 });
   const [ready, setReady] = useState(false);
-  const checked = useRef(false);
+
+  const refreshCounts = useCallback(async (tiendaId: string) => {
+    const supabase = createClient();
+    const [{ count: dropsCount }, { count: pedidosCount }, { count: comprobantesCount }] = await Promise.all([
+      supabase.from('drops').select('*', { count: 'exact', head: true })
+        .eq('tienda_id', tiendaId).in('estado', ['activo', 'programado']),
+      supabase.from('pedidos').select('*', { count: 'exact', head: true })
+        .eq('tienda_id', tiendaId).in('estado', ['por_verificar', 'pagado', 'empacado']),
+      supabase.from('comprobantes').select('*', { count: 'exact', head: true })
+        .eq('tienda_id', tiendaId).eq('estado', 'pendiente'),
+    ]);
+
+    setCounts({
+      drops: dropsCount ?? 0,
+      pedidos: pedidosCount ?? 0,
+      comprobantes: comprobantesCount ?? 0,
+    });
+  }, []);
 
   useEffect(() => {
-    if (checked.current) return;
-    checked.current = true;
     async function cargarTienda() {
       const supabase = createClient();
       const { data: { user } } = await supabase.auth.getUser();
@@ -48,25 +63,30 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
       if (error || !data) { setReady(true); return; }
       setTienda(data);
-
-      const [{ count: dropsCount }, { count: pedidosCount }, { count: comprobantesCount }] = await Promise.all([
-        supabase.from('drops').select('*', { count: 'exact', head: true })
-          .eq('tienda_id', data.id).in('estado', ['activo', 'programado']),
-        supabase.from('pedidos').select('*', { count: 'exact', head: true })
-          .eq('tienda_id', data.id).not('estado', 'in', '(entregado,cancelado)'),
-        supabase.from('pedidos').select('*', { count: 'exact', head: true })
-          .eq('tienda_id', data.id).eq('estado', 'por_verificar'),
-      ]);
-
-      setCounts({
-        drops: dropsCount ?? 0,
-        pedidos: pedidosCount ?? 0,
-        comprobantes: comprobantesCount ?? 0,
-      });
+      await refreshCounts(data.id);
       setReady(true);
     }
     cargarTienda();
-  }, [router]);
+  }, [router, refreshCounts]);
+
+  useEffect(() => {
+    if (!tienda?.id) return;
+
+    const handleRefresh = () => refreshCounts(tienda.id);
+    const handleVisibility = () => {
+      if (document.visibilityState === 'visible') handleRefresh();
+    };
+
+    window.addEventListener('focus', handleRefresh);
+    window.addEventListener('fd-dashboard-counts-refresh', handleRefresh);
+    document.addEventListener('visibilitychange', handleVisibility);
+
+    return () => {
+      window.removeEventListener('focus', handleRefresh);
+      window.removeEventListener('fd-dashboard-counts-refresh', handleRefresh);
+      document.removeEventListener('visibilitychange', handleVisibility);
+    };
+  }, [refreshCounts, tienda?.id]);
 
   const initiales = tienda?.nombre
     ? tienda.nombre.split(' ').map(w => w[0]).slice(0, 2).join('').toUpperCase()

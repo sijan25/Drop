@@ -139,8 +139,14 @@ export default function DropsPage() {
   const [busqueda, setBusqueda] = useState('');
   const [dropCerradoId, setDropCerradoId] = useState<string>('');
   const [migrando, setMigrando] = useState(false);
+  const [nowMs, setNowMs] = useState(() => Date.now());
   const [confirmDeleteDrop, setConfirmDeleteDrop] = useState<string | null>(null);
   const [deletePending, startDeleteTransition] = useTransition();
+
+  useEffect(() => {
+    const timer = window.setInterval(() => setNowMs(Date.now()), 30_000);
+    return () => window.clearInterval(timer);
+  }, []);
 
   useEffect(() => {
     async function cargar() {
@@ -190,11 +196,10 @@ export default function DropsPage() {
       }
 
       const { count } = await supabase
-        .from('pedidos')
+        .from('comprobantes')
         .select('id', { count: 'exact', head: true })
         .eq('tienda_id', t.id)
-        .eq('comprobante_estado', 'pendiente')
-        .eq('metodo_pago', 'transferencia');
+        .eq('estado', 'pendiente');
 
       setComprobantesPendientes(count ?? 0);
       setLoading(false);
@@ -401,7 +406,7 @@ export default function DropsPage() {
                     : d.estado === 'programado'
                       ? new Date(d.inicia_at).getTime()
                       : null;
-                  const showCountdown = targetMs !== null && targetMs > Date.now();
+                  const showCountdown = targetMs !== null && targetMs > nowMs;
                   return (
                     <div
                       key={d.id}

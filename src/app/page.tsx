@@ -198,7 +198,7 @@ const faqs: Faq[] = [
   },
   {
     q: '¿Qué es un "drop" exactamente?',
-    a: 'Un drop es una venta por tiempo limitado con cuenta regresiva. Publicas tus prendas, fijas una duración y tus seguidoras compiten por comprar antes de que el drop cierre. Genera urgencia real que convierte.',
+    a: 'Drop viene de "soltar". Publicas tus prendas, activas el contador y tus seguidoras tienen un tiempo límite para comprar. Lo que no se vende en ese tiempo, se va. Eso genera urgencia real — sin fingirla..',
   },
   {
     q: '¿Cómo verifican los comprobantes de pago?',

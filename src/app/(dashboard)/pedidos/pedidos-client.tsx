@@ -204,7 +204,10 @@ export default function PedidosClient({
       const result = await avanzarEstado(pedidoId, estado)
       if (result && 'error' in result) {
         setMessage({ pedidoId, tone: 'error', text: result.error ?? 'No se pudo avanzar el estado.' })
+        return
       }
+      window.dispatchEvent(new Event('fd-dashboard-counts-refresh'))
+      router.refresh()
     })
   }
 
@@ -217,7 +220,10 @@ export default function PedidosClient({
       const result = await avanzarEstado(id, estado, tracking)
       if (result && 'error' in result) {
         setMessage({ pedidoId: id, tone: 'error', text: result.error ?? 'No se pudo avanzar el estado.' })
+        return
       }
+      window.dispatchEvent(new Event('fd-dashboard-counts-refresh'))
+      router.refresh()
     })
   }
 
@@ -231,7 +237,10 @@ export default function PedidosClient({
       const result = await cancelarPedido(pedidoId)
       if (result && 'error' in result) {
         setMessage({ pedidoId, tone: 'error', text: result.error ?? 'No se pudo cancelar el pedido.' })
+        return
       }
+      window.dispatchEvent(new Event('fd-dashboard-counts-refresh'))
+      router.refresh()
     })
   }
 
