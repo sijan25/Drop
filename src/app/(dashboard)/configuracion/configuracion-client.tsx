@@ -4,9 +4,11 @@ import type { FormEvent } from 'react';
 import { useState, useTransition, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { Icons } from '@/components/shared/icons';
+import { PhoneInput } from '@/components/shared/phone-input';
 import { uploadImage } from '@/lib/cloudinary/client';
-import { getCatalogDefaults, type CatalogOptionTipo } from '@/lib/catalog-options';
+import type { CatalogOptionTipo } from '@/lib/catalog-options';
 import { USERNAME_CHANGE_LIMIT, normalizeStoreUsername } from '@/lib/stores/username';
+import { PLATFORM, formatCurrencyFree } from '@/lib/config/platform';
 import type { Database } from '@/types/database';
 import {
   guardarInfoTienda,
@@ -18,7 +20,6 @@ import {
   toggleMetodoEnvio,
   eliminarMetodoEnvio,
   agregarOpcionCatalogo,
-  ocultarOpcionBaseCatalogo,
   toggleOpcionCatalogo,
   eliminarOpcionCatalogo,
   resetearCatalogo,
@@ -78,7 +79,7 @@ function FeedbackModal({
 function EnvioModal({ m, onClose, onSave }: {
   m: Partial<MetodoEnvio> | null;
   onClose: () => void;
-  onSave: (data: { nombre: string; proveedor: string; precio: number; tiempo_estimado: string; cobertura: string }) => void;
+  onSave: (data: { nombre: string; proveedor: string; precio: number; tiempo_estimado: string; cobertura: string; tracking_url: string }) => void;
 }) {
   const [form, setForm] = useState({
     nombre: m?.nombre ?? '',
@@ -86,6 +87,7 @@ function EnvioModal({ m, onClose, onSave }: {
     precio: m?.precio ?? 0,
     tiempo_estimado: m?.tiempo_estimado ?? '',
     cobertura: m?.cobertura ?? '',
+    tracking_url: m?.tracking_url ?? '',
   });
   const change = (k: string, v: string | number) => setForm(f => ({ ...f, [k]: v }));
 
@@ -100,7 +102,7 @@ function EnvioModal({ m, onClose, onSave }: {
           <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 12 }}>
             <div>
               <label className="label">Nombre público</label>
-              <input className="input" value={form.nombre} onChange={e => change('nombre', e.target.value)} placeholder="Envío a todo Honduras"/>
+              <input className="input" value={form.nombre} onChange={e => change('nombre', e.target.value)} placeholder={`Envío a todo ${PLATFORM.country}`}/>
             </div>
             <div>
               <label className="label">Precio (L)</label>
@@ -117,9 +119,15 @@ function EnvioModal({ m, onClose, onSave }: {
               <input className="input" value={form.tiempo_estimado} onChange={e => change('tiempo_estimado', e.target.value)} placeholder="3 días laborales"/>
             </div>
           </div>
-          <div>
-            <label className="label">Zona de cobertura</label>
-            <input className="input" value={form.cobertura} onChange={e => change('cobertura', e.target.value)} placeholder="Todos los departamentos"/>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+            <div>
+              <label className="label">Zona de cobertura</label>
+              <input className="input" value={form.cobertura} onChange={e => change('cobertura', e.target.value)} placeholder="Todos los departamentos"/>
+            </div>
+            <div>
+              <label className="label">URL de rastreo</label>
+              <input className="input" value={form.tracking_url} onChange={e => change('tracking_url', e.target.value)} placeholder="https://proveedor.com/track?id="/>
+            </div>
           </div>
         </div>
         <div style={{ padding: '14px 22px', borderTop: '1px solid var(--line)', display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
@@ -181,7 +189,6 @@ function CatalogOptionsCard({
   onAdd,
   onToggle,
   onDelete,
-  onHideBase,
   pending,
 }: {
   title: string;
@@ -192,7 +199,6 @@ function CatalogOptionsCard({
   onAdd: (tipo: OpcionTipo, nombre: string, onSuccess: () => void) => void;
   onToggle: (id: string, activo: boolean) => void;
   onDelete: (id: string) => void;
-  onHideBase: (tipo: OpcionTipo, nombre: string) => void;
   pending: boolean;
 }) {
   const [nombre, setNombre] = useState('');
@@ -250,26 +256,19 @@ function CatalogOptionsCard({
           {inputError && <div style={{ fontSize: 11, color: 'var(--urgent)' }}>{inputError}</div>}
         </form>
 
-        <div>
-          <div className="mono" style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: 0.08, color: 'var(--ink-3)', marginBottom: 8 }}>Base del sistema</div>
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
-            {visibleBaseRows.map(row => (
-              <span key={row.nombre} style={{ display: 'inline-flex', alignItems: 'center', gap: 7, padding: '5px 7px 5px 8px', border: '1px solid var(--line)', borderRadius: 7, fontSize: 12, color: 'var(--ink-2)', background: 'var(--surface-2)' }}>
-                {row.nombre}
-                <span className="mono" style={{ fontSize: 9, color: 'var(--ink-3)', textTransform: 'uppercase' }}>Base</span>
-                <button
-                  type="button"
-                  aria-label={`Ocultar ${row.nombre}`}
-                  onClick={() => onHideBase(tipo, row.nombre)}
-                  disabled={pending}
-                  style={{ width: 20, height: 20, borderRadius: 6, border: '1px solid var(--line)', background: '#fff', color: 'var(--ink-3)', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', cursor: pending ? 'default' : 'pointer' }}
-                >
-                  <Icons.trash width={11} height={11}/>
-                </button>
-              </span>
-            ))}
+        {visibleBaseRows.length > 0 && (
+          <div>
+            <div className="mono" style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: 0.08, color: 'var(--ink-3)', marginBottom: 8 }}>Base del sistema</div>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+              {visibleBaseRows.map(row => (
+                <span key={row.nombre} style={{ display: 'inline-flex', alignItems: 'center', gap: 7, padding: '5px 7px 5px 8px', border: '1px solid var(--line)', borderRadius: 7, fontSize: 12, color: 'var(--ink-2)', background: 'var(--surface-2)' }}>
+                  {row.nombre}
+                  <span className="mono" style={{ fontSize: 9, color: 'var(--ink-3)', textTransform: 'uppercase' }}>Base</span>
+                </span>
+              ))}
+            </div>
           </div>
-        </div>
+        )}
 
         <div>
           <div className="mono" style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: 0.08, color: 'var(--ink-3)', marginBottom: 8 }}>Tus opciones</div>
@@ -421,7 +420,7 @@ export function ConfiguracionClient({
   };
 
   // ── Handlers envío ──
-  const handleGuardarEnvio = (data: { nombre: string; proveedor: string; precio: number; tiempo_estimado: string; cobertura: string }) => {
+  const handleGuardarEnvio = (data: { nombre: string; proveedor: string; precio: number; tiempo_estimado: string; cobertura: string; tracking_url: string }) => {
     const id = editingEnvio?.id;
     setEditingEnvio(null);
     startTransition(async () => {
@@ -495,26 +494,14 @@ export function ConfiguracionClient({
   };
 
   const handleResetearCatalogo = () => {
-    if (!confirm('¿Restaurar el catálogo a los valores por defecto? Se eliminarán todas tus opciones personalizadas y las que hayas eliminado volverán a aparecer.')) return;
+    if (!confirm('¿Restaurar el catálogo a los valores por defecto de tu tipo de tienda? Se reemplazarán todas tus opciones actuales.')) return;
     startTransition(async () => {
       const res = await resetearCatalogo();
-      if (!res.error) {
-        setOpcionesCatalogo([]);
-        showNotice('Catálogo restaurado', 'Todas las opciones volvieron a los valores por defecto.');
+      if (res.opciones) {
+        setOpcionesCatalogo(sortOptions(res.opciones));
+        showNotice('Catálogo restaurado', 'Las opciones volvieron a los valores por defecto de tu tipo de tienda.');
       } else {
-        showNotice('No se pudo restaurar', res.error, false);
-      }
-    });
-  };
-
-  const handleOcultarOpcionBase = (tipo: OpcionTipo, nombre: string) => {
-    startTransition(async () => {
-      const res = await ocultarOpcionBaseCatalogo({ tipo, nombre });
-      if (res.opcion) {
-        setOpcionesCatalogo(items => sortOptions([...items.filter(item => item.id !== res.opcion!.id), res.opcion!]));
-        showNotice('Opción eliminada', `${res.opcion.nombre} ya no aparecerá en tus formularios.`);
-      } else {
-        showNotice('No se pudo eliminar', res.error ?? 'Intentá de nuevo.', false);
+        showNotice('No se pudo restaurar', res.error ?? 'Intentá de nuevo.', false);
       }
     });
   };
@@ -607,12 +594,9 @@ export function ConfiguracionClient({
                     <label className="label" style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                       <Icons.whatsapp width={13} height={13}/> WhatsApp de la tienda
                     </label>
-                    <input
-                      className="input"
-                      type="tel"
+                    <PhoneInput
                       value={infoForm.whatsapp}
-                      onChange={e => setInfoForm(f => ({ ...f, whatsapp: e.target.value }))}
-                      placeholder="+50499990000 o 99990000"
+                      onChange={v => setInfoForm(f => ({ ...f, whatsapp: v }))}
                     />
                     <div className="help">Número donde recibirás el aviso de nuevos pedidos por WhatsApp.</div>
                   </div>
@@ -715,7 +699,7 @@ export function ConfiguracionClient({
                           <div style={{ flex: 1, minWidth: 0 }}>
                             <div style={{ display: 'flex', alignItems: 'baseline', gap: 10, flexWrap: 'wrap' }}>
                               <div style={{ fontSize: 14, fontWeight: 600 }}>{m.nombre}</div>
-                              <span className="mono tnum" style={{ fontSize: 13, fontWeight: 500 }}>{m.precio === 0 ? 'Gratis' : `L ${m.precio}`}</span>
+                              <span className="mono tnum" style={{ fontSize: 13, fontWeight: 500 }}>{formatCurrencyFree(m.precio)}</span>
                               {!m.activo && <span className="badge">Inactivo</span>}
                             </div>
                             <div className="t-mute" style={{ fontSize: 12, marginTop: 2 }}>{m.proveedor} · {m.tiempo_estimado}</div>
@@ -755,37 +739,30 @@ export function ConfiguracionClient({
                   </button>
                 </div>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14, alignItems: 'start' }}>
-                  {(() => {
-                    const defaults = getCatalogDefaults(tienda.tipo_negocio as 'ropa' | 'zapatos' | 'mixto');
-                    return (
-                      <>
-                        <CatalogOptionsCard
-                          title="Categorías"
-                          description="Usalas para ordenar tu inventario y facilitar la búsqueda."
-                          defaults={defaults.categorias}
-                          options={opcionesCatalogo.filter(option => option.tipo === 'categoria')}
-                          tipo="categoria"
-                          pending={isPending}
-                          onAdd={handleAgregarOpcion}
-                          onToggle={handleToggleOpcion}
-                          onDelete={handleEliminarOpcion}
-                          onHideBase={handleOcultarOpcionBase}
-                        />
-                        <CatalogOptionsCard
-                          title="Tallas"
-                          description="Agregá números, tallas especiales o formatos propios."
-                          defaults={defaults.tallas}
-                          options={opcionesCatalogo.filter(option => option.tipo === 'talla')}
-                          tipo="talla"
-                          pending={isPending}
-                          onAdd={handleAgregarOpcion}
-                          onToggle={handleToggleOpcion}
-                          onDelete={handleEliminarOpcion}
-                          onHideBase={handleOcultarOpcionBase}
-                        />
-                      </>
-                    );
-                  })()}
+                  <>
+                    <CatalogOptionsCard
+                      title="Categorías"
+                      description="Usalas para ordenar tu inventario y facilitar la búsqueda."
+                      defaults={[]}
+                      options={opcionesCatalogo.filter(option => option.tipo === 'categoria')}
+                      tipo="categoria"
+                      pending={isPending}
+                      onAdd={handleAgregarOpcion}
+                      onToggle={handleToggleOpcion}
+                      onDelete={handleEliminarOpcion}
+                    />
+                    <CatalogOptionsCard
+                      title="Tallas"
+                      description="Agregá números, tallas especiales o formatos propios."
+                      defaults={[]}
+                      options={opcionesCatalogo.filter(option => option.tipo === 'talla')}
+                      tipo="talla"
+                      pending={isPending}
+                      onAdd={handleAgregarOpcion}
+                      onToggle={handleToggleOpcion}
+                      onDelete={handleEliminarOpcion}
+                    />
+                  </>
                 </div>
               </div>
             )}

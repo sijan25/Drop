@@ -8,6 +8,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase/client';
 import { Icons } from '@/components/shared/icons';
+import { PhoneInput } from '@/components/shared/phone-input';
 import { useCountdown, pad } from '@/hooks/use-countdown';
 import { useDropViewerCount } from '@/hooks/use-drop-viewer-count';
 import { Ph } from '@/components/shared/image-placeholder';
@@ -606,14 +607,7 @@ function AnotarseSection({ dropId }: { dropId: string }) {
       </div>
       <div style={{ marginBottom: 10 }}>
         <label className="label">WhatsApp</label>
-        <input
-          className="input"
-          style={{ textAlign: 'left' }}
-          placeholder="+504 9876-5432"
-          value={telefono}
-          onChange={e => { setTelefono(e.target.value); setError(''); }}
-          onKeyDown={e => e.key === 'Enter' && handleAnotarse()}
-        />
+        <PhoneInput value={telefono} onChange={v => { setTelefono(v); setError(''); }} />
       </div>
       <div style={{ marginBottom: 18 }}>
         <label className="label">

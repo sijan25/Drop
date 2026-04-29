@@ -1,0 +1,178 @@
+.shell {
+  width: 100%;
+  max-width: 520px;
+  margin: 0 auto;
+  padding: 80px 24px 80px;
+}
+
+.header {
+  text-align: center;
+  margin-bottom: 36px;
+}
+
+.header h1 {
+  font-size: 26px;
+  font-weight: 700;
+  color: #1A1714;
+  margin: 0;
+  letter-spacing: -0.4px;
+}
+
+.card {
+  background: #fff;
+  border: 1px solid #E8DED5;
+  border-radius: 16px;
+  padding: 32px;
+}
+
+.form {
+  display: grid;
+  gap: 18px;
+}
+
+.field {
+  display: grid;
+  gap: 6px;
+}
+
+.label {
+  font-size: 13px;
+  font-weight: 500;
+  color: #4A4540;
+}
+
+.input {
+  height: 42px;
+  border: 1px solid #E8DED5;
+  border-radius: 10px;
+  padding: 0 14px;
+  font-size: 14px;
+  color: #1A1714;
+  background: #FAF9F7;
+  outline: none;
+  transition: border-color 0.15s;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.input:focus {
+  border-color: #C96442;
+  background: #fff;
+}
+
+.input::placeholder {
+  color: #C1B8B3;
+}
+
+.select {
+  composes: input;
+  cursor: pointer;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' fill='none'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%238A8380' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 14px center;
+  padding-right: 36px;
+}
+
+.textarea {
+  composes: input;
+  height: auto;
+  padding: 12px 14px;
+  resize: vertical;
+  min-height: 110px;
+  line-height: 1.5;
+}
+
+.btn {
+  height: 46px;
+  width: 100%;
+  border-radius: 10px;
+  background: #C96442;
+  color: #fff;
+  font-size: 14px;
+  font-weight: 600;
+  border: none;
+  cursor: pointer;
+  transition: background 0.15s, opacity 0.15s;
+  letter-spacing: 0.1px;
+}
+
+.btn:hover:not(:disabled) {
+  background: #B5593A;
+}
+
+.btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.error {
+  font-size: 13px;
+  color: #b91c1c;
+  background: #fef2f2;
+  border-radius: 8px;
+  padding: 10px 12px;
+}
+
+.success {
+  text-align: center;
+  padding: 48px 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
+.successIcon {
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  background: #ecfdf5;
+  color: #059669;
+  font-size: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+}
+
+.success h2 {
+  font-size: 20px;
+  font-weight: 700;
+  color: #1A1714;
+  margin: 0;
+}
+
+.success p {
+  font-size: 14px;
+  color: #8A8380;
+  margin: 0;
+  max-width: 300px;
+}
+
+.alt {
+  margin-top: 20px;
+  text-align: center;
+  font-size: 13px;
+  color: #8A8380;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.alt a {
+  color: #1A1714;
+  font-weight: 500;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+@media (max-width: 560px) {
+  .card {
+    padding: 24px 18px;
+  }
+
+  .header h1 {
+    font-size: 22px;
+  }
+}

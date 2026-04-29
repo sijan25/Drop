@@ -8,6 +8,7 @@ import { getProductSizes, isProductSizeInStock, normalizeSelectedProductSize } f
 import { buildOrderTrackingUrl } from '@/lib/security/order-access';
 import { guardServerMutation } from '@/lib/security/request';
 import { createBuyerClient, createServiceClient, getServiceRoleConfigError } from '@/lib/supabase/server';
+import { formatCurrencyFree } from '@/lib/config/platform';
 import type { Database } from '@/types/database';
 
 type MetodoPago = Database['public']['Tables']['metodos_pago']['Row'];
@@ -82,7 +83,7 @@ function metodoPagoLabelDesdeRpc(row: CheckoutRpcRow) {
 
 function metodoEnvioLabelDesdeRpc(row: CheckoutRpcRow) {
   const precio = Number(row.metodo_envio_precio ?? 0);
-  const costo = precio === 0 ? 'Gratis' : `L ${precio}`;
+  const costo = formatCurrencyFree(precio);
   return `${row.metodo_envio_nombre} · ${costo}`;
 }
 

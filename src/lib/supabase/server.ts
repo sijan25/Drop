@@ -97,12 +97,21 @@ export async function createBuyerClient() {
         },
         setAll(cookiesToSet) {
           try {
-            cookiesToSet.forEach(({ name, value, options }) =>
-              cookieStore.set(name, value, {
+            cookiesToSet.forEach(({ name, value, options }) => {
+              const nextOptions = {
                 ...options,
                 ...buyerCookieDefaults,
-              })
-            );
+              };
+
+              // La sesión compradora no debe sobrevivir al cierre del navegador.
+              // Preservamos maxAge=0 solo cuando Supabase está limpiando la cookie.
+              if (nextOptions.maxAge !== 0) {
+                delete nextOptions.maxAge;
+                delete nextOptions.expires;
+              }
+
+              cookieStore.set(name, value, nextOptions);
+            });
           } catch {
             // Called from Server Component — cookies set by browser/client flows.
           }

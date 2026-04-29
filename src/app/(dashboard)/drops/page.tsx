@@ -8,6 +8,7 @@ import { CountdownTimer } from '@/components/drops/countdown-timer';
 import { Icons } from '@/components/shared/icons';
 import { Ph } from '@/components/shared/image-placeholder';
 import { createClient } from '@/lib/supabase/client';
+import { formatCurrency } from '@/lib/config/platform';
 import { getProductTotalQuantity } from '@/lib/product-sizes';
 import {
   DropdownMenu, DropdownMenuTrigger, DropdownMenuContent,
@@ -67,7 +68,7 @@ function fmtFecha(iso: string | null | undefined): string {
 }
 
 function dinero(valor: number | null | undefined): string {
-  return `L ${(valor ?? 0).toLocaleString()}`;
+  return formatCurrency(valor ?? 0);
 }
 
 function statusInfo(estado: string | null | undefined) {

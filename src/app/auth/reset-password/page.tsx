@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Logo } from '@/components/shared/logo';
 import { createClient } from '@/lib/supabase/client';
+import { PLATFORM } from '@/lib/config/platform';
 import s from '@/app/(auth)/auth.module.css';
 
 export default function ResetPasswordPage() {
@@ -56,7 +57,7 @@ export default function ResetPasswordPage() {
               ))}
             </div>
           </div>
-          <div className={s.leftFooter}>© 2026 Droppi · Honduras</div>
+          <div className={s.leftFooter}>© 2026 Droppi · {PLATFORM.country}</div>
         </div>
 
         {/* Right — form */}

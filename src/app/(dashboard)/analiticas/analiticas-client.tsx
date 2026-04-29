@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Icons } from '@/components/shared/icons';
 import { createClient } from '@/lib/supabase/client';
+import { formatCurrency } from '@/lib/config/platform';
 
 interface PedidoItem {
   precio: number;
@@ -55,7 +56,7 @@ function getRange(preset: Preset, customDesde?: string, customHasta?: string): {
 }
 
 function fmtL(n: number) {
-  return `L ${n.toLocaleString('es-HN', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;
+  return formatCurrency(n);
 }
 
 function dayKey(iso: string) {

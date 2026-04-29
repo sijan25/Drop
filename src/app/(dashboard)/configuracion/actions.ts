@@ -257,6 +257,7 @@ export async function agregarMetodoEnvio(data: {
   precio: number;
   tiempo_estimado: string;
   cobertura: string;
+  tracking_url: string;
 }): Promise<{ error?: string; metodo?: MetodoEnvio }> {
   const { error: authError, tiendaId, supabase } = await getTiendaId();
   if (authError || !supabase) return { error: authError ?? 'Error' };
@@ -270,6 +271,7 @@ export async function agregarMetodoEnvio(data: {
       precio: data.precio,
       tiempo_estimado: data.tiempo_estimado || 'Por confirmar',
       cobertura: data.cobertura || 'Por confirmar',
+      tracking_url: data.tracking_url || null,
       activo: true,
     })
     .select()
@@ -287,6 +289,7 @@ export async function editarMetodoEnvio(id: string, data: {
   precio: number;
   tiempo_estimado: string;
   cobertura: string;
+  tracking_url: string;
 }): Promise<{ error?: string; metodo?: MetodoEnvio }> {
   const { error: authError, tiendaId, supabase } = await getTiendaId();
   if (authError || !supabase) return { error: authError ?? 'Error' };
@@ -299,6 +302,7 @@ export async function editarMetodoEnvio(id: string, data: {
       precio: data.precio,
       tiempo_estimado: data.tiempo_estimado || 'Por confirmar',
       cobertura: data.cobertura || 'Por confirmar',
+      tracking_url: data.tracking_url || null,
     })
     .eq('id', id)
     .eq('tienda_id', tiendaId!)
@@ -350,14 +354,13 @@ export async function agregarOpcionCatalogo(data: {
   tipo: 'categoria' | 'talla';
   nombre: string;
 }): Promise<{ error?: string; opcion?: OpcionCatalogo }> {
-  const { error: authError, tiendaId, tipoNegocio, supabase } = await getTiendaId();
+  const { error: authError, tiendaId, supabase } = await getTiendaId();
   if (authError || !supabase) return { error: authError ?? 'Error' };
 
   const nombre = normalizeCatalogOptionName(data.nombre);
   const validationError = validateCatalogOptionName(data.tipo, nombre);
   if (validationError) return { error: validationError };
 
-  const base = getBaseOptions(tipoNegocio ?? 'ropa', data.tipo);
   const lowerNombre = nombre.toLowerCase();
 
   const { data: existingOptions, error: existingError } = await supabase
@@ -385,10 +388,6 @@ export async function agregarOpcionCatalogo(data: {
       return { opcion: restored };
     }
     return { error: 'Esa opción ya existe en tu catálogo.' };
-  }
-
-  if (base.some(option => option.toLowerCase() === lowerNombre)) {
-    return { error: 'Esa opción ya viene incluida en la lista base.' };
   }
 
   const { data: opcion, error } = await supabase
@@ -495,19 +494,32 @@ export async function eliminarOpcionCatalogo(id: string): Promise<{ error?: stri
   return {};
 }
 
-export async function resetearCatalogo(): Promise<{ error?: string }> {
-  const { error: authError, tiendaId, supabase } = await getTiendaId();
+export async function resetearCatalogo(): Promise<{ error?: string; opciones?: OpcionCatalogo[] }> {
+  const { error: authError, tiendaId, tipoNegocio, supabase } = await getTiendaId();
   if (authError || !supabase) return { error: authError ?? 'Error' };
 
-  const { error } = await supabase
+  const { error: delError } = await supabase
     .from('opciones_catalogo')
     .delete()
     .eq('tienda_id', tiendaId!);
 
-  if (error) return { error: error.message };
+  if (delError) return { error: delError.message };
+
+  const defaults = getCatalogDefaults(tipoNegocio ?? 'ropa');
+  const rows = [
+    ...defaults.categorias.map((nombre, orden) => ({ tienda_id: tiendaId!, tipo: 'categoria' as const, nombre, activo: true, orden })),
+    ...defaults.tallas.map((nombre, orden) => ({ tienda_id: tiendaId!, tipo: 'talla' as const, nombre, activo: true, orden })),
+  ];
+
+  const { data: inserted, error: insertError } = await supabase
+    .from('opciones_catalogo')
+    .insert(rows)
+    .select();
+
+  if (insertError) return { error: insertError.message };
 
   revalidatePath('/configuracion');
-  return {};
+  return { opciones: (inserted ?? []) as OpcionCatalogo[] };
 }
 
 export async function eliminarMetodoEnvio(id: string): Promise<{ error?: string }> {

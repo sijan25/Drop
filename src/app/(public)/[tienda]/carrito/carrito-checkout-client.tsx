@@ -9,6 +9,7 @@ import type { BuyerProfile } from '@/components/buyer/buyer-auth-modal';
 import { carritoItemKey, useCarrito } from '@/hooks/use-carrito';
 import { obtenerPerfilComprador } from '@/lib/buyer/actions';
 import { crearCheckoutPublico } from '@/lib/checkout/actions';
+import { PLATFORM, formatCurrency, formatCurrencyFree } from '@/lib/config/platform';
 import { obtenerCarrito } from '@/lib/cart/actions';
 import { uploadImage } from '@/lib/cloudinary/client';
 import type { Database } from '@/types/database';
@@ -264,7 +265,13 @@ export function CarritoCheckoutClient({
             <div style={{ marginBottom: 16 }}>
               <div style={{ fontSize: 20, fontWeight: 700, letterSpacing: '-0.015em' }}>Contacto</div>
             </div>
-            {!isOwnerPreview && <BuyerCheckoutAccess buyer={buyer} onBuyer={aplicarBuyer} />}
+            {!isOwnerPreview && (
+              <BuyerCheckoutAccess
+                buyer={buyer}
+                onBuyer={aplicarBuyer}
+                onLogout={() => setBuyer(null)}
+              />
+            )}
             <div style={{ display: 'grid', gap: 12 }}>
               <div>
                 <input
@@ -316,14 +323,14 @@ export function CarritoCheckoutClient({
               <div className="buyer-checkout-two-col" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
                 <div id="field-ciudad">
                   <label className="label">Ciudad</label>
-                  <input className="input input-lg" placeholder="Tegucigalpa" value={ciudad}
+                  <input className="input input-lg" placeholder={PLATFORM.defaultCity} value={ciudad}
                     onChange={e => { setCiudad(e.target.value); clearFe('ciudad'); }}
                     style={fe('ciudad') ? { borderColor: 'var(--urgent)' } : undefined} />
                   {fe('ciudad') && <div style={{ marginTop: 4, fontSize: 12, color: 'var(--urgent)' }}>{fe('ciudad')}</div>}
                 </div>
                 <div>
                   <label className="label">País</label>
-                  <input className="input input-lg" value="Honduras" readOnly style={{ background: 'var(--surface-2)', color: 'var(--ink-3)' }} />
+                  <input className="input input-lg" value={PLATFORM.country} readOnly style={{ background: 'var(--surface-2)', color: 'var(--ink-3)' }} />
                 </div>
               </div>
             </div>
@@ -348,7 +355,7 @@ export function CarritoCheckoutClient({
                       <div style={{ flex: 1 }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                           <div style={{ fontSize: 14, fontWeight: 600 }}>{m.nombre}</div>
-                          <div className="mono tnum" style={{ fontSize: 14, fontWeight: 600 }}>{m.precio === 0 ? 'Gratis' : `L ${m.precio}`}</div>
+                          <div className="mono tnum" style={{ fontSize: 14, fontWeight: 600 }}>{formatCurrencyFree(m.precio)}</div>
                         </div>
                         <div style={{ fontSize: 12, color: 'var(--ink-3)', marginTop: 2 }}>{m.proveedor} · {m.tiempo_estimado}</div>
                         <div style={{ fontSize: 12, color: 'var(--ink-3)' }}>{m.cobertura}</div>
@@ -401,7 +408,7 @@ export function CarritoCheckoutClient({
               <div style={{ marginTop: 16 }}>
                 <div style={{ background: 'var(--surface-2)', borderRadius: 12, padding: '16px 18px', marginBottom: 12 }}>
                   <div style={{ fontSize: 12, color: 'var(--ink-3)', marginBottom: 6 }}>Transferí el total exacto:</div>
-                  <div className="mono tnum" style={{ fontSize: 32, fontWeight: 700, letterSpacing: '-0.04em' }}>L {total.toLocaleString()}</div>
+                  <div className="mono tnum" style={{ fontSize: 32, fontWeight: 700, letterSpacing: '-0.04em' }}>{formatCurrency(total)}</div>
                 </div>
                 <input ref={fileRef} type="file" accept="image/*" style={{ display: 'none' }}
                   onChange={e => { const f = e.target.files?.[0]; if (f) subirComprobante(f); }} />
@@ -443,7 +450,7 @@ export function CarritoCheckoutClient({
 
           <button className="btn btn-primary btn-block" style={{ height: 56, fontSize: 16, fontWeight: 600, borderRadius: 14 }}
             onClick={confirmar} disabled={loading || uploading}>
-            {loading ? 'Procesando...' : `Finalizar compra · L ${total.toLocaleString()}`}
+            {loading ? 'Procesando...' : `Finalizar compra · ${formatCurrency(total)}`}
           </button>
         </div>
 
@@ -477,7 +484,7 @@ export function CarritoCheckoutClient({
                     <div style={{ fontSize: 13, fontWeight: 600 }}>{item.nombre}</div>
                     {item.talla && <div style={{ fontSize: 12, color: 'var(--ink-3)' }}>Talla {item.talla}</div>}
                   </div>
-                  <div className="mono tnum" style={{ fontSize: 14, fontWeight: 600 }}>L {item.precio.toLocaleString()}</div>
+                  <div className="mono tnum" style={{ fontSize: 14, fontWeight: 600 }}>{formatCurrency(item.precio)}</div>
                 </div>
               ))}
             </div>
@@ -488,17 +495,17 @@ export function CarritoCheckoutClient({
             <div style={{ padding: '16px 20px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, color: 'var(--ink-2)', marginBottom: 8 }}>
                 <span>Subtotal · {items.length} {items.length === 1 ? 'prenda' : 'prendas'}</span>
-                <span className="mono tnum">L {totalPrendas.toLocaleString()}</span>
+                <span className="mono tnum">{formatCurrency(totalPrendas)}</span>
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, color: 'var(--ink-2)', marginBottom: 12 }}>
                 <span>Envío</span>
-                <span className="mono tnum">{costoEnvio === 0 ? 'Gratis' : `L ${costoEnvio}`}</span>
+                <span className="mono tnum">{formatCurrencyFree(costoEnvio)}</span>
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
                 <span style={{ fontSize: 16, fontWeight: 700 }}>Total</span>
                 <div style={{ textAlign: 'right' }}>
-                  <span style={{ fontSize: 11, color: 'var(--ink-3)', marginRight: 4 }}>HNL</span>
-                  <span className="mono tnum" style={{ fontSize: 22, fontWeight: 800 }}>L {total.toLocaleString()}</span>
+                  <span style={{ fontSize: 11, color: 'var(--ink-3)', marginRight: 4 }}>{PLATFORM.currency}</span>
+                  <span className="mono tnum" style={{ fontSize: 22, fontWeight: 800 }}>{formatCurrency(total)}</span>
                 </div>
               </div>
             </div>

@@ -8,6 +8,7 @@ import { BuyerCheckoutAccess } from '@/components/buyer/buyer-checkout-access';
 import type { BuyerProfile } from '@/components/buyer/buyer-auth-modal';
 import type { Database } from '@/types/database';
 import { Alert } from '@/components/shared/alert';
+import { PLATFORM, formatCurrency, formatCurrencyFree } from '@/lib/config/platform';
 
 type MetodoPago = Database['public']['Tables']['metodos_pago']['Row'];
 type MetodoEnvio = Database['public']['Tables']['metodos_envio']['Row'];
@@ -25,14 +26,14 @@ export function ResumenLineas({ precio, costoEnvio, total }: { precio: number; c
   return (
     <>
       <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, color: 'var(--ink-2)', marginBottom: 6 }}>
-        <span>Subtotal</span><span className="mono tnum">L {precio}</span>
+        <span>Subtotal</span><span className="mono tnum">{formatCurrency(precio)}</span>
       </div>
       <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, color: 'var(--ink-2)', marginBottom: 8 }}>
-        <span>Envío</span><span className="mono tnum">{costoEnvio === 0 ? 'Gratis' : `L ${costoEnvio}`}</span>
+        <span>Envío</span><span className="mono tnum">{formatCurrencyFree(costoEnvio)}</span>
       </div>
       <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 15, fontWeight: 700 }}>
         <span>Total</span>
-        <span><span style={{ fontSize: 11, color: 'var(--ink-3)', marginRight: 3 }}>HNL</span><span className="mono tnum">L {total}</span></span>
+        <span><span style={{ fontSize: 11, color: 'var(--ink-3)', marginRight: 3 }}>{PLATFORM.currency}</span><span className="mono tnum">{formatCurrency(total)}</span></span>
       </div>
     </>
   );
@@ -57,7 +58,7 @@ function PrendaSummary({ prenda, tallaSeleccionada, costoEnvio, total }: {
           <div style={{ fontSize: 14, fontWeight: 600 }}>{prenda.nombre}</div>
           <div style={{ fontSize: 12, color: 'var(--ink-3)' }}>{prenda.marca}{tallaSeleccionada ? ` · Talla ${tallaSeleccionada}` : ''}</div>
         </div>
-        <div className="mono tnum" style={{ fontSize: 15, fontWeight: 700 }}>L {prenda.precio}</div>
+        <div className="mono tnum" style={{ fontSize: 15, fontWeight: 700 }}>{formatCurrency(prenda.precio)}</div>
       </div>
       <hr style={{ border: 'none', borderTop: '1px solid var(--line)', margin: '12px 0' }} />
       <ResumenLineas precio={prenda.precio} costoEnvio={costoEnvio} total={total} />
@@ -126,11 +127,11 @@ export function EnvioPanel({ prenda, tallaSeleccionada, nombre, email, whatsapp,
       <div className="buyer-checkout-two-col" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 24 }}>
         <div>
           <label className="label">Ciudad</label>
-          <input className="input input-lg" placeholder="Tegucigalpa" value={ciudad} onChange={e => onChange('ciudad', e.target.value)} />
+          <input className="input input-lg" placeholder={PLATFORM.defaultCity} value={ciudad} onChange={e => onChange('ciudad', e.target.value)} />
         </div>
         <div>
           <label className="label">País</label>
-          <input className="input input-lg" value="Honduras" readOnly style={{ background: 'var(--surface-2)', color: 'var(--ink-3)' }} />
+          <input className="input input-lg" value={PLATFORM.country} readOnly style={{ background: 'var(--surface-2)', color: 'var(--ink-3)' }} />
         </div>
       </div>
       <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 12 }}>Método de envío</div>
@@ -144,7 +145,7 @@ export function EnvioPanel({ prenda, tallaSeleccionada, nombre, email, whatsapp,
               <div style={{ flex: 1 }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                   <div style={{ fontSize: 14, fontWeight: 600 }}>{m.nombre}</div>
-                  <div className="mono tnum" style={{ fontSize: 14, fontWeight: 600 }}>{m.precio === 0 ? 'Gratis' : `L ${m.precio}`}</div>
+                  <div className="mono tnum" style={{ fontSize: 14, fontWeight: 600 }}>{formatCurrencyFree(m.precio)}</div>
                 </div>
                 <div style={{ fontSize: 12, color: 'var(--ink-3)', marginTop: 2 }}>{m.proveedor} · {m.tiempo_estimado}</div>
                 <div style={{ fontSize: 12, color: 'var(--ink-3)' }}>{m.cobertura}</div>
@@ -234,7 +235,7 @@ export function PagoPanel({ prenda, tallaSeleccionada, metodosPago, metodoPagoId
       {esTransferencia && (
         <div style={{ background: 'var(--surface-2)', borderRadius: 12, padding: '16px 18px', marginBottom: 16 }}>
           <div style={{ fontSize: 12, color: 'var(--ink-3)', marginBottom: 8 }}>Transferí este monto exacto:</div>
-          <div className="mono tnum" style={{ fontSize: 32, fontWeight: 700, letterSpacing: '-0.04em' }}>L {total}</div>
+          <div className="mono tnum" style={{ fontSize: 32, fontWeight: 700, letterSpacing: '-0.04em' }}>{formatCurrency(total)}</div>
           <div style={{ fontSize: 13, color: 'var(--ink-3)', marginTop: 6 }}>Concepto: <strong>{refPedido}</strong></div>
         </div>
       )}

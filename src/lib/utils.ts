@@ -13,6 +13,7 @@ export function formatLempiras(amount: number): string {
     maximumFractionDigits: 0,
   }).format(amount);
 }
+// Note: prefer formatCurrency from @/lib/config/platform for new code
 
 export function formatRelativeTime(date: Date | string): string {
   const d = typeof date === "string" ? new Date(date) : date;

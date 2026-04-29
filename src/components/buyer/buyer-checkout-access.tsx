@@ -3,15 +3,26 @@
 import { useState } from 'react';
 import { Icons } from '@/components/shared/icons';
 import { BuyerAuthModal, type BuyerProfile } from './buyer-auth-modal';
+import { cerrarSesionComprador } from '@/lib/buyer/actions';
 
 export function BuyerCheckoutAccess({
   buyer,
   onBuyer,
+  onLogout,
 }: {
   buyer: BuyerProfile | null;
   onBuyer: (buyer: BuyerProfile) => void;
+  onLogout?: () => void;
 }) {
   const [open, setOpen] = useState(false);
+  const [loggingOut, setLoggingOut] = useState(false);
+
+  async function handleLogout() {
+    setLoggingOut(true);
+    await cerrarSesionComprador();
+    setLoggingOut(false);
+    onLogout?.();
+  }
 
   return (
     <>
@@ -51,7 +62,7 @@ export function BuyerCheckoutAccess({
           </div>
         </div>
 
-        {!buyer && (
+        {!buyer ? (
           <button
             type="button"
             onClick={() => setOpen(true)}
@@ -69,6 +80,27 @@ export function BuyerCheckoutAccess({
             }}
           >
             Iniciar sesión
+          </button>
+        ) : (
+          <button
+            type="button"
+            onClick={handleLogout}
+            disabled={loggingOut}
+            style={{
+              height: 34,
+              borderRadius: 9,
+              border: '1px solid rgba(0,0,0,0.1)',
+              background: '#fff',
+              color: '#777',
+              padding: '0 12px',
+              fontSize: 12,
+              fontWeight: 600,
+              cursor: 'pointer',
+              flexShrink: 0,
+              opacity: loggingOut ? 0.5 : 1,
+            }}
+          >
+            {loggingOut ? '...' : 'Cerrar sesión'}
           </button>
         )}
       </div>

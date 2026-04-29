@@ -77,10 +77,12 @@ export function useCatalogOptions(tiendaId?: string | null) {
 
   return useMemo(() => {
     const defaults = getCatalogDefaults(tipoNegocio);
+    const hasCustomCategorias = custom.some(o => o.tipo === 'categoria');
+    const hasCustomTallas = custom.some(o => o.tipo === 'talla');
     return {
       tipoNegocio,
-      categorias: mergeCatalogOptions(defaults.categorias, custom, 'categoria'),
-      tallas: mergeCatalogOptions(defaults.tallas, custom, 'talla'),
+      categorias: mergeCatalogOptions(hasCustomCategorias ? [] : defaults.categorias, custom, 'categoria'),
+      tallas: mergeCatalogOptions(hasCustomTallas ? [] : defaults.tallas, custom, 'talla'),
     };
   }, [tipoNegocio, custom]);
 }

@@ -1,12 +1,14 @@
 'use client';
 
 import Image from 'next/image';
+import { PLATFORM } from '@/lib/config/platform';
 
 import { cld } from '@/lib/cloudinary/client';
 import { useState, useEffect, type FormEvent } from 'react';
 import { useRouter } from 'next/navigation';
 import { Ph } from '@/components/shared/image-placeholder';
 import { Icons } from '@/components/shared/icons';
+import { PhoneInput } from '@/components/shared/phone-input';
 import { useCountdown, pad } from '@/hooks/use-countdown';
 import {
   cerrarSesionComprador,
@@ -306,7 +308,7 @@ function SubscribeModal({ drop, tienda, onClose, onViewDrop }: { drop: Drop; tie
                   <input placeholder="Apellido" value={apellido} onChange={e => setApellido(e.target.value)} style={{ height: 48, minWidth: 0, borderRadius: 10, border: '1px solid rgba(26,23,20,0.10)', background: 'rgba(255,255,255,0.82)', color: 'var(--ink)', padding: '0 13px', fontSize: 14, outline: 'none' }} />
                 </div>
                 <input type="email" placeholder="Correo electrónico*" value={email} onChange={e => setEmail(e.target.value)} style={{ height: 48, borderRadius: 10, border: '1px solid rgba(26,23,20,0.10)', background: 'rgba(255,255,255,0.82)', color: 'var(--ink)', padding: '0 13px', fontSize: 14, outline: 'none' }} />
-                <input placeholder="WhatsApp opcional" value={telefono} onChange={e => setTelefono(e.target.value)} style={{ height: 48, borderRadius: 10, border: '1px solid rgba(26,23,20,0.10)', background: 'rgba(255,255,255,0.82)', color: 'var(--ink)', padding: '0 13px', fontSize: 14, outline: 'none' }} />
+                <PhoneInput size="lg" value={telefono} onChange={setTelefono} placeholder="WhatsApp opcional" inputStyle={{ height: 48, borderRadius: '0 10px 10px 0', border: '1px solid rgba(26,23,20,0.10)', background: 'rgba(255,255,255,0.82)', color: 'var(--ink)', padding: '0 13px', fontSize: 14, outline: 'none' }} selectStyle={{ height: 48, borderRadius: '10px 0 0 10px', border: '1px solid rgba(26,23,20,0.10)', background: 'rgba(255,255,255,0.82)' }} />
                 {error && <div style={{ color: '#b91c1c', background: '#fff1ee', border: '1px solid rgba(185,28,28,0.12)', borderRadius: 10, padding: '10px 12px', fontSize: 13 }}>{error}</div>}
                 <button className="btn btn-primary btn-block" disabled={loading} style={{ height: 50, borderRadius: 10, fontSize: 15, marginTop: 2, background: 'var(--accent)', color: '#fff' }}>
                   {loading ? 'Registrando...' : 'Avisarme del drop'}
@@ -427,7 +429,7 @@ function BuyerAuthModal({ onClose, onSuccess }: { onClose: () => void; onSuccess
                 </div>
                 <div>
                   <label className="label">WhatsApp <span style={{ fontWeight: 400, color: '#999' }}>opcional</span></label>
-                  <input className="input input-lg" inputMode="tel" autoComplete="tel" placeholder="+504 9876-5432" value={telefono} onChange={e => { setTelefono(e.target.value); setError(''); setNotice(''); }} />
+                  <PhoneInput size="lg" value={telefono} onChange={v => { setTelefono(v); setError(''); setNotice(''); }} />
                 </div>
               </div>
             )}
@@ -691,7 +693,7 @@ function BuyerProfileSheet({
                 </div>
                 <div>
                   <label className="label">WhatsApp</label>
-                  <input className="input input-lg" value={profileForm.telefono} onChange={e => { setProfileForm(f => ({ ...f, telefono: e.target.value })); setProfileError(''); setProfileMsg(''); }} placeholder="+504 9876-5432" />
+                  <PhoneInput size="lg" value={profileForm.telefono} onChange={v => { setProfileForm(f => ({ ...f, telefono: v })); setProfileError(''); setProfileMsg(''); }} />
                 </div>
               </div>
 
@@ -710,7 +712,7 @@ function BuyerProfileSheet({
 
               <div>
                 <label className="label">Ciudad</label>
-                <input className="input input-lg" value={profileForm.ciudad} onChange={e => { setProfileForm(f => ({ ...f, ciudad: e.target.value })); setProfileError(''); setProfileMsg(''); }} placeholder="San Pedro Sula" />
+                <input className="input input-lg" value={profileForm.ciudad} onChange={e => { setProfileForm(f => ({ ...f, ciudad: e.target.value })); setProfileError(''); setProfileMsg(''); }} placeholder={PLATFORM.cities[0]} />
               </div>
 
               {profileError && <div style={{ fontSize: 13, color: '#b91c1c', background: '#fef2f2', borderRadius: 10, padding: '10px 12px' }}>{profileError}</div>}
@@ -1434,7 +1436,7 @@ export function TiendaPageClient(props: {
                 </svg>
               ),
               title: 'Envío Rápido',
-              desc: 'Recibe tu compra en cualquier parte de Honduras',
+              desc: `Recibe tu compra en cualquier parte de ${PLATFORM.country}`,
             },
             {
               svg: (

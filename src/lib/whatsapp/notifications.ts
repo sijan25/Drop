@@ -1,9 +1,10 @@
 import { sendWhatsAppText, type WhatsAppSendResult } from './client'
+import { formatCurrency } from '@/lib/config/platform'
 
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000'
 
 function lps(n: number) {
-  return `L ${n.toLocaleString('es-HN')}`
+  return formatCurrency(n)
 }
 
 // ── 1. NUEVO PEDIDO → tienda ─────────────────────────────

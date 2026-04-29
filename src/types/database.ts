@@ -340,6 +340,7 @@ export type Database = {
           proveedor: string
           tiempo_estimado: string | null
           tienda_id: string
+          tracking_url: string | null
         }
         Insert: {
           activo?: boolean
@@ -351,6 +352,7 @@ export type Database = {
           proveedor: string
           tiempo_estimado?: string | null
           tienda_id: string
+          tracking_url?: string | null
         }
         Update: {
           activo?: boolean
@@ -362,6 +364,7 @@ export type Database = {
           proveedor?: string
           tiempo_estimado?: string | null
           tienda_id?: string
+          tracking_url?: string | null
         }
         Relationships: [
           {

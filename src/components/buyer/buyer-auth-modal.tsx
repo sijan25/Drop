@@ -2,6 +2,7 @@
 
 import { useState, type FormEvent } from 'react';
 import { Icons } from '@/components/shared/icons';
+import { PhoneInput } from '@/components/shared/phone-input';
 import { iniciarSesionComprador, registrarComprador } from '@/lib/buyer/actions';
 
 export type BuyerProfile = {
@@ -129,7 +130,7 @@ export function BuyerAuthModal({
                 </div>
                 <div>
                   <label className="label">WhatsApp <span style={{ fontWeight: 400, color: '#999' }}>opcional</span></label>
-                  <input className="input input-lg" inputMode="tel" autoComplete="tel" placeholder="+504 9876-5432" value={telefono} onChange={e => { setTelefono(e.target.value); setError(''); setNotice(''); }} />
+                  <PhoneInput size="lg" value={telefono} onChange={v => { setTelefono(v); setError(''); setNotice(''); }} />
                 </div>
               </div>
             )}

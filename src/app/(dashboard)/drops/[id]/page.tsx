@@ -9,6 +9,7 @@ import { Ph } from '@/components/shared/image-placeholder';
 import { SizeSelector } from '@/components/shared/size-selector';
 import { useDropViewerCount } from '@/hooks/use-drop-viewer-count';
 import { createClient } from '@/lib/supabase/client';
+import { formatCurrency } from '@/lib/config/platform';
 import { useCountdown } from '@/hooks/use-countdown';
 import { formatProductSizes, getProductTotalQuantity } from '@/lib/product-sizes';
 import { useCatalogOptions } from '@/hooks/use-catalog-options';
@@ -65,7 +66,7 @@ const BADGE: Record<string, string> = { disponible: 'badge-ok', apartada: 'badge
 const LABEL: Record<string, string> = { disponible: 'Disponible', apartada: 'Apartada', vendida: 'Vendida', remanente: 'Remanente' };
 
 function dinero(valor: number | null | undefined): string {
-  return `L ${(valor ?? 0).toLocaleString()}`;
+  return formatCurrency(valor ?? 0);
 }
 
 function fmtFecha(iso: string | null | undefined): string {
@@ -519,7 +520,7 @@ export default function DropDetallePage() {
               { label: 'Viendo ahora', value: drop?.estado === 'activo' ? liveViewerCount : (drop?.viewers_count ?? 0), icon: Icons.eye },
               { label: 'Vendidas', value: vendidas || (drop?.vendidas_count ?? 0), icon: Icons.bag },
               { label: 'Apartadas', value: apartadas, icon: Icons.inbox },
-              { label: 'Recaudado', value: `L ${(drop?.recaudado_total ?? 0).toLocaleString()}`, icon: Icons.card },
+              { label: 'Recaudado', value: formatCurrency(drop?.recaudado_total ?? 0), icon: Icons.card },
             ].map(s => {
               const Ic = s.icon;
               return (

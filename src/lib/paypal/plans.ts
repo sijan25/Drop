@@ -1,9 +1,11 @@
+import { formatCurrency } from '@/lib/config/platform';
+
 export const PAYPAL_PLANS = {
   pro_monthly: {
     id: process.env.PAYPAL_PLAN_PRO_MONTHLY_ID ?? '',
     label: 'Pro Mensual',
     price: 999,
-    priceLabel: 'L 999/mes',
+    priceLabel: `${formatCurrency(999)}/mes`,
     interval: 'MONTH' as const,
     savings: null,
     annualEquiv: null,
@@ -12,10 +14,10 @@ export const PAYPAL_PLANS = {
     id: process.env.PAYPAL_PLAN_PRO_ANNUAL_ID ?? '',
     label: 'Pro Anual',
     price: 9990,
-    priceLabel: 'L 9,990/año',
+    priceLabel: `${formatCurrency(9990)}/año`,
     interval: 'YEAR' as const,
-    savings: 'Ahorrás L 1,998 (2 meses gratis)',
-    annualEquiv: 'L 832/mes',
+    savings: `Ahorrás ${formatCurrency(1998)} (2 meses gratis)`,
+    annualEquiv: `${formatCurrency(832)}/mes`,
   },
 } as const;
 

@@ -1,4 +1,5 @@
 /** Templates HTML para los emails de Droppi */
+import { formatCurrency } from '@/lib/config/platform'
 
 const BASE_STYLE = `
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
@@ -114,7 +115,7 @@ export function emailPedidoConfirmado(opts: {
 
     <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:24px;">
       ${infoRow('Prenda', `${opts.prendaNombre}${opts.prendaMarca ? ` · ${opts.prendaMarca}` : ''}${opts.prendaTalla ? ` · Talla ${opts.prendaTalla}` : ''}`)}
-      ${infoRow('Total', `L ${opts.montoTotal.toLocaleString('es-HN')}`)}
+      ${infoRow('Total', formatCurrency(opts.montoTotal))}
       ${infoRow('Método de pago', opts.metodoPago)}
       ${infoRow('Envío', opts.metodoEnvio)}
       ${opts.direccion ? infoRow('Dirección', opts.direccion) : ''}
@@ -179,7 +180,7 @@ export function emailNuevoPedidoVendedor(opts: {
 
     <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:24px;">
       ${infoRow('Prenda', opts.prendaNombre)}
-      ${infoRow('Total', `L ${opts.montoTotal.toLocaleString('es-HN')}`)}
+      ${infoRow('Total', formatCurrency(opts.montoTotal))}
       ${infoRow('Comprador', opts.compradorNombre)}
       ${infoRow('WhatsApp', opts.compradorTelefono)}
       ${opts.compradorEmail ? infoRow('Email', opts.compradorEmail) : ''}
@@ -238,7 +239,7 @@ export function emailPagoConfirmado(opts: {
 
     <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:24px;">
       ${infoRow('Prenda', opts.prendaNombre)}
-      ${infoRow('Total pagado', `L ${opts.montoTotal.toLocaleString('es-HN')}`)}
+      ${infoRow('Total pagado', formatCurrency(opts.montoTotal))}
       ${infoRow('Envío', opts.metodoEnvio)}
       ${opts.direccion ? infoRow('Dirección', opts.direccion) : ''}
     </table>

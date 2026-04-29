@@ -4,6 +4,7 @@ import { useState, useTransition } from 'react'
 import { Icons } from '@/components/shared/icons'
 import { Ph } from '@/components/shared/image-placeholder'
 import { confirmarPago, rechazarPago } from './actions'
+import { formatCurrency } from '@/lib/config/platform'
 
 type PrendaItem = {
   id: string
@@ -334,8 +335,8 @@ export default function ComprobantesClient({ comprobantes, historial }: { compro
             <hr className="hr"/>
             <div style={{ display: 'grid', gap: 6 }}>
               {[
-                ['Esperado',    `L ${(pedido?.monto_total ?? 0).toLocaleString()}.00`, ''],
-                ['Comprobante', current.monto_declarado != null ? `L ${current.monto_declarado.toLocaleString()}.00${current.coincide_monto ? ' ✓' : ''}` : '—', current.coincide_monto ? '#065f46' : ''],
+                ['Esperado',    formatCurrency(pedido?.monto_total ?? 0), ''],
+                ['Comprobante', current.monto_declarado != null ? `${formatCurrency(current.monto_declarado)}${current.coincide_monto ? ' ✓' : ''}` : '—', current.coincide_monto ? '#065f46' : ''],
                 ['Cuenta',      current.cuenta_destino ? `${current.banco ?? ''} ${current.cuenta_destino}${current.coincide_cuenta ? ' ✓' : ''}` : '—', current.coincide_cuenta ? '#065f46' : ''],
                 ['Referencia',  current.referencia ? `${current.referencia}${current.coincide_referencia ? ' ✓' : ''}` : '—', current.coincide_referencia ? '#065f46' : ''],
               ].map(([k, v, c]) => (

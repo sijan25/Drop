@@ -19,6 +19,12 @@ export default async function PedidosPage() {
     .single()
   if (!tienda) redirect('/onboarding')
 
+  const { data: metodosEnvio } = await supabase
+    .from('metodos_envio')
+    .select('id, nombre, tracking_url')
+    .eq('tienda_id', tienda.id)
+    .eq('activo', true)
+
   const { data: pedidos } = await supabase
     .from('pedidos')
     .select(`
@@ -45,6 +51,7 @@ export default async function PedidosPage() {
       pedidos={(pedidos ?? []) as Parameters<typeof PedidosClient>[0]['pedidos']}
       semanaCount={semanaCount}
       transitoTotal={transitoTotal}
+      metodosEnvio={(metodosEnvio ?? []) as unknown as { id: string; nombre: string; tracking_url: string | null }[]}
     />
   )
 }

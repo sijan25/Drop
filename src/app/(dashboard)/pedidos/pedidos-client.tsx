@@ -8,14 +8,21 @@ import { ModalOverlay } from '@/components/shared/modal-overlay'
 import { avanzarEstado, cancelarPedido, reenviarCorreoPagoConfirmado } from './actions'
 
 function TrackingModal({
-  onConfirm, onClose, loading,
+  onConfirm, onClose, loading, baseTrackingUrl,
 }: {
   onConfirm: (tracking: { numero: string; url: string }) => void
   onClose: () => void
   loading: boolean
+  baseTrackingUrl?: string | null
 }) {
   const [numero, setNumero] = useState('')
-  const [url, setUrl] = useState('')
+  const [urlManual, setUrlManual] = useState('')
+
+  const urlGenerada = baseTrackingUrl && numero.trim()
+    ? baseTrackingUrl.replace(/=?$/, '') + numero.trim()
+    : ''
+  const urlFinal = urlGenerada || urlManual
+
   return (
     <ModalOverlay onClose={onClose} maxWidth={420}>
       <div style={{ padding: 24 }}>
@@ -35,15 +42,23 @@ function TrackingModal({
               onChange={e => setNumero(e.target.value)}
             />
           </div>
-          <div>
-            <label className="label">Link de rastreo <span style={{ color: 'var(--ink-3)', fontWeight: 400 }}>(opcional)</span></label>
-            <input
-              className="input"
-              placeholder="https://..."
-              value={url}
-              onChange={e => setUrl(e.target.value)}
-            />
-          </div>
+          {baseTrackingUrl ? (
+            urlGenerada ? (
+              <div style={{ fontSize: 12, color: 'var(--ink-3)', background: 'var(--surface-2)', borderRadius: 8, padding: '8px 12px', lineHeight: 1.5 }}>
+                Link generado: <a href={urlGenerada} target="_blank" rel="noreferrer" style={{ color: 'var(--accent)', wordBreak: 'break-all' }}>{urlGenerada}</a>
+              </div>
+            ) : null
+          ) : (
+            <div>
+              <label className="label">Link de rastreo <span style={{ color: 'var(--ink-3)', fontWeight: 400 }}>(opcional)</span></label>
+              <input
+                className="input"
+                placeholder="https://..."
+                value={urlManual}
+                onChange={e => setUrlManual(e.target.value)}
+              />
+            </div>
+          )}
         </div>
         <p style={{ fontSize: 12, color: 'var(--ink-3)', marginTop: 12, marginBottom: 18, lineHeight: 1.5 }}>
           Si ingresás estos datos, el comprador los recibirá por email y WhatsApp.
@@ -51,7 +66,7 @@ function TrackingModal({
         <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
           <button onClick={onClose} className="btn btn-outline btn-sm">Cancelar</button>
           <button
-            onClick={() => onConfirm({ numero, url })}
+            onClick={() => onConfirm({ numero, url: urlFinal })}
             disabled={loading}
             className="btn btn-primary btn-sm"
           >
@@ -114,7 +129,12 @@ function prendaLabel(items: Item[]) {
   const item = items[0]
   const p = item?.prenda
   if (!p) return '—'
-  return [p.marca, p.nombre, item?.talla_seleccionada ?? p.talla].filter(Boolean).join(' · ')
+  return [p.marca, p.nombre].filter(Boolean).join(' · ')
+}
+
+function tallaLabel(items: Item[]) {
+  const item = items[0]
+  return item?.talla_seleccionada ?? item?.prenda?.talla ?? '—'
 }
 
 function dropLabel(drop: Drop | null) {
@@ -124,22 +144,59 @@ function dropLabel(drop: Drop | null) {
 }
 
 export default function PedidosClient({
-  pedidos, semanaCount, transitoTotal,
+  pedidos, semanaCount, transitoTotal, metodosEnvio,
 }: {
   pedidos: Pedido[]
   semanaCount: number
   transitoTotal: number
+  metodosEnvio: { id: string; nombre: string; tracking_url: string | null }[]
 }) {
   const router = useRouter()
   const [expanded, setExpanded] = useState<string | null>(pedidos[0]?.numero ?? null)
   const [message, setMessage] = useState<{ pedidoId: string; tone: 'ok' | 'error'; text: string } | null>(null)
   const [pending, startTransition] = useTransition()
   const [confirmCancelar, setConfirmCancelar] = useState<string | null>(null)
-  const [trackingPedido, setTrackingPedido] = useState<{ id: string; estado: string } | null>(null)
+  const [trackingPedido, setTrackingPedido] = useState<{ id: string; estado: string; baseTrackingUrl?: string | null } | null>(null)
+  const [showFilters, setShowFilters] = useState(false)
+  const [fechaDesde, setFechaDesde] = useState('')
+  const [fechaHasta, setFechaHasta] = useState('')
+
+  const pedidosFiltrados = pedidos.filter(p => {
+    const fecha = new Date(p.created_at ?? '')
+    if (fechaDesde && fecha < new Date(fechaDesde)) return false
+    if (fechaHasta && fecha > new Date(fechaHasta + 'T23:59:59')) return false
+    return true
+  })
+
+  function exportarCSV() {
+    const headers = ['#Pedido', 'Cliente', 'Prenda', 'Talla', 'Drop', 'Monto (L)', 'Fecha', 'Estado']
+    const rows = pedidosFiltrados.map(r => [
+      r.numero,
+      r.comprador_nombre,
+      prendaLabel(r.items),
+      tallaLabel(r.items),
+      dropLabel(r.drop),
+      r.monto_total,
+      fmt(r.created_at),
+      estadoLabel(r.estado),
+    ])
+    const csv = [headers, ...rows].map(row => row.map(v => `"${String(v).replace(/"/g, '""')}"`).join(',')).join('\n')
+    const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `pedidos-${new Date().toISOString().slice(0, 10)}.csv`
+    a.click()
+    URL.revokeObjectURL(url)
+  }
 
   function handleAvanzar(pedidoId: string, estado: string) {
     if (estado === 'empacado') {
-      setTrackingPedido({ id: pedidoId, estado })
+      const pedido = pedidos.find(p => p.id === pedidoId)
+      const metodo = metodosEnvio.find(m =>
+        m.nombre.toLowerCase() === (pedido?.metodo_envio ?? '').toLowerCase()
+      )
+      setTrackingPedido({ id: pedidoId, estado, baseTrackingUrl: metodo?.tracking_url ?? null })
       return
     }
     startTransition(async () => {
@@ -205,16 +262,34 @@ export default function PedidosClient({
           </div>
         </div>
         <div style={{ display: 'flex', gap: 8 }}>
-          <button className="btn btn-outline btn-sm"><Icons.filter width={13} height={13}/> Filtros</button>
-          <button className="btn btn-outline btn-sm">Exportar</button>
+          <button className={`btn btn-sm ${showFilters ? 'btn-primary' : 'btn-outline'}`} onClick={() => setShowFilters(v => !v)}>
+            <Icons.filter width={13} height={13}/> Filtros{(fechaDesde || fechaHasta) ? ' ·' : ''}
+          </button>
+          <button className="btn btn-outline btn-sm" onClick={exportarCSV}>Exportar</button>
         </div>
       </div>
+
+      {showFilters && (
+        <div style={{ padding: '12px 28px', borderBottom: '1px solid var(--line)', background: 'var(--surface-2)', display: 'flex', gap: 16, alignItems: 'center', flexShrink: 0 }}>
+          <span style={{ fontSize: 12, color: 'var(--ink-3)', fontWeight: 500 }}>Fecha</span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <input type="date" className="input" value={fechaDesde} onChange={e => setFechaDesde(e.target.value)} style={{ height: 32, fontSize: 12, padding: '0 10px', width: 148 }} />
+            <span style={{ fontSize: 12, color: 'var(--ink-3)' }}>→</span>
+            <input type="date" className="input" value={fechaHasta} onChange={e => setFechaHasta(e.target.value)} style={{ height: 32, fontSize: 12, padding: '0 10px', width: 148 }} />
+          </div>
+          {(fechaDesde || fechaHasta) && (
+            <button className="btn btn-outline btn-sm" onClick={() => { setFechaDesde(''); setFechaHasta('') }}>Limpiar</button>
+          )}
+          <span style={{ fontSize: 12, color: 'var(--ink-3)', marginLeft: 'auto' }}>{pedidosFiltrados.length} resultado{pedidosFiltrados.length !== 1 ? 's' : ''}</span>
+        </div>
+      )}
 
       {trackingPedido && (
         <TrackingModal
           loading={pending}
           onConfirm={confirmarTracking}
           onClose={() => setTrackingPedido(null)}
+          baseTrackingUrl={trackingPedido.baseTrackingUrl}
         />
       )}
 
@@ -237,19 +312,22 @@ export default function PedidosClient({
           </div>
         ) : (
           <div className="card" style={{ overflow: 'hidden' }}>
-            <div style={{ display: 'grid', gridTemplateColumns: '90px 1.2fr 1.6fr 90px 80px 110px 110px 28px', padding: '10px 16px', borderBottom: '1px solid var(--line)', fontSize: 11, color: 'var(--ink-3)', textTransform: 'uppercase', letterSpacing: 0.04 }} className="mono">
-              <div>Pedido</div><div>Comprador</div><div>Prenda</div><div>Drop</div><div>Monto</div><div>Fecha</div><div>Estado</div><div/>
+            <div style={{ display: 'grid', gridTemplateColumns: '90px 1.2fr 1.4fr 70px 90px 80px 110px 110px 28px', padding: '10px 16px', borderBottom: '1px solid var(--line)', fontSize: 11, color: 'var(--ink-3)', textTransform: 'uppercase', letterSpacing: 0.04 }} className="mono">
+              <div>Pedido</div><div>Cliente</div><div>Prenda</div><div>Talla</div><div>Drop</div><div>Monto</div><div>Fecha</div><div>Estado</div><div/>
             </div>
 
-            {pedidos.map((r, i) => (
+            {pedidosFiltrados.length === 0 ? (
+              <div style={{ padding: 32, textAlign: 'center', color: 'var(--ink-3)', fontSize: 13 }}>Sin resultados para ese rango de fechas</div>
+            ) : pedidosFiltrados.map((r, i) => (
               <div key={r.id}>
                 <div
                   onClick={() => setExpanded(e => e === r.numero ? null : r.numero)}
-                  style={{ display: 'grid', gridTemplateColumns: '90px 1.2fr 1.6fr 90px 80px 110px 110px 28px', padding: '12px 16px', borderBottom: i < pedidos.length - 1 ? '1px solid var(--line-2)' : 'none', alignItems: 'center', fontSize: 12, cursor: 'pointer' }}
+                  style={{ display: 'grid', gridTemplateColumns: '90px 1.2fr 1.4fr 70px 90px 80px 110px 110px 28px', padding: '12px 16px', borderBottom: i < pedidosFiltrados.length - 1 ? '1px solid var(--line-2)' : 'none', alignItems: 'center', fontSize: 12, cursor: 'pointer' }}
                 >
                   <div className="mono tnum" style={{ fontWeight: 500 }}>{r.numero}</div>
                   <div>{r.comprador_nombre}</div>
                   <div className="t-mute">{prendaLabel(r.items)}</div>
+                  <div className="t-mute">{tallaLabel(r.items)}</div>
                   <div className="mono t-mute">{dropLabel(r.drop)}</div>
                   <div className="mono tnum" style={{ fontWeight: 500 }}>L {r.monto_total.toLocaleString()}</div>
                   <div className="t-mute">{fmt(r.created_at)}</div>

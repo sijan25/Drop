@@ -6,6 +6,7 @@ import { CountdownTimer } from '@/components/drops/countdown-timer';
 import { Icons } from '@/components/shared/icons';
 import { Ph } from '@/components/shared/image-placeholder';
 import { createClient } from '@/lib/supabase/client';
+import { formatCurrency } from '@/lib/config/platform';
 import { getProductTotalQuantity } from '@/lib/product-sizes';
 
 interface Tienda {
@@ -155,7 +156,7 @@ function LiveDropBar({ drop, onNav }: { drop: Drop; onNav: (path: string) => voi
         <div style={{ display: 'flex', gap: 6, marginLeft: 4 }}>
           {[
             { l: 'Vendidas', v: String(drop.vendidas_count ?? 0), c: '#86efac' },
-            { l: 'Recaudado', v: `L ${(drop.recaudado_total ?? 0).toLocaleString()}`, c: '#fbbf24' },
+            { l: 'Recaudado', v: formatCurrency(drop.recaudado_total ?? 0), c: '#fbbf24' },
           ].map(s => (
             <div key={s.l} style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '4px 10px', borderRadius: 7, background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.1)' }}>
               <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.5)', textTransform: 'uppercase', letterSpacing: 0.06 }}>{s.l}</span>
@@ -307,7 +308,7 @@ export default function DashboardPage() {
           'radial-gradient(circle at top right, rgba(201,100,66,0.06) 0%, transparent 20%), linear-gradient(180deg, rgba(255,255,255,0.18) 0%, transparent 100%)',
       }}>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, minmax(160px, 1fr))', gap: 14, marginBottom: 24 }}>
-          <StatCard label="Ventas del mes" value={`L ${stats.ventasMes.toLocaleString()}`} help="Este mes · pedidos pagados" icon={Icons.wallet} accent="orange"/>
+          <StatCard label="Ventas del mes" value={formatCurrency(stats.ventasMes)} help="Este mes · pedidos pagados" icon={Icons.wallet} accent="orange"/>
           <StatCard label="Drops activos" value={String(stats.dropsActivos)} help="Lanzamientos en vivo" icon={Icons.sparkle}/>
           <StatCard label="Comprobantes" value={String(stats.comprobantesP)} help="Pagos por verificar" icon={Icons.inbox}/>
           <StatCard label="Inventario activo" value={String(stats.inventarioActivo)} help="Unidades disponibles" icon={Icons.grid}/>

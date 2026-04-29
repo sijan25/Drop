@@ -6,6 +6,7 @@ import { Icons } from '@/components/shared/icons';
 import { Ph } from '@/components/shared/image-placeholder';
 import { SizeSelector } from '@/components/shared/size-selector';
 import { createClient } from '@/lib/supabase/client';
+import { formatCurrency } from '@/lib/config/platform';
 import { uploadImage } from '@/lib/cloudinary/client';
 import { formatProductSizes, normalizeProductSizes } from '@/lib/product-sizes';
 import { useCatalogOptions } from '@/hooks/use-catalog-options';
@@ -625,7 +626,7 @@ export default function NuevoDropPage() {
                     ['Apertura', `${form.date} ${form.time}`],
                     ['Duración', form.duration],
                     ['Prendas', `${prendas.length} líneas · ${totalUnidades} unidades`],
-                    ['Valor total', `L ${totalValor.toLocaleString()}`],
+                    ['Valor total', formatCurrency(totalValor)],
                   ].map(([k, v]) => (
                     <div key={k} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, padding: '8px 0', borderBottom: '1px solid var(--line-2)' }}>
                       <span className="t-mute">{k}</span>

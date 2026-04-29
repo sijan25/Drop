@@ -11,6 +11,10 @@ import {
   ShieldCheck,
   Zap,
 } from 'lucide-react';
+import { Logo } from '@/components/shared/logo';
+import { StoreSearchInput } from '@/components/shared/store-search-input';
+import { ScrollReveal } from '@/components/shared/scroll-reveal';
+import { PLATFORM } from '@/lib/config/platform';
 
 type Feature = {
   title: string;
@@ -46,7 +50,7 @@ const features: Feature[] = [
   {
     title: 'Drops en vivo con countdown',
     description:
-      'Programá lanzamientos con cuenta regresiva, feed de actividad en tiempo real y contador de viewers. Creás urgencia genuina que convierte.',
+      'Programa lanzamientos con cuenta regresiva, feed de actividad en tiempo real y contador de espectadores. Genera urgencia real que convierte.',
     Icon: Clock3,
   },
   {
@@ -58,49 +62,49 @@ const features: Feature[] = [
   {
     title: 'Analíticas de ventas en vivo',
     description:
-      'Mirás cuánto vendiste, qué prendas rotan más, el ticket promedio y la tasa de conversión de cada drop.',
+      'Consulta cuánto vendiste, qué prendas rotan más, el ticket promedio y la tasa de conversión de cada drop.',
     Icon: BarChart3,
   },
   {
     title: 'Verificación de comprobantes',
     description:
-      'El sistema detecta si el monto, cuenta y referencia del comprobante coinciden. Vos aprobás o rechazás en un click.',
+      'El sistema detecta si el monto, cuenta y referencia del comprobante coinciden. Aprueba o rechaza en un clic.',
     Icon: ShieldCheck,
   },
   {
     title: 'Gestión de inventario',
     description:
-      'Agregá prendas con foto, talla y precio. Al cerrar un drop, el remanente migra automáticamente al inventario para el próximo.',
+      'Agrega prendas con foto, talla y precio. Al cerrar un drop, el remanente migra automáticamente al inventario para el próximo drop.',
     Icon: Package,
   },
   {
     title: 'Notificaciones a compradoras',
     description:
-      'Avisá el próximo drop por WhatsApp o correo. Tus compradoras se anotan y vos mandás con un click antes de abrir.',
+      'Avisa sobre el próximo drop por WhatsApp o correo. Tus compradoras se registran y tú notificas con un clic antes de abrir.',
     Icon: MessageCircleMore,
   },
 ];
 
 const steps: Step[] = [
   {
-    title: 'Creá tu tienda',
+    title: 'Crea tu tienda',
     description:
-      'Registrate, elegí tu username y configurá métodos de pago y envío. En menos de 5 minutos ya estás lista para vender.',
+      'Regístrate, elige tu nombre de usuario y configura tus métodos de pago y envío. En menos de 5 minutos ya puedes vender.',
   },
   {
-    title: 'Publicá tus prendas',
+    title: 'Publica tus prendas',
     description:
-      'Subí fotos, asignás talla y precio. Cargás hasta 50 prendas con tu plan Starter y tu catálogo queda listo al instante.',
+      'Sube fotos, asigna talla y precio. Carga hasta 50 prendas con tu plan Starter y tu catálogo queda listo al instante.',
   },
   {
-    title: 'Programá un drop',
+    title: 'Programa un drop',
     description:
-      'Elegís fecha, hora y duración. Compartís el link en tus stories. Tus seguidoras se anotan para recibir alerta.',
+      'Elige fecha, hora y duración. Comparte el link en tus stories. Tus seguidoras se registran para recibir una notificación.',
   },
   {
-    title: 'Vendé y entregá',
+    title: 'Vende y entrega',
     description:
-      'Tu tienda recibe pedidos, verifica comprobantes y gestiona envíos. Vos solo confirmás y empacás.',
+      'Tu tienda recibe pedidos, verifica comprobantes y gestiona envíos. Solo confirmas y empacas.',
   },
 ];
 
@@ -182,13 +186,54 @@ const plans: Plan[] = [
   },
 ];
 
+type Faq = { q: string; a: string };
+
+const faqs: Faq[] = [
+  {
+    q: '¿Necesito tarjeta de crédito para registrarme?',
+    a: 'No. Puedes crear tu tienda y explorar Droppi sin ingresar ningún método de pago. Solo necesitas uno cuando decides activar tu plan de suscripción.',
+  },
+  {
+    q: '¿Cobran comisión por cada venta que hago?',
+    a: 'No cobramos comisión por venta en ningún plan. Pagas únicamente la suscripción mensual y cada lempira que vendas es tuyo.',
+  },
+  {
+    q: '¿Qué es un "drop" exactamente?',
+    a: 'Un drop es una venta por tiempo limitado con cuenta regresiva. Publicas tus prendas, fijas una duración y tus seguidoras compiten por comprar antes de que el drop cierre. Genera urgencia real que convierte.',
+  },
+  {
+    q: '¿Cómo verifican los comprobantes de pago?',
+    a: 'El sistema revisa automáticamente que el monto, la cuenta y la referencia del comprobante coincidan con el pedido. Tú solo apruebas o rechazas en un clic desde tu panel.',
+  },
+  {
+    q: '¿Necesito conocimientos técnicos para configurar mi tienda?',
+    a: 'Para nada. En menos de 5 minutos tienes tu tienda lista: subes tus fotos, asignas precios y compartes tu link. Sin código, sin diseñador web.',
+  },
+  {
+    q: '¿Puedo cancelar mi plan cuando quiera?',
+    a: 'Sí. No hay contratos ni permanencias. Cancelas desde tu cuenta con un clic y no se te cobra el siguiente mes. Tus datos se mantienen disponibles durante 30 días.',
+  },
+  {
+    q: '¿Funciona si vendo desde fuera de Honduras?',
+    a: 'Droppi está optimizado para Honduras y Centroamérica, con soporte para moneda local y métodos de pago locales. Estamos expandiendo a otras regiones próximamente.',
+  },
+  {
+    q: '¿Puedo llevar el inventario de mis prendas dentro de Droppi?',
+    a: 'Sí. Cada prenda tiene su propio registro con foto, talla y precio. Al cerrar un drop, las prendas no vendidas pasan automáticamente a tu inventario y quedan listas para el próximo drop, sin que tengas que volver a cargarlas.',
+  },
+  {
+    q: '¿Cuántas tiendas puedo tener?',
+    a: 'Con los planes Starter y Pro puedes gestionar una tienda. Si necesitas múltiples tiendas o acceso para un equipo, el plan Enterprise está diseñado para eso.',
+  },
+];
+
 const tickerItems = [
-  ['500+', 'tiendas activas'],
-  ['L 2M+', 'en ventas procesadas'],
-  ['Honduras', '& región'],
-  ['5 minutos', 'de configuración'],
-  ['Urgencia real', 'con countdown'],
+  ['Drops en vivo', 'con countdown'],
+  ['Sin WhatsApp', 'sin caos'],
+  ['Sin comisión', 'por venta'],
   ['Checkout', 'integrado'],
+  ['Hecho en', 'Honduras 🇭🇳'],
+  ['5 minutos', 'de configuración'],
 ];
 
 const activityItems = [
@@ -221,18 +266,6 @@ const activityItems = [
     badgeClass: 'landing-activity-badge-green',
   },
 ];
-
-function BrandLockup() {
-  return (
-    <span className="landing-logo">
-      <svg className="landing-logo-mark" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-        <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="1.8" />
-        <circle cx="12" cy="12" r="3.5" fill="currentColor" />
-      </svg>
-      <span className="landing-logo-text">Droppi</span>
-    </span>
-  );
-}
 
 function NavButton({ href, children }: { href: string; children: React.ReactNode }) {
   return (
@@ -272,11 +305,12 @@ function CheckIcon() {
 export default function Home() {
   return (
     <main className="landing-page">
+      <ScrollReveal />
       <div className="landing-nav-wrap">
         <div className="landing-shell">
           <nav className="landing-nav">
             <Link className="landing-brand" href="/">
-              <BrandLockup />
+              <Logo size={32} wordmarkSize={18} className="landing-logo" />
             </Link>
 
             <div className="landing-nav-links">
@@ -298,11 +332,11 @@ export default function Home() {
         <div className="landing-shell landing-hero-inner">
           <div className="landing-hero-badge landing-fade-up">
             <span className="landing-badge-dot" />
-            500+ tiendas vendiendo hoy en Honduras
+            Lanzamiento anticipado · Cupos limitados
           </div>
 
           <h1 className="landing-hero-title landing-fade-up landing-fade-up-1">
-            Vendé ropa
+            Vende ropa
             <br />
             con <span>drops en vivo</span>.
             <br />
@@ -320,27 +354,11 @@ export default function Home() {
           </div>
 
           <div className="landing-proof landing-fade-up landing-fade-up-3">
-            <div className="landing-avatars">
-              {[
-              ['AK', 'linear-gradient(135deg,#1A8C64 0%,#0F5E43 100%)'],
-              ['SM', 'linear-gradient(135deg,#1A6CA0 0%,#0F4A78 100%)'],
-              ['KR', 'linear-gradient(135deg,#4ECFA0 0%,#1A8C64 100%)'],
-              ['GB', 'linear-gradient(135deg,#2D6A4F 0%,#1A8C64 100%)'],
-              ['MJ', 'linear-gradient(135deg,#1A6CA0 0%,#4ECFA0 100%)'],
-              ].map(([label, gradient]) => (
-                <span className="landing-avatar" key={label} style={{ background: gradient }}>
-                  {label}
-                </span>
-              ))}
-            </div>
-            <p>
-              <strong>L 2,000,000+</strong> en ventas procesadas
-              <br />
-              ★★★★★ 4.9 promedio de tiendas activas
-            </p>
+            <span className="landing-proof-stars">★★★★★</span>
+            <span className="landing-proof-text">Acceso anticipado · Sin comisión · Todo en un solo link</span>
           </div>
 
-          <div className="landing-demo-grid">
+          <div className="landing-demo-grid" data-reveal>
             <article className="landing-demo-card">
               <div className="landing-demo-head">
                 <span className="landing-demo-dot" />
@@ -420,22 +438,34 @@ export default function Home() {
         </div>
       </div>
 
+      <section className="landing-store-search-section" data-reveal>
+        <div className="landing-shell">
+          <div className="landing-store-search-inner">
+            <div className="landing-store-search-text">
+              <h2>¿Buscas una tienda?</h2>
+              <p>Ingresa el nombre de la tienda y accede directo a su catálogo.</p>
+            </div>
+            <StoreSearchInput />
+          </div>
+        </div>
+      </section>
+
       <section className="landing-section" id="features">
         <div className="landing-shell">
-          <div className="landing-section-kicker">Producto</div>
-          <h2 className="landing-section-title">
-            Todo lo que necesitás
+          <div className="landing-section-kicker" data-reveal>Producto</div>
+          <h2 className="landing-section-title" data-reveal data-delay="1">
+            Todo lo que necesitas
             <br />
             para vender <span>sin límites.</span>
           </h2>
-          <p className="landing-section-copy">
+          <p className="landing-section-copy" data-reveal data-delay="2">
             Desde el primer drop hasta la gestión diaria. Droppi te da las herramientas que usan las mejores tiendas de
             ropa en Honduras.
           </p>
 
           <div className="landing-features-grid">
-            {features.map(({ title, description, Icon }) => (
-              <article className="landing-feature-card" key={title}>
+            {features.map(({ title, description, Icon }, i) => (
+              <article className="landing-feature-card" key={title} data-reveal data-delay={String((i % 3) + 1)}>
                 <div className="landing-feature-icon">
                   <Icon size={20} />
                 </div>
@@ -449,8 +479,8 @@ export default function Home() {
 
       <section className="landing-section landing-section-alt" id="como-funciona">
         <div className="landing-shell">
-          <div className="landing-section-kicker">Flujo</div>
-          <h2 className="landing-section-title">
+          <div className="landing-section-kicker" data-reveal>Proceso</div>
+          <h2 className="landing-section-title" data-reveal data-delay="1">
             De cero a <span>vendiendo</span>
             <br />
             en 4 pasos.
@@ -458,7 +488,7 @@ export default function Home() {
 
           <div className="landing-steps-grid">
             {steps.map((step, index) => (
-              <article className="landing-step" key={step.title}>
+              <article className="landing-step" key={step.title} data-reveal data-delay={String(index + 1)}>
                 <span>{index + 1}</span>
                 <h3>{step.title}</h3>
                 <p>{step.description}</p>
@@ -470,16 +500,16 @@ export default function Home() {
 
       <section className="landing-section" id="testimonios">
         <div className="landing-shell">
-          <div className="landing-section-kicker">Historias reales</div>
-          <h2 className="landing-section-title">
+          <div className="landing-section-kicker" data-reveal>Historias reales</div>
+          <h2 className="landing-section-title" data-reveal data-delay="1">
             Emprendedoras que
             <br />
             encontraron su <span>sistema.</span>
           </h2>
 
           <div className="landing-testimonials-grid">
-            {testimonials.map(testimonial => (
-              <article className="landing-testimonial-card" key={testimonial.name}>
+            {testimonials.map((testimonial, i) => (
+              <article className="landing-testimonial-card" key={testimonial.name} data-reveal data-delay={String(i + 1)}>
                 <div className="landing-stars">★★★★★</div>
                 <p>{testimonial.quote}</p>
                 <strong>{testimonial.result}</strong>
@@ -505,12 +535,12 @@ export default function Home() {
             <span>sin sorpresas.</span>
           </h2>
           <p className="landing-section-copy">
-            Empezá simple. Escalá cuando tu operación lo pida. Sin comisión por venta en ningún plan.
+            Empieza simple. Escala cuando tu operación lo pida. Sin comisión por venta en ningún plan.
           </p>
 
           <div className="landing-pricing-grid">
-            {plans.map(plan => (
-              <article className={`landing-plan${plan.highlighted ? ' landing-plan-highlighted' : ''}`} key={plan.name}>
+            {plans.map((plan, i) => (
+              <article className={`landing-plan${plan.highlighted ? ' landing-plan-highlighted' : ''}`} key={plan.name} data-reveal data-delay={String(i + 1)}>
                 {plan.highlighted && <div className="landing-plan-badge">Más popular</div>}
                 <span className="landing-plan-name">{plan.name}</span>
                 <p className="landing-plan-description">{plan.description}</p>
@@ -533,14 +563,34 @@ export default function Home() {
             ))}
           </div>
 
-          <p className="landing-pricing-note">✓ Sin comisión por venta · ✓ Cancelá cuando quieras · ✓ Soporte en español</p>
+          <p className="landing-pricing-note">✓ Sin comisión por venta · ✓ Cancela cuando quieras · ✓ Soporte en español</p>
         </div>
       </section>
 
-      <section className="landing-final-cta">
+      <section className="landing-section" id="faq">
+        <div className="landing-shell">
+          <div className="landing-section-kicker" data-reveal>FAQ</div>
+          <h2 className="landing-section-title" style={{ textAlign: 'center' }} data-reveal data-delay="1">
+            Preguntas
+            <br />
+            <span>frecuentes.</span>
+          </h2>
+
+          <div className="landing-faq-list">
+            {faqs.map(({ q, a }, i) => (
+              <details className="landing-faq-item" key={q} data-reveal data-delay={String((i % 3) + 1)}>
+                <summary>{q}</summary>
+                <p className="landing-faq-answer">{a}</p>
+              </details>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section className="landing-final-cta" data-reveal>
         <div className="landing-final-glow" />
         <div className="landing-shell">
-          <div className="landing-section-kicker landing-section-kicker-center">Empezá hoy</div>
+          <div className="landing-section-kicker landing-section-kicker-center">Empieza hoy</div>
           <h2 className="landing-final-title">
             Tu audiencia ya existe.
             <br />
@@ -549,10 +599,10 @@ export default function Home() {
             <span>simple de venderle.</span>
           </h2>
           <p className="landing-final-copy">
-            Publicá tus prendas, compartí tu link y empezá a vender hoy — sin montar una web, sin comisión por venta.
+            Publica tus prendas, comparte tu link y empieza a vender hoy — sin montar una web, sin comisión por venta.
           </p>
           <div className="landing-final-actions">
-            <PrimaryButton href="/login">Empezar mi link de ventas</PrimaryButton>
+            <PrimaryButton href="/login">Crear mi link de ventas</PrimaryButton>
             <a className="landing-btn-secondary landing-btn-secondary-plain" href="mailto:hola@droppi.app">
               Hablar con el equipo
             </a>
@@ -564,7 +614,7 @@ export default function Home() {
         <div className="landing-shell landing-footer-grid">
           <div>
             <div className="landing-footer-brand">
-              <BrandLockup />
+              <Logo size={24} wordmarkSize={16} className="landing-logo" />
             </div>
             <p>
               La plataforma para vender desde tu audiencia. Drops, checkout y gestión en un solo link.
@@ -582,7 +632,7 @@ export default function Home() {
 
           <div>
             <strong>Soporte</strong>
-            <a href="mailto:hola@droppi.app">Contacto</a>
+            <a href="/contacto">Contacto</a>
             <a href="/ayuda">Centro de ayuda</a>
             <a href="https://wa.me/50498765432">WhatsApp</a>
           </div>
@@ -597,7 +647,7 @@ export default function Home() {
 
         <div className="landing-shell landing-footer-bottom">
           <span>© 2026 Droppi. Todos los derechos reservados.</span>
-          <span>San Pedro Sula, Honduras</span>
+          <span>{PLATFORM.location}</span>
         </div>
       </footer>
     </main>
