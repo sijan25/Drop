@@ -24,8 +24,8 @@ export function useDropViewerCount(
     if (!dropId || !enabled) return;
 
     const supabase = createClient();
-    const HEARTBEAT_MS = 10_000;
-    const STALE_MS = 25_000;
+    const HEARTBEAT_MS = 5_000;
+    const STALE_MS = 15_000;
 
     function recount() {
       const now = Date.now();
@@ -37,22 +37,26 @@ export function useDropViewerCount(
 
     const channel = supabase.channel(`viewers-v2-${dropId}`);
 
+    const sendHb = () =>
+      channel.send({ type: 'broadcast', event: 'hb', payload: { s: sessionId } }).catch(() => {});
+
     channel
       .on('broadcast', { event: 'hb' }, ({ payload }) => {
         const sid = (payload as { s?: string })?.s;
         if (!sid || sid === sessionId) return;
+        const isNew = !peers.current.has(sid);
         peers.current.set(sid, Date.now());
         recount();
+        // Respond immediately to new peers so they see us right away
+        if (trackSelf && isNew) sendHb();
       })
       .on('broadcast', { event: 'ping' }, () => {
-        if (trackSelf) {
-          channel.send({ type: 'broadcast', event: 'hb', payload: { s: sessionId } }).catch(() => {});
-        }
+        if (trackSelf) sendHb();
       })
       .subscribe(status => {
         if (status !== 'SUBSCRIBED') return;
         if (trackSelf) {
-          channel.send({ type: 'broadcast', event: 'hb', payload: { s: sessionId } }).catch(() => {});
+          sendHb();
         } else {
           channel.send({ type: 'broadcast', event: 'ping', payload: {} }).catch(() => {});
         }
