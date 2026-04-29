@@ -23,8 +23,7 @@ interface PrendaForm {
   categoria: string;
   descripcion: string;
   tone: 'rose' | 'sand' | 'sage' | 'blue' | 'dark' | 'warm' | 'neutral';
-  fotoUrl?: string;
-  fotoFile?: File;
+  fotos: string[];
 }
 
 function totalCantidad(cantidades: Record<string, number>, tallas: string[]) {
@@ -82,8 +81,7 @@ function ModalPrenda({
     return { nombre: inicial.nombre, marca: inicial.marca, talla: inicial.talla, tallas, cantidades_por_talla: cantidadesFull, precio: inicial.precio, categoria: inicial.categoria, descripcion: inicial.descripcion };
   });
   const [error, setError] = useState('');
-  const [fotoUrl, setFotoUrl] = useState<string>(inicial?.fotoUrl ?? '');
-  const [fotoFile, setFotoFile] = useState<File | undefined>(inicial?.fotoFile);
+  const [fotos, setFotos] = useState<string[]>(inicial?.fotos ?? []);
   const [subiendo, setSubiendo] = useState(false);
   const fotoRef = useRef<HTMLInputElement>(null);
   const { categorias, tallas, tipoNegocio } = useCatalogOptions();
@@ -108,20 +106,16 @@ function ModalPrenda({
 
   async function handleFoto(e: React.ChangeEvent<HTMLInputElement>) {
     const f = e.target.files?.[0];
-    if (!f) return;
-    // Preview inmediato
-    setFotoUrl(URL.createObjectURL(f));
-    setFotoFile(f);
-    // Subir a Cloudinary
+    if (!f || fotos.length >= 5) return;
     setSubiendo(true);
     try {
       const result = await uploadImage(f, { folder: 'fardodrops/prendas' });
-      setFotoUrl(result.url);
-      setFotoFile(undefined); // ya no necesitamos el archivo local
+      setFotos(prev => [...prev, result.url]);
     } catch {
       setError('No se pudo subir la foto. Intentá de nuevo.');
     } finally {
       setSubiendo(false);
+      if (fotoRef.current) fotoRef.current.value = '';
     }
   }
 
@@ -136,8 +130,7 @@ function ModalPrenda({
     onGuardar({
       id: inicial?.id ?? `p-${Date.now()}`,
       tone: inicial?.tone ?? TONES[idx],
-      fotoUrl: fotoUrl || undefined,
-      fotoFile: fotoFile || undefined,
+      fotos,
       ...form,
       talla: form.tallas[0] ?? '',
       precio: String(Number(form.precio)),
@@ -164,38 +157,31 @@ function ModalPrenda({
         {/* Body */}
         <div style={{ padding: '20px 22px', overflowY: 'auto', display: 'grid', gap: 14 }}>
 
-          {/* Foto de prenda */}
+          {/* Fotos de la prenda — máx 5 */}
           <div>
-            <label className="label">Foto de la prenda</label>
-            <input
-              ref={fotoRef}
-              type="file"
-              accept="image/jpeg,image/png,image/webp"
-              style={{ display: 'none' }}
-              onChange={handleFoto}
-            />
-            <div
-              onClick={() => !subiendo && fotoRef.current?.click()}
-              style={{
-                padding: '18px 24px', border: '1.5px dashed var(--line)', borderRadius: 10,
-                display: 'flex', alignItems: 'center', gap: 14,
-                background: 'var(--surface-2)', cursor: subiendo ? 'default' : 'pointer',
-                overflow: 'hidden', opacity: subiendo ? 0.7 : 1,
-              }}
-            >
-              {fotoUrl ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img src={fotoUrl} alt="prenda" style={{ width: 56, height: 56, objectFit: 'cover', borderRadius: 8, flexShrink: 0 }}/>
-              ) : (
-                <Icons.upload width={18} height={18} style={{ color: 'var(--ink-3)', flexShrink: 0 }}/>
-              )}
-              <div>
-                <div style={{ fontSize: 13, fontWeight: 500 }}>
-                  {subiendo ? 'Subiendo a Cloudinary…' : fotoUrl ? 'Cambiar foto' : 'Subir foto'}
+            <label className="label">Fotos</label>
+            <input ref={fotoRef} type="file" accept="image/jpeg,image/png,image/webp" style={{ display: 'none' }} onChange={handleFoto}/>
+            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+              {fotos.map((url, i) => (
+                <div key={i} style={{ width: 72, height: 72, borderRadius: 8, overflow: 'hidden', border: '1px solid var(--line)', position: 'relative' }}>
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }}/>
+                  <button onClick={() => setFotos(f => f.filter((_, j) => j !== i))}
+                    style={{ position: 'absolute', top: 2, right: 2, background: 'rgba(0,0,0,0.55)', borderRadius: 4, color: '#fff', width: 18, height: 18, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, border: 'none', cursor: 'pointer' }}>
+                    ×
+                  </button>
                 </div>
-                <div className="t-mute" style={{ fontSize: 11 }}>JPG, PNG, WEBP · Máx 5MB</div>
-              </div>
+              ))}
+              {fotos.length < 5 && (
+                <button
+                  onClick={() => fotoRef.current?.click()}
+                  disabled={subiendo}
+                  style={{ width: 72, height: 72, borderRadius: 8, border: '1.5px dashed var(--line)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 4, color: 'var(--ink-3)', fontSize: 10, background: 'var(--surface-2)', cursor: subiendo ? 'default' : 'pointer', opacity: subiendo ? 0.7 : 1 }}>
+                  {subiendo ? <span style={{ fontSize: 10 }}>Subiendo…</span> : <><Icons.plus width={16} height={16}/><span>Foto</span></>}
+                </button>
+              )}
             </div>
+            <div className="t-mute" style={{ fontSize: 11, marginTop: 4 }}>{fotos.length}/5 fotos · JPG, PNG, WEBP</div>
           </div>
 
           <hr className="hr"/>
@@ -396,9 +382,8 @@ export default function NuevoDropPage() {
 
       if (dropErr || !drop) throw new Error(dropErr?.message ?? 'Error al crear el drop');
 
-      // Insertar prendas — las fotos ya están en Cloudinary (fotoUrl es URL directa)
       for (const p of prendas) {
-        const fotos: string[] = p.fotoUrl ? [p.fotoUrl] : [];
+        const fotos: string[] = p.fotos ?? [];
         const cantTotal = totalCantidad(p.cantidades_por_talla, p.tallas);
         const { error: prendaErr } = await supabase.from('prendas').insert({
           tienda_id: t.id,
@@ -578,9 +563,9 @@ export default function NuevoDropPage() {
                       {prendas.map((p, i) => (
                         <div key={p.id} style={{ display: 'grid', gridTemplateColumns: COL, padding: '10px 16px', borderBottom: i < prendas.length - 1 ? '1px solid var(--line-2)' : 'none', alignItems: 'center', fontSize: 13 }}>
                           <div style={{ width: 36, height: 36, borderRadius: 6, overflow: 'hidden', flexShrink: 0 }}>
-                            {p.fotoUrl ? (
+                            {p.fotos?.[0] ? (
                               // eslint-disable-next-line @next/next/no-img-element
-                              <img src={p.fotoUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}/>
+                              <img src={p.fotos?.[0]} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}/>
                             ) : (
                               <Ph tone={p.tone} radius={6}/>
                             )}
@@ -641,9 +626,9 @@ export default function NuevoDropPage() {
                       {prendas.map(p => (
                         <div key={p.id} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '8px 12px', background: 'var(--surface-2)', borderRadius: 8 }}>
                           <div style={{ width: 32, height: 32, borderRadius: 6, overflow: 'hidden', flexShrink: 0 }}>
-                            {p.fotoUrl ? (
+                            {p.fotos?.[0] ? (
                               // eslint-disable-next-line @next/next/no-img-element
-                              <img src={p.fotoUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}/>
+                              <img src={p.fotos?.[0]} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}/>
                             ) : (
                               <Ph tone={p.tone} radius={6}/>
                             )}

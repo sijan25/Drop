@@ -122,6 +122,7 @@ function ModalPrenda({ tiendaId, drops, prenda, onClose, onSaved }: ModalProps) 
   async function handleFoto(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
+    if (fotos.length >= 5) return;
     setUploading(true);
     setError('');
     try {
@@ -207,17 +208,19 @@ function ModalPrenda({ tiendaId, drops, prenda, onClose, onSaved }: ModalProps) 
                   </button>
                 </div>
               ))}
-              <button
-                onClick={() => fileRef.current?.click()}
-                disabled={uploading}
-                style={{ width: 72, height: 72, borderRadius: 8, border: '1.5px dashed var(--line)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 4, color: 'var(--ink-3)', fontSize: 10, background: 'var(--surface-2)', cursor: uploading ? 'default' : 'pointer', opacity: uploading ? 0.7 : 1 }}>
-                {uploading
-                  ? <span style={{ fontSize: 10 }}>Subiendo…</span>
-                  : <><Icons.plus width={16} height={16}/><span>Foto</span></>}
-              </button>
+              {fotos.length < 5 && (
+                <button
+                  onClick={() => fileRef.current?.click()}
+                  disabled={uploading}
+                  style={{ width: 72, height: 72, borderRadius: 8, border: '1.5px dashed var(--line)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 4, color: 'var(--ink-3)', fontSize: 10, background: 'var(--surface-2)', cursor: uploading ? 'default' : 'pointer', opacity: uploading ? 0.7 : 1 }}>
+                  {uploading
+                    ? <span style={{ fontSize: 10 }}>Subiendo…</span>
+                    : <><Icons.plus width={16} height={16}/><span>Foto</span></>}
+                </button>
+              )}
             </div>
             <input ref={fileRef} type="file" accept="image/jpeg,image/png,image/webp" style={{ display: 'none' }} onChange={handleFoto}/>
-            <div className="t-mute" style={{ fontSize: 11, marginTop: 4 }}>Las fotos se suben a Cloudinary automáticamente</div>
+            <div className="t-mute" style={{ fontSize: 11, marginTop: 4 }}>{fotos.length}/5 fotos · se suben a Cloudinary automáticamente</div>
           </div>
 
           {/* Nombre + Marca */}

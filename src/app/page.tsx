@@ -166,7 +166,6 @@ const plans: Plan[] = [
       'Drops ilimitados',
       'Analíticas completas',
       'Notificaciones WhatsApp',
-      'IA para precios y categorías',
       'Soporte prioritario',
     ],
   },
@@ -569,7 +568,7 @@ export default function Home() {
 
       <section className="landing-section" id="faq">
         <div className="landing-shell">
-          <div className="landing-section-kicker" data-reveal>FAQ</div>
+          <div className="landing-section-kicker" data-reveal>FAQS</div>
           <h2 className="landing-section-title" style={{ textAlign: 'center' }} data-reveal data-delay="1">
             Preguntas
             <br />
