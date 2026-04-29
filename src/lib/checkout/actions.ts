@@ -67,7 +67,14 @@ function publicUrlIsAllowed(url: string | null | undefined) {
 
     const cloudName = process.env.CLOUDINARY_CLOUD_NAME ?? process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME;
     if (cloudName && parsed.origin === 'https://res.cloudinary.com') {
-      return parsed.pathname.startsWith(`/${cloudName}/fardodrops/comprobantes/`);
+      const parts = parsed.pathname.split('/').filter(Boolean);
+      if (parts[0] !== cloudName || parts[1] !== 'image' || parts[2] !== 'upload') return false;
+
+      return parts.some((part, index) => (
+        index > 2 &&
+        part === 'fardodrops' &&
+        parts[index + 1] === 'comprobantes'
+      ));
     }
 
     return false;
@@ -99,6 +106,54 @@ function mensajeRpc(error: { message: string; code?: string }) {
   return error.message || 'No pudimos procesar la compra. Intentá de nuevo.';
 }
 
+async function marcarPrendasConComprobanteComoVendidas(
+  service: Awaited<ReturnType<typeof createServiceClient>> | null,
+  tiendaId: string,
+  prendaIds: string[],
+) {
+  if (!service || prendaIds.length === 0) return;
+
+  const { error } = await service
+    .from('prendas')
+    .update({ estado: 'vendida' })
+    .eq('tienda_id', tiendaId)
+    .in('id', prendaIds);
+
+  if (error) {
+    console.error('[checkout] No pudimos marcar las prendas como vendidas:', error);
+  }
+}
+
+async function registrarActividadDrop(params: {
+  client: Awaited<ReturnType<typeof createBuyerClient>> | Awaited<ReturnType<typeof createServiceClient>>;
+  dropId: string;
+  tipo: 'compra' | 'apartado';
+  texto: string;
+}) {
+  const since = new Date(Date.now() - 5 * 60_000).toISOString();
+  const { data: existente } = await params.client
+    .from('actividad')
+    .select('id')
+    .eq('drop_id', params.dropId)
+    .eq('tipo', params.tipo)
+    .eq('texto', params.texto)
+    .gte('created_at', since)
+    .limit(1)
+    .maybeSingle();
+
+  if (existente) return;
+
+  const { error } = await params.client.from('actividad').insert({
+    drop_id: params.dropId,
+    tipo: params.tipo,
+    texto: params.texto,
+  });
+
+  if (error) {
+    console.error('[checkout] No pudimos registrar actividad en vivo:', error);
+  }
+}
+
 export async function crearCheckoutPublico(input: CheckoutInput): Promise<{
   error?: string;
   pedido?: { id: string; numero: string; trackingUrl: string };
@@ -122,9 +177,19 @@ export async function crearCheckoutPublico(input: CheckoutInput): Promise<{
   }
 
   const itemIds = Array.from(new Set(data.items.map(item => item.prendaId)));
+  const buyer = await createBuyerClient();
+  const serviceRoleConfigError = getServiceRoleConfigError();
+  let service: Awaited<ReturnType<typeof createServiceClient>> | null = null;
 
-  const service = await createServiceClient();
-  const { data: prendasParaValidar, error: prendasError } = await service
+  if (!serviceRoleConfigError) {
+    try {
+      service = await createServiceClient();
+    } catch {
+      service = null;
+    }
+  }
+
+  const { data: prendasParaValidar, error: prendasError } = await (service ?? buyer)
     .from('prendas')
     .select('id, talla, tallas, cantidad, cantidades_por_talla')
     .eq('tienda_id', data.tiendaId)
@@ -153,7 +218,6 @@ export async function crearCheckoutPublico(input: CheckoutInput): Promise<{
     itemsNormalizados.push({ prendaId: item.prendaId, talla: tallaSeleccionada });
   }
 
-  const buyer = await createBuyerClient();
   const { data: buyerAuth } = await buyer.auth.getUser();
   const compradorEmail = data.email || buyerAuth.user?.email || null;
   const direccionCompleta = `${data.direccion}, ${data.ciudad}`;
@@ -197,6 +261,10 @@ export async function crearCheckoutPublico(input: CheckoutInput): Promise<{
   const checkout = checkoutRows?.[0];
   if (!checkout) return { error: 'No pudimos crear el pedido. Intentá de nuevo.' };
 
+  if (data.comprobanteUrl) {
+    await marcarPrendasConComprobanteComoVendidas(service, data.tiendaId, itemIds);
+  }
+
   if (buyerAuth.user) {
     await buyer.from('compradores').upsert({
       user_id: buyerAuth.user.id,
@@ -210,7 +278,7 @@ export async function crearCheckoutPublico(input: CheckoutInput): Promise<{
 
   try {
     let tiendaEmail = checkout.tienda_contact_email || '';
-    if (!tiendaEmail && !getServiceRoleConfigError()) {
+    if (!tiendaEmail && service) {
       const { data: owner } = await service.auth.admin.getUserById(checkout.tienda_user_id);
       tiendaEmail = owner.user?.email || '';
     }
@@ -239,7 +307,7 @@ export async function crearCheckoutPublico(input: CheckoutInput): Promise<{
         comprobanteUrl: data.comprobanteUrl ?? null,
       });
     }
-    const tiendaWa = await service.from('tiendas').select('whatsapp').eq('id', data.tiendaId).maybeSingle()
+    const tiendaWa = await (service ?? buyer).from('tiendas').select('whatsapp').eq('id', data.tiendaId).maybeSingle()
     wsNuevoPedido({
       tiendaWhatsApp: tiendaWa.data?.whatsapp,
       tiendaNombre: checkout.tienda_nombre,
@@ -265,9 +333,10 @@ export async function crearCheckoutPublico(input: CheckoutInput): Promise<{
         : '';
       const producto = checkout.prendas_count > 1
         ? `${checkout.prendas_count} prendas`
-        : [checkout.prenda_nombre, checkout.prenda_marca].filter(Boolean).join(' ');
-      await service.from('actividad').insert({
-        drop_id: data.dropId,
+        : (checkout.prenda_nombre ?? '');
+      await registrarActividadDrop({
+        client: service ?? buyer,
+        dropId: data.dropId,
         tipo: 'compra',
         texto: `${nombreCorto} · ${producto}${talla}`,
       });
@@ -277,6 +346,9 @@ export async function crearCheckoutPublico(input: CheckoutInput): Promise<{
   }
 
   revalidatePath(`/${checkout.tienda_username}`);
+  if (data.dropId) {
+    revalidatePath(`/${checkout.tienda_username}/drop/${data.dropId}`);
+  }
   revalidatePath('/pedidos');
   revalidatePath('/comprobantes');
 

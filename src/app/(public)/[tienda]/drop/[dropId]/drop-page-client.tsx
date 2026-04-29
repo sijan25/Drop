@@ -12,7 +12,7 @@ import { PhoneInput } from '@/components/shared/phone-input';
 import { useCountdown, pad } from '@/hooks/use-countdown';
 import { useDropViewerCount } from '@/hooks/use-drop-viewer-count';
 import { Ph } from '@/components/shared/image-placeholder';
-import { formatProductSizes, getProductTotalQuantity } from '@/lib/product-sizes';
+import { getProductSizes, getProductSizeQuantities, getProductTotalQuantity } from '@/lib/product-sizes';
 import type { Database } from '@/types/database';
 
 type Tienda = Database['public']['Tables']['tiendas']['Row'];
@@ -125,7 +125,6 @@ export function DropPageClient({
     .filter(p => p.estado === 'disponible')
     .reduce((sum, p) => sum + getProductTotalQuantity(p), 0);
   const prendasTotales = prendas.reduce((sum, p) => sum + getProductTotalQuantity(p), 0);
-  const ultimaActividad = actividadLive[0];
   const showHeroImage = Boolean(drop.foto_portada_url && heroImageFailedFor !== drop.foto_portada_url);
 
   const handleShare = () => {
@@ -297,20 +296,6 @@ export function DropPageClient({
         </div>
       </section>
 
-      {/* ── TICKER ACTIVIDAD ── */}
-      {esActivo && ultimaActividad && (
-        <div style={{
-          background: 'var(--dark)', color: '#fff', padding: '8px 16px',
-          fontSize: 12, display: 'flex', alignItems: 'center', gap: 8,
-          borderBottom: '1px solid rgba(255,255,255,0.06)',
-        }}>
-          <span style={{ width: 6, height: 6, borderRadius: 3, background: '#ef4444', flexShrink: 0, animation: 'pulse 1.4s ease-in-out infinite', display: 'inline-block' }} />
-          <span style={{ flex: 1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-            {ultimaActividad.texto}
-          </span>
-          <span className="mono" style={{ color: 'rgba(255,255,255,0.35)', flexShrink: 0 }}>{formatRelativo(ultimaActividad.created_at)}</span>
-        </div>
-      )}
 
       {/* ── MAIN ── */}
       <div id="drop-prendas" style={{ maxWidth: 1100, margin: '0 auto', padding: '18px 14px 80px' }}>
@@ -327,7 +312,7 @@ export function DropPageClient({
         {/* ── LAYOUT: grid + actividad side-by-side when active ── */}
         <div style={{
           display: 'grid',
-          gridTemplateColumns: esActivo ? 'minmax(0,1fr) 280px' : '1fr',
+          gridTemplateColumns: esActivo ? 'minmax(0,1fr) 320px' : '1fr',
           gap: 16,
           alignItems: 'start',
         }}>
@@ -398,18 +383,43 @@ export function DropPageClient({
                         )}
                       </div>
                       <div style={{ padding: '10px 12px 12px' }}>
-                        <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', color: disponible ? '#0a0a0a' : '#aaa' }}>
+                        <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', color: disponible ? '#0a0a0a' : '#aaa' }}>
                           {p.nombre}
                         </div>
-                        <div style={{ fontSize: 11, color: '#aaa', marginBottom: 8 }}>
-                          {[p.marca, formatProductSizes(p), `${getProductTotalQuantity(p)} disp.`].filter(Boolean).join(' · ') || '\u00A0'}
-                        </div>
+                        {p.marca && (
+                          <div style={{ fontSize: 11, color: '#bbb', marginBottom: 6, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                            {p.marca}
+                          </div>
+                        )}
+                        {(() => {
+                          const sizes = getProductSizes(p);
+                          const qtys = sizes.length > 0 ? getProductSizeQuantities(p) : {};
+                          if (sizes.length === 0) return <div style={{ marginBottom: 8, height: 4 }} />;
+                          return (
+                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, marginBottom: 8 }}>
+                              {sizes.map(size => {
+                                const qty = qtys[size] ?? 0;
+                                const avail = disponible && qty > 0;
+                                return (
+                                  <span key={size} style={{
+                                    fontSize: 10, fontWeight: 700, padding: '2px 7px', borderRadius: 6,
+                                    background: avail ? '#f0fdf4' : vendida ? '#f5f5f5' : apartada ? '#fffbeb' : '#f5f5f5',
+                                    color: avail ? '#16a34a' : vendida ? '#ccc' : apartada ? '#d97706' : '#ccc',
+                                    border: `1px solid ${avail ? '#bbf7d0' : vendida ? '#e5e5e5' : apartada ? '#fde68a' : '#e5e5e5'}`,
+                                  }}>
+                                    {size}
+                                  </span>
+                                );
+                              })}
+                            </div>
+                          );
+                        })()}
                         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                          <span className="mono tnum" style={{ fontSize: 16, fontWeight: 700, letterSpacing: 0, color: !disponible ? '#bbb' : '#0a0a0a', textDecoration: !disponible ? 'line-through' : 'none' }}>
+                          <span className="mono tnum" style={{ fontSize: 16, fontWeight: 700, letterSpacing: 0, color: !disponible ? '#ccc' : '#0a0a0a', textDecoration: !disponible ? 'line-through' : 'none' }}>
                             L {p.precio.toLocaleString()}
                           </span>
-                          <span style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 11, fontWeight: 500 }}>
-                            <span style={{ width: 6, height: 6, borderRadius: 3, flexShrink: 0, display: 'inline-block', background: vendida ? '#ef4444' : apartada ? '#f59e0b' : isPreview ? '#888' : '#22c55e' }} />
+                          <span style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 11, fontWeight: 600 }}>
+                            <span style={{ width: 5, height: 5, borderRadius: 3, flexShrink: 0, display: 'inline-block', background: vendida ? '#ef4444' : apartada ? '#f59e0b' : isPreview ? '#888' : '#22c55e' }} />
                             <span style={{ color: vendida ? '#ef4444' : apartada ? '#f59e0b' : isPreview ? '#777' : '#16a34a' }}>
                               {vendida ? 'Vendida' : apartada ? 'Apartada' : isPreview ? 'Preview' : 'Disponible'}
                             </span>
@@ -470,34 +480,39 @@ export function DropPageClient({
                     <div style={{ fontSize: 11, color: '#bbb', lineHeight: 1.5 }}>Las compras y apartados aparecerán aquí en tiempo real.</div>
                   </div>
                 ) : (
-                  <div style={{ padding: '10px 14px 14px', display: 'grid', gap: 12, maxHeight: 520, overflowY: 'auto' }}>
+                  <div style={{ padding: '10px 14px 14px', display: 'grid', gap: 14, maxHeight: 520, overflowY: 'auto' }}>
                     {actividadLive.map(a => {
-                      const partes = a.texto.split('·');
-                      const nombreAccion = partes[0]?.trim() ?? '';
-                      const resto = partes.slice(1).join('·').trim();
+                      const partes = a.texto.split('·').map(s => s.trim());
+                      const nombre = partes[0] ?? '';
+                      const prenda = partes[1] ?? '';
+                      const talla = partes[2] ?? '';
                       const esCompra = a.tipo === 'compra';
                       const esApartado = a.tipo === 'apartado';
-                      const letraAvatar = nombreAccion.charAt(0).toUpperCase();
+                      const letraAvatar = nombre.charAt(0).toUpperCase();
 
                       return (
-                        <div key={a.id} style={{ display: 'flex', gap: 10, alignItems: 'flex-start' }}>
+                        <div key={a.id} style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
                           <div style={{
-                            width: 30, height: 30, borderRadius: 15, flexShrink: 0,
+                            width: 36, height: 36, borderRadius: 18, flexShrink: 0,
                             background: esCompra ? '#0a0a0a' : esApartado ? '#fef3c7' : '#f0efed',
                             color: esCompra ? '#fff' : esApartado ? '#92400e' : '#888',
                             display: 'flex', alignItems: 'center', justifyContent: 'center',
-                            fontSize: 11, fontWeight: 700,
+                            fontSize: 13, fontWeight: 700,
                           }}>
                             {letraAvatar}
                           </div>
                           <div style={{ flex: 1, minWidth: 0 }}>
-                            <div style={{ fontSize: 12, lineHeight: 1.4 }}>
-                              <span style={{ fontWeight: 600 }}>{nombreAccion}</span>
+                            <div style={{ fontSize: 14, lineHeight: 1.4 }}>
+                              <span style={{ fontWeight: 700 }}>{nombre}</span>
                               {esApartado && <span style={{ color: '#d97706', fontWeight: 500 }}> apartó</span>}
-                              {esCompra && <span style={{ fontWeight: 500 }}> compró</span>}
-                              {resto && <span style={{ color: '#888' }}> · {resto}</span>}
+                              {esCompra && <span style={{ color: '#555', fontWeight: 500 }}> compró</span>}
                             </div>
-                            <div className="mono" style={{ fontSize: 10, color: '#bbb', marginTop: 2 }}>{formatRelativo(a.created_at)}</div>
+                            {prenda && (
+                              <div style={{ fontSize: 13, fontWeight: 600, color: '#222', marginTop: 2 }}>
+                                {prenda}{talla && <span style={{ color: '#999', fontWeight: 500 }}> · {talla}</span>}
+                              </div>
+                            )}
+                            <div className="mono" style={{ fontSize: 10, color: '#bbb', marginTop: 3 }}>{formatRelativo(a.created_at)}</div>
                           </div>
                         </div>
                       );

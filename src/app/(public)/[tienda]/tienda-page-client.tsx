@@ -20,7 +20,7 @@ import {
   type CompradorPedidoResumen,
 } from '@/lib/buyer/actions';
 import { createClient } from '@/lib/supabase/client';
-import { formatProductSizes, getPrimaryProductSize, getProductSizes, getProductTotalQuantity } from '@/lib/product-sizes';
+import { getPrimaryProductSize, getProductSizes, getProductSizeQuantities, getProductTotalQuantity } from '@/lib/product-sizes';
 import type { Database } from '@/types/database';
 import { useCarrito } from '@/hooks/use-carrito';
 
@@ -1296,7 +1296,6 @@ export function TiendaPageClient(props: {
                 const disponible = estaDisponible(p.estado);
                 const vistas = p.drop_id ? (dropsWithLiveState.find(d => d.id === p.drop_id)?.viewers_count ?? 0) : null;
                 const esNueva = p.created_at ? (Date.now() - new Date(p.created_at).getTime() < NUEVO_THRESHOLD_MS) : false;
-                const tallaLabel = formatProductSizes(p);
                 const tallaCarrito = getPrimaryProductSize(p);
                 const tieneVariantes = getProductSizes(p).length > 1;
                 const enCarrito = tallaCarrito ? tieneItem(p.id, tallaCarrito) : tieneItem(p.id);
@@ -1350,18 +1349,41 @@ export function TiendaPageClient(props: {
                         </span>
                       </div>
 
-                      {/* Talla + vistas */}
-                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                        <span style={{ fontSize: 11, color: '#888', background: '#f5f5f5', borderRadius: 5, padding: '2px 8px', whiteSpace: 'nowrap', maxWidth: '72%', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                          {[tallaLabel, `${unidadesProducto} disp.`].filter(Boolean).join(' · ')}
-                        </span>
-                        {vistas !== null && vistas > 0 && (
-                          <span style={{ fontSize: 11, color: '#bbb', display: 'flex', alignItems: 'center', gap: 3, marginLeft: 'auto' }}>
-                            <svg width="11" height="11" viewBox="0 0 20 20" fill="none"><path d="M1 10s3.5-7 9-7 9 7 9 7-3.5 7-9 7-9-7-9-7z" stroke="currentColor" strokeWidth="1.5"/><circle cx="10" cy="10" r="2.5" stroke="currentColor" strokeWidth="1.5"/></svg>
-                            {vistas}
-                          </span>
-                        )}
-                      </div>
+                      {/* Tallas chips + vistas */}
+                      {(() => {
+                        const sizes = getProductSizes(p);
+                        const qtys = sizes.length > 0 ? getProductSizeQuantities(p) : {};
+                        return (
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap', minHeight: 22 }}>
+                            {sizes.length > 0 ? sizes.map(size => {
+                              const qty = qtys[size] ?? 0;
+                              const avail = disponible && qty > 0;
+                              return (
+                                <span key={size} style={{
+                                  fontSize: 10, fontWeight: 700, padding: '2px 7px', borderRadius: 6,
+                                  background: avail ? '#f0fdf4' : '#f5f5f5',
+                                  color: avail ? '#16a34a' : '#bbb',
+                                  border: `1px solid ${avail ? '#bbf7d0' : '#e5e5e5'}`,
+                                }}>
+                                  {size}
+                                </span>
+                              );
+                            }) : (
+                              disponible && unidadesProducto > 0 && (
+                                <span style={{ fontSize: 10, fontWeight: 700, padding: '2px 7px', borderRadius: 6, background: '#f0fdf4', color: '#16a34a', border: '1px solid #bbf7d0' }}>
+                                  {unidadesProducto} disp.
+                                </span>
+                              )
+                            )}
+                            {vistas !== null && vistas > 0 && (
+                              <span style={{ fontSize: 11, color: '#bbb', display: 'flex', alignItems: 'center', gap: 3, marginLeft: 'auto' }}>
+                                <svg width="11" height="11" viewBox="0 0 20 20" fill="none"><path d="M1 10s3.5-7 9-7 9 7 9 7-3.5 7-9 7-9-7-9-7z" stroke="currentColor" strokeWidth="1.5"/><circle cx="10" cy="10" r="2.5" stroke="currentColor" strokeWidth="1.5"/></svg>
+                                {vistas}
+                              </span>
+                            )}
+                          </div>
+                        );
+                      })()}
                     </div>
 
                     {/* Botones comprar / carrito */}
