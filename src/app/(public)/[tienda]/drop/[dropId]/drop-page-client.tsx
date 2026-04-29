@@ -125,7 +125,6 @@ export function DropPageClient({
     .filter(p => p.estado === 'disponible')
     .reduce((sum, p) => sum + getProductTotalQuantity(p), 0);
   const prendasTotales = prendas.reduce((sum, p) => sum + getProductTotalQuantity(p), 0);
-  const ultimaActividad = actividadLive[0];
   const showHeroImage = Boolean(drop.foto_portada_url && heroImageFailedFor !== drop.foto_portada_url);
 
   const handleShare = () => {
@@ -297,20 +296,6 @@ export function DropPageClient({
         </div>
       </section>
 
-      {/* ── TICKER ACTIVIDAD ── */}
-      {esActivo && ultimaActividad && (
-        <div style={{
-          background: 'var(--dark)', color: '#fff', padding: '8px 16px',
-          fontSize: 12, display: 'flex', alignItems: 'center', gap: 8,
-          borderBottom: '1px solid rgba(255,255,255,0.06)',
-        }}>
-          <span style={{ width: 6, height: 6, borderRadius: 3, background: '#ef4444', flexShrink: 0, animation: 'pulse 1.4s ease-in-out infinite', display: 'inline-block' }} />
-          <span style={{ flex: 1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-            {ultimaActividad.texto}
-          </span>
-          <span className="mono" style={{ color: 'rgba(255,255,255,0.35)', flexShrink: 0 }}>{formatRelativo(ultimaActividad.created_at)}</span>
-        </div>
-      )}
 
       {/* ── MAIN ── */}
       <div id="drop-prendas" style={{ maxWidth: 1100, margin: '0 auto', padding: '18px 14px 80px' }}>
