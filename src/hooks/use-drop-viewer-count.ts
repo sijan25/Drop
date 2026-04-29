@@ -1,69 +1,82 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
 
-type UseDropViewerCountOptions = {
+type Options = {
   enabled?: boolean;
   initialCount?: number | null;
   trackSelf?: boolean;
 };
 
+// Uses Broadcast (not Presence) for reliable cross-browser viewer counting.
+// Each viewer sends a heartbeat every 10s; observer counts unique active sessions.
 export function useDropViewerCount(
   dropId: string | null | undefined,
-  {
-    enabled = true,
-    initialCount = 0,
-    trackSelf = false,
-  }: UseDropViewerCountOptions = {},
+  { enabled = true, initialCount = 0, trackSelf = false }: Options = {},
 ) {
-  const baseline = useMemo(() => {
-    const normalized = typeof initialCount === 'number' && Number.isFinite(initialCount)
-      ? initialCount
-      : 0;
-    return trackSelf ? Math.max(normalized, 1) : Math.max(normalized, 0);
-  }, [initialCount, trackSelf]);
-
-  const [viewerState, setViewerState] = useState<{ dropId: string; value: number } | null>(null);
+  const base = typeof initialCount === 'number' && Number.isFinite(initialCount) ? initialCount : 0;
+  const [count, setCount] = useState<number | null>(null);
+  const sessionId = useRef(`${Date.now()}-${Math.random().toString(36).slice(2)}`).current;
+  const peers = useRef(new Map<string, number>());
 
   useEffect(() => {
     if (!dropId || !enabled) return;
 
     const supabase = createClient();
-    const channel = supabase.channel(`viewers-${dropId}`, {
-      config: {
-        presence: {
-          key: `${trackSelf ? 'viewer' : 'observer'}-${Math.random().toString(36).slice(2)}`,
-        },
-      },
-    });
+    const HEARTBEAT_MS = 10_000;
+    const STALE_MS = 25_000;
 
-    const syncCount = () => {
-      const state = channel.presenceState();
-      const total = Object.values(state).reduce((sum, entries) => (
-        Array.isArray(entries) ? sum + entries.length : sum
-      ), 0);
-      setViewerState({
-        dropId,
-        value: trackSelf ? Math.max(total, 1) : total,
-      });
-    };
+    function recount() {
+      const now = Date.now();
+      for (const [id, ts] of peers.current) {
+        if (now - ts > STALE_MS) peers.current.delete(id);
+      }
+      setCount(peers.current.size + (trackSelf ? 1 : 0));
+    }
+
+    const channel = supabase.channel(`viewers-v2-${dropId}`);
 
     channel
-      .on('presence', { event: 'sync' }, syncCount)
-      .subscribe(async status => {
+      .on('broadcast', { event: 'hb' }, ({ payload }) => {
+        const sid = (payload as { s?: string })?.s;
+        if (!sid || sid === sessionId) return;
+        peers.current.set(sid, Date.now());
+        recount();
+      })
+      .on('broadcast', { event: 'ping' }, () => {
+        if (trackSelf) {
+          channel.send({ type: 'broadcast', event: 'hb', payload: { s: sessionId } }).catch(() => {});
+        }
+      })
+      .subscribe(status => {
         if (status !== 'SUBSCRIBED') return;
         if (trackSelf) {
-          await channel.track({ at: Date.now() });
+          channel.send({ type: 'broadcast', event: 'hb', payload: { s: sessionId } }).catch(() => {});
         } else {
-          syncCount();
+          channel.send({ type: 'broadcast', event: 'ping', payload: {} }).catch(() => {});
         }
       });
 
+    const heartbeatTimer = trackSelf
+      ? setInterval(() => {
+          channel.send({ type: 'broadcast', event: 'hb', payload: { s: sessionId } }).catch(() => {});
+          recount();
+        }, HEARTBEAT_MS)
+      : null;
+
+    const cleanupTimer = setInterval(recount, STALE_MS);
+
     return () => {
+      if (heartbeatTimer) clearInterval(heartbeatTimer);
+      clearInterval(cleanupTimer);
       void supabase.removeChannel(channel);
     };
-  }, [dropId, enabled, trackSelf]);
+  }, [dropId, enabled, trackSelf, sessionId]);
 
-  return viewerState && viewerState.dropId === dropId ? viewerState.value : baseline;
+  // Show baseline from DB until first heartbeat received
+  if (count === null) {
+    return trackSelf ? Math.max(base, 1) : base;
+  }
+  return count;
 }

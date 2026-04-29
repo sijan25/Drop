@@ -9,6 +9,7 @@ import { Ph } from '@/components/shared/image-placeholder';
 import { SizeSelector } from '@/components/shared/size-selector';
 import { useDropViewerCount } from '@/hooks/use-drop-viewer-count';
 import { createClient } from '@/lib/supabase/client';
+import { uploadImage } from '@/lib/cloudinary/client';
 import { formatCurrency } from '@/lib/config/platform';
 import { useCountdown } from '@/hooks/use-countdown';
 import { formatProductSizes, getProductTotalQuantity } from '@/lib/product-sizes';
@@ -83,8 +84,8 @@ function ModalAgregarPrenda({ dropId, tiendaId, onGuardado, onCerrar }: {
   onCerrar: () => void;
 }) {
   const [form, setForm] = useState<PrendaForm>({ ...PRENDA_VACIA });
-  const [fotoUrl, setFotoUrl] = useState('');
-  const [fotoFile, setFotoFile] = useState<File | null>(null);
+  const [fotos, setFotos] = useState<string[]>([]);
+  const [uploading, setUploading] = useState(false);
   const [guardando, setGuardando] = useState(false);
   const [error, setError] = useState('');
   const fotoRef = useRef<HTMLInputElement>(null);
@@ -111,12 +112,34 @@ function ModalAgregarPrenda({ dropId, tiendaId, onGuardado, onCerrar }: {
     }));
   }
 
+  async function handleFoto(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (fotos.length >= 5) return;
+    setUploading(true);
+    setError('');
+    try {
+      const result = await uploadImage(file, { folder: 'fardodrops/prendas' });
+      setFotos(f => [...f, result.url]);
+    } catch {
+      setError('No se pudo subir la foto. Intentá de nuevo.');
+    } finally {
+      setUploading(false);
+      if (fotoRef.current) fotoRef.current.value = '';
+    }
+  }
+
+  function fail(msg: string) {
+    setError(msg);
+    toast.error(msg);
+  }
+
   async function guardar() {
-    if (!form.nombre.trim()) { setError('El nombre es requerido.'); return; }
-    if (!form.precio || Number(form.precio) <= 0) { setError('Ingresá un precio válido.'); return; }
+    if (!form.nombre.trim()) { fail('El nombre es requerido.'); return; }
+    if (!form.precio || Number(form.precio) <= 0) { fail('Ingresá un precio válido.'); return; }
     const cantidadTotal = form.tallas.length > 0 ? totalPorTallas : Number(form.cantidad);
     if (!Number.isInteger(cantidadTotal) || cantidadTotal <= 0) {
-      setError(form.tallas.length > 0
+      fail(form.tallas.length > 0
         ? 'Asigná al menos 1 unidad entre las tallas seleccionadas.'
         : 'Ingresá una cantidad válida.');
       return;
@@ -125,13 +148,6 @@ function ModalAgregarPrenda({ dropId, tiendaId, onGuardado, onCerrar }: {
     setError('');
     try {
       const supabase = createClient();
-      let fotos: string[] = [];
-      if (fotoFile) {
-        const ext = fotoFile.name.split('.').pop();
-        const path = `prendas/${tiendaId}/${Date.now()}.${ext}`;
-        await supabase.storage.from('fotos').upload(path, fotoFile, { upsert: true });
-        fotos = [supabase.storage.from('fotos').getPublicUrl(path).data.publicUrl];
-      }
       const { data, error: err } = await supabase.from('prendas').insert({
         tienda_id: tiendaId,
         drop_id: dropId,
@@ -152,7 +168,7 @@ function ModalAgregarPrenda({ dropId, tiendaId, onGuardado, onCerrar }: {
       if (err || !data) throw new Error(err?.message ?? 'Error al guardar');
       onGuardado(data as Prenda);
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Error al guardar');
+      fail(e instanceof Error ? e.message : 'Error al guardar');
     } finally {
       setGuardando(false);
     }
@@ -168,14 +184,21 @@ function ModalAgregarPrenda({ dropId, tiendaId, onGuardado, onCerrar }: {
         <div style={{ padding: '20px 22px', overflowY: 'auto', display: 'grid', gap: 14 }}>
           <div>
             <label className="label">Foto</label>
-            <input ref={fotoRef} type="file" accept="image/jpeg,image/png" style={{ display: 'none' }}
-              onChange={e => { const f = e.target.files?.[0]; if (f) { setFotoUrl(URL.createObjectURL(f)); setFotoFile(f); } }}/>
-            <div onClick={() => fotoRef.current?.click()} style={{ padding: '14px 20px', border: '1.5px dashed var(--line)', borderRadius: 10, display: 'flex', alignItems: 'center', gap: 12, background: 'var(--surface-2)', cursor: 'pointer' }}>
-              {fotoUrl ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img src={fotoUrl} alt="" style={{ width: 48, height: 48, objectFit: 'cover', borderRadius: 6, display: 'block', flexShrink: 0 }}/>
-              ) : <Icons.upload width={16} height={16} style={{ color: 'var(--ink-3)' }}/>}
-              <div style={{ fontSize: 13 }}>{fotoUrl ? 'Cambiar foto' : 'Subir foto'} <span className="t-mute" style={{ fontSize: 11 }}>· JPG, PNG</span></div>
+            <input ref={fotoRef} type="file" accept="image/jpeg,image/png,image/webp" style={{ display: 'none' }} onChange={handleFoto}/>
+            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+              {fotos.map((url, i) => (
+                <div key={i} style={{ position: 'relative', width: 64, height: 64 }}>
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={url} alt="" style={{ width: 64, height: 64, objectFit: 'cover', borderRadius: 8, display: 'block' }}/>
+                  <button onClick={() => setFotos(f => f.filter((_, j) => j !== i))} style={{ position: 'absolute', top: -6, right: -6, width: 18, height: 18, borderRadius: 9, background: '#111', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10 }}>×</button>
+                </div>
+              ))}
+              {fotos.length < 5 && (
+                <div onClick={() => fotoRef.current?.click()} style={{ width: 64, height: 64, border: '1.5px dashed var(--line)', borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', background: 'var(--surface-2)', flexDirection: 'column', gap: 4 }}>
+                  {uploading ? <Icons.upload width={16} height={16} style={{ color: 'var(--ink-3)', opacity: 0.4 }}/> : <Icons.upload width={16} height={16} style={{ color: 'var(--ink-3)' }}/>}
+                  <span style={{ fontSize: 9, color: 'var(--ink-3)' }}>{uploading ? 'Subiendo…' : 'Foto'}</span>
+                </div>
+              )}
             </div>
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
@@ -244,6 +267,76 @@ function ModalAgregarPrenda({ dropId, tiendaId, onGuardado, onCerrar }: {
   );
 }
 
+function toLocalDatetimeInput(iso: string | null) {
+  const d = iso ? new Date(iso) : new Date(Date.now() + 60 * 60 * 1000);
+  const pad = (n: number) => String(n).padStart(2, '0');
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+
+function ModalEditarTiempo({ drop, onGuardado, onCerrar }: {
+  drop: Drop;
+  onGuardado: (nuevoCierreAt: string) => void;
+  onCerrar: () => void;
+}) {
+  const [valor, setValor] = useState(toLocalDatetimeInput(drop.cierra_at));
+  const [guardando, setGuardando] = useState(false);
+  const [error, setError] = useState('');
+
+  const minDatetime = toLocalDatetimeInput(new Date().toISOString());
+
+  async function guardar() {
+    const nueva = new Date(valor);
+    if (isNaN(nueva.getTime()) || nueva <= new Date()) {
+      setError('La nueva fecha debe ser en el futuro.');
+      return;
+    }
+    setGuardando(true);
+    try {
+      const supabase = createClient();
+      const { error: err } = await supabase
+        .from('drops')
+        .update({ cierra_at: nueva.toISOString() })
+        .eq('id', drop.id);
+      if (err) throw new Error(err.message);
+      onGuardado(nueva.toISOString());
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Error al actualizar');
+    } finally {
+      setGuardando(false);
+    }
+  }
+
+  return (
+    <div onClick={onCerrar} style={{ position: 'fixed', inset: 0, background: 'rgba(15,20,25,0.45)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 400, padding: 24 }}>
+      <div onClick={e => e.stopPropagation()} style={{ width: '100%', maxWidth: 360, background: '#fff', borderRadius: 16, boxShadow: '0 30px 80px rgba(0,0,0,0.2)' }}>
+        <div style={{ padding: '18px 22px', borderBottom: '1px solid var(--line)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <div style={{ fontSize: 16, fontWeight: 600 }}>Cambiar cierre del drop</div>
+          <button onClick={onCerrar} style={{ color: 'var(--ink-3)' }}><Icons.close width={16} height={16}/></button>
+        </div>
+        <div style={{ padding: '20px 22px', display: 'grid', gap: 14 }}>
+          <div>
+            <label className="label">Nueva fecha y hora de cierre</label>
+            <input
+              className="input"
+              type="datetime-local"
+              min={minDatetime}
+              value={valor}
+              onChange={e => setValor(e.target.value)}
+            />
+          </div>
+          {error && <div style={{ padding: '8px 12px', background: '#fef2f2', border: '1px solid #fecaca', borderRadius: 8, fontSize: 13, color: 'var(--urgent)' }}>{error}</div>}
+        </div>
+        <div style={{ padding: '14px 22px', borderTop: '1px solid var(--line)', display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
+          <button onClick={onCerrar} className="btn btn-outline btn-sm">Cancelar</button>
+          <button onClick={guardar} className="btn btn-primary btn-sm" disabled={guardando}>
+            {guardando ? 'Guardando…' : 'Confirmar'}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function DropDetallePage() {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
@@ -253,6 +346,7 @@ export default function DropDetallePage() {
   const [cerrando, setCerrando] = useState(false);
   const [migrando, setMigrando] = useState(false);
   const [modalAbierto, setModalAbierto] = useState(false);
+  const [modalTiempo, setModalTiempo] = useState(false);
   const [tiendaUsername, setTiendaUsername] = useState<string>('');
 
   useEffect(() => {
@@ -457,6 +551,11 @@ export default function DropDetallePage() {
               </button>
             )}
             {drop?.estado === 'activo' && (
+              <button className="btn btn-outline btn-sm" onClick={() => setModalTiempo(true)}>
+                <Icons.clock width={13} height={13}/> Extender tiempo
+              </button>
+            )}
+            {drop?.estado === 'activo' && (
               <button className="btn btn-danger btn-sm" onClick={cerrarDrop} disabled={cerrando}>
                 {cerrando ? 'Cerrando…' : 'Cerrar drop'}
               </button>
@@ -632,8 +731,19 @@ export default function DropDetallePage() {
         <ModalAgregarPrenda
           dropId={drop.id}
           tiendaId={drop.tienda_id}
-          onGuardado={p => { setPrendas(prev => [...prev, p]); setModalAbierto(false); }}
+          onGuardado={p => { setPrendas(prev => [...prev, p]); setModalAbierto(false); toast.success('Prenda agregada'); }}
           onCerrar={() => setModalAbierto(false)}
+        />
+      )}
+      {modalTiempo && drop && (
+        <ModalEditarTiempo
+          drop={drop}
+          onGuardado={nuevoCierreAt => {
+            setDrop(prev => prev ? { ...prev, cierra_at: nuevoCierreAt } : prev);
+            setModalTiempo(false);
+            toast.success('Tiempo extendido');
+          }}
+          onCerrar={() => setModalTiempo(false)}
         />
       )}
     </>
