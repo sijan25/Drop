@@ -219,9 +219,6 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
         {/* Footer */}
         <div style={{ padding: 12, borderTop: '1px solid var(--line)', display: 'grid', gap: 8 }}>
-          <button onClick={() => router.push('/drops/nuevo')} className="btn btn-accent btn-sm btn-block" style={{ fontWeight: 700 }}>
-            <Icons.plus width={13} height={13}/> Nuevo drop
-          </button>
           <button onClick={handleLogout} className="btn btn-ghost btn-sm btn-block" style={{ color: 'var(--ink-3)', fontSize: 12 }}>
             Cerrar sesión
           </button>
