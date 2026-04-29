@@ -95,11 +95,8 @@ export function requireTrustedRequestOrigin(request: NextRequest) {
 async function runRateLimit(headerSource: HeaderReader, scope: string, limit: number, windowSeconds: number, identity: string) {
   const serviceRoleError = getServiceRoleConfigError();
   if (serviceRoleError) {
-    if (process.env.NODE_ENV !== 'production') {
-      console.warn(`[security] Rate limit skipped in development: ${serviceRoleError}`);
-      return null;
-    }
-    return serviceRoleError;
+    console.warn(`[security] Rate limit skipped — service role not configured: ${serviceRoleError}`);
+    return null;
   }
 
   const key = hashKey(`${scope}:${getClientIp(headerSource)}:${identity}`);
@@ -111,8 +108,8 @@ async function runRateLimit(headerSource: HeaderReader, scope: string, limit: nu
   });
 
   if (error) {
-    console.error('[security] Rate limit error:', error);
-    return 'No pudimos validar la seguridad de la solicitud. Intentá de nuevo.';
+    console.error('[security] Rate limit error (skipping):', error);
+    return null;
   }
 
   return data === false ? RATE_LIMIT_ERROR : null;
