@@ -1,11 +1,11 @@
 import { notFound, redirect } from 'next/navigation';
-import { createServiceClient } from '@/lib/supabase/server';
+import { createClient, createServiceClient, getServiceRoleConfigError } from '@/lib/supabase/server';
 
 export async function getPublicTiendaOrRedirect(username: string, suffix = '') {
-  const service = await createServiceClient();
+  const supabase = await createClient();
   const cleanUsername = username.trim();
 
-  const { data: tienda } = await service
+  const { data: tienda } = await supabase
     .from('tiendas')
     .select('*')
     .ilike('username', cleanUsername)
@@ -19,13 +19,21 @@ export async function getPublicTiendaOrRedirect(username: string, suffix = '') {
     return tienda;
   }
 
-  const { data: usernameRedirect } = await service
-    .from('tienda_username_redirects')
-    .select('new_username')
-    .ilike('old_username', cleanUsername)
-    .order('created_at', { ascending: false })
-    .limit(1)
-    .maybeSingle();
+  let usernameRedirect: { new_username: string | null } | null = null;
+  const serviceRoleError = getServiceRoleConfigError();
+
+  if (!serviceRoleError) {
+    const service = await createServiceClient();
+    const { data } = await service
+      .from('tienda_username_redirects')
+      .select('new_username')
+      .ilike('old_username', cleanUsername)
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    usernameRedirect = data;
+  }
 
   if (usernameRedirect?.new_username) {
     redirect(`/${usernameRedirect.new_username}${suffix}`);

@@ -1,5 +1,5 @@
 import { notFound } from 'next/navigation';
-import { createClient, createServiceClient } from '@/lib/supabase/server';
+import { createClient, createServiceClient, getServiceRoleConfigError } from '@/lib/supabase/server';
 import { getPublicTiendaOrRedirect } from '@/lib/stores/public-store';
 import { DropPageClient } from './drop-page-client';
 
@@ -43,11 +43,21 @@ export default async function DropPage({ params }: { params: Promise<{ tienda: s
     .order('created_at', { ascending: false })
     .limit(20);
 
-  const service = await createServiceClient();
-  const { count: anotadasCount } = await service
-    .from('anotaciones')
-    .select('*', { count: 'exact', head: true })
-    .eq('drop_id', dropId);
+  let anotadasCount = 0;
+
+  if (!getServiceRoleConfigError()) {
+    try {
+      const service = await createServiceClient();
+      const { count } = await service
+        .from('anotaciones')
+        .select('*', { count: 'exact', head: true })
+        .eq('drop_id', dropId);
+
+      anotadasCount = count ?? 0;
+    } catch {
+      anotadasCount = 0;
+    }
+  }
 
   return (
     <DropPageClient
@@ -57,7 +67,7 @@ export default async function DropPage({ params }: { params: Promise<{ tienda: s
       metodosPago={metodosPago ?? []}
       metodosEnvio={metodosEnvio ?? []}
       actividad={actividad ?? []}
-      anotadasCount={anotadasCount ?? 0}
+      anotadasCount={anotadasCount}
     />
   );
 }
