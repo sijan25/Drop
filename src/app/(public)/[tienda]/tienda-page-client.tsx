@@ -760,46 +760,47 @@ export function TiendaPageClient(props: {
   const [viewerCounts, setViewerCounts] = useState<Record<string, number | null>>({});
   const [nowMs, setNowMs] = useState<number | null>(null);
 
-  // Realtime: observar viewers de cada drop sin depender de una columna persistida.
+  // Realtime: observar viewers de cada drop usando Broadcast (mismo canal que drop-page-client).
   useEffect(() => {
     if (drops.length === 0) return;
 
     const supabase = createClient();
+    const STALE_MS = 15_000;
+    const cleanupTimers: ReturnType<typeof setInterval>[] = [];
+
     const channels = drops.map(drop => {
-      const channel = supabase.channel(`viewers-${drop.id}`, {
-        config: {
-          presence: {
-            key: `observer-store-${drop.id}-${Math.random().toString(36).slice(2)}`,
-          },
-        },
-      });
+      const peers = new Map<string, number>();
+      const channel = supabase.channel(`viewers-v2-${drop.id}`);
 
-      const syncCount = () => {
-        const state = channel.presenceState();
-        const total = Object.values(state).reduce((sum, entries) => (
-          Array.isArray(entries) ? sum + entries.length : sum
-        ), 0);
-
-        setViewerCounts(prev => (
-          prev[drop.id] === total
-            ? prev
-            : { ...prev, [drop.id]: total }
-        ));
+      const recount = () => {
+        const now = Date.now();
+        for (const [id, ts] of peers) {
+          if (now - ts > STALE_MS) peers.delete(id);
+        }
+        const total = peers.size;
+        setViewerCounts(prev => prev[drop.id] === total ? prev : { ...prev, [drop.id]: total });
       };
 
       channel
-        .on('presence', { event: 'sync' }, syncCount)
+        .on('broadcast', { event: 'hb' }, ({ payload }) => {
+          const sid = (payload as { s?: string })?.s;
+          if (!sid) return;
+          peers.set(sid, Date.now());
+          recount();
+        })
         .subscribe(status => {
-          if (status === 'SUBSCRIBED') syncCount();
+          if (status === 'SUBSCRIBED') {
+            channel.send({ type: 'broadcast', event: 'ping', payload: {} }).catch(() => {});
+          }
         });
 
+      cleanupTimers.push(setInterval(recount, STALE_MS));
       return channel;
     });
 
     return () => {
-      channels.forEach(channel => {
-        void supabase.removeChannel(channel);
-      });
+      cleanupTimers.forEach(t => clearInterval(t));
+      channels.forEach(channel => void supabase.removeChannel(channel));
     };
   }, [drops]);
 
