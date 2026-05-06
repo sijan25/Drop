@@ -1,34 +1,45 @@
 'use client';
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { Suspense, useState } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { Logo } from '@/components/shared/logo';
-import { createClient } from '@/lib/supabase/client';
 import { PLATFORM } from '@/lib/config/platform';
 import s from '@/app/(auth)/auth.module.css';
+import { actualizarPasswordRecuperacion } from './actions';
 
-export default function ResetPasswordPage() {
+function ResetPasswordContent() {
   const [password, setPassword] = useState('');
   const [confirm, setConfirm] = useState('');
   const [showPass, setShowPass] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
   const [done, setDone] = useState(false);
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const scope = searchParams.get('scope') === 'buyer' ? 'buyer' : 'seller';
+  const isBuyerReset = scope === 'buyer';
+  const [error, setError] = useState(
+    searchParams.get('error')
+      ? 'El link expiró o no es válido. Pedí uno nuevo.'
+      : '',
+  );
 
   async function handleReset() {
     if (password.length < 8) { setError('La contraseña debe tener al menos 8 caracteres.'); return; }
     if (password !== confirm) { setError('Las contraseñas no coinciden.'); return; }
     setLoading(true);
     setError('');
-    const supabase = createClient();
-    const { error: updateError } = await supabase.auth.updateUser({ password });
-    if (updateError) {
-      setError('No pudimos actualizar la contraseña. El link puede haber expirado.');
-    } else {
-      setDone(true);
+    try {
+      const result = await actualizarPasswordRecuperacion({ password, scope });
+      if (result.error) {
+        setError(result.error);
+      } else {
+        setDone(true);
+      }
+    } catch {
+      setError('No pudimos actualizar la contraseña. Intentá de nuevo.');
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   }
 
   return (
@@ -73,14 +84,16 @@ export default function ResetPasswordPage() {
               </div>
               <div className={s.formTitle}>¡Contraseña actualizada!</div>
               <div className={s.formSub}>
-                Tu nueva contraseña está activa. Ya podés iniciar sesión.
+                {isBuyerReset
+                  ? 'Tu nueva contraseña está activa. Ya podés volver a comprar.'
+                  : 'Tu nueva contraseña está activa. Ya podés iniciar sesión.'}
               </div>
               <button
-                onClick={() => router.push('/dashboard')}
+                onClick={() => router.push(isBuyerReset ? '/' : '/dashboard')}
                 className="btn btn-primary btn-lg btn-block"
                 style={{ marginTop: 24 }}
               >
-                Ir al dashboard
+                {isBuyerReset ? 'Ir a Droppi' : 'Ir al dashboard'}
               </button>
             </>
           ) : (
@@ -141,11 +154,11 @@ export default function ResetPasswordPage() {
               </button>
 
               <button
-                onClick={() => router.push('/login')}
+                onClick={() => router.push(isBuyerReset ? '/' : '/login')}
                 className="btn btn-ghost btn-sm btn-block"
                 style={{ marginTop: 10, color: '#737373' }}
               >
-                ← Volver al inicio de sesión
+                {isBuyerReset ? '← Volver a Droppi' : '← Volver al inicio de sesión'}
               </button>
             </>
           )}
@@ -153,5 +166,13 @@ export default function ResetPasswordPage() {
 
       </div>
     </div>
+  );
+}
+
+export default function ResetPasswordPage() {
+  return (
+    <Suspense fallback={null}>
+      <ResetPasswordContent />
+    </Suspense>
   );
 }

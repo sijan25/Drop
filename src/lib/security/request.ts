@@ -108,8 +108,8 @@ async function runRateLimit(headerSource: HeaderReader, scope: string, limit: nu
   });
 
   if (error) {
-    console.error('[security] Rate limit error (skipping):', error);
-    return null;
+    console.error('[security] Rate limit check failed (blocking request):', error);
+    return RATE_LIMIT_ERROR;
   }
 
   return data === false ? RATE_LIMIT_ERROR : null;

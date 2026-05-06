@@ -32,6 +32,9 @@ export default async function PedidosPage() {
       metodo_envio, monto_total, estado, created_at,
       pagado_at, empacado_at, en_camino_at,
       tracking_numero, tracking_url,
+      envio_proveedor, envio_modalidad, envio_monto,
+      envio_courier_id, envio_courier_nombre, envio_courier_logo,
+      envio_tracking_url, envio_label_url, envio_estado, envio_metadata,
       drop:drops(nombre),
       items:pedido_items(
         id, precio, talla_seleccionada,

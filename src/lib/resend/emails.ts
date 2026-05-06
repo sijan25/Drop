@@ -6,9 +6,9 @@ import {
   emailPagoRechazado,
   emailActualizacionEstado,
 } from './templates'
-import { buildOrderTrackingUrl } from '@/lib/security/order-access'
+import { buildOrderTrackingUrl, getPublicAppUrl } from '@/lib/security/order-access'
 
-const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000'
+const APP_URL = getPublicAppUrl()
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
 export type EmailSendResult =
@@ -102,6 +102,7 @@ export async function notificarPedidoCreado(opts: {
   comprobanteUrl?: string | null
 }) {
   const comprobanteSubido = !!opts.comprobanteUrl
+  const trackingUrl = buildOrderTrackingUrl({ id: opts.pedidoId, numero: opts.numeroPedido })
 
   // Email al comprador (solo si tiene email)
   if (opts.compradorEmail) {
@@ -118,7 +119,7 @@ export async function notificarPedidoCreado(opts: {
       metodoEnvio: opts.metodoEnvio,
       direccion: opts.direccion,
       comprobanteSubido,
-      trackingUrl: buildOrderTrackingUrl({ id: opts.pedidoId, numero: opts.numeroPedido }),
+      trackingUrl,
     })
     await enviarEmail({
       to: opts.compradorEmail,
@@ -143,6 +144,7 @@ export async function notificarPedidoCreado(opts: {
     metodoEnvio: opts.metodoEnvio,
     direccion: opts.direccion,
     comprobanteUrl: opts.comprobanteUrl,
+    trackingUrl,
     dashboardUrl: `${APP_URL}/comprobantes`,
   })
   if (opts.tiendaEmail) {

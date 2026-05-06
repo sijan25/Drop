@@ -34,6 +34,8 @@ export default function RootLayout({
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
       <head>
+        <link rel="preconnect" href="https://res.cloudinary.com" />
+        <link rel="dns-prefetch" href="https://res.cloudinary.com" />
         <style dangerouslySetInnerHTML={{ __html: `html,body{background:#FAF9F7}` }} />
       </head>
       <body className="min-h-full flex flex-col">

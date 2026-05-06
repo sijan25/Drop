@@ -1,17 +1,26 @@
 'use client';
 
 import Image from 'next/image';
+import { useEffect, useState } from 'react';
 import { Icons } from '@/components/shared/icons';
 import { Ph } from '@/components/shared/image-placeholder';
 import { CountdownTimer } from '@/components/drops/countdown-timer';
 import { BuyerCheckoutAccess } from '@/components/buyer/buyer-checkout-access';
 import type { BuyerProfile } from '@/components/buyer/buyer-auth-modal';
-import type { Database } from '@/types/database';
+import type { MetodoPago, MetodoEnvio } from '@/types/envio';
 import { Alert } from '@/components/shared/alert';
 import { PLATFORM, formatCurrency, formatCurrencyFree } from '@/lib/config/platform';
+import type { BoxfulQuote, BoxfulShippingMode, BoxfulState } from '@/lib/boxful/types';
+import { PhoneInput } from '@/components/shared/phone-input';
 
-type MetodoPago = Database['public']['Tables']['metodos_pago']['Row'];
-type MetodoEnvio = Database['public']['Tables']['metodos_envio']['Row'];
+const BOXFUL_ID = 'boxful';
+
+export type BoxfulChangeData = {
+  isBoxful: boolean;
+  quote: BoxfulQuote | null;
+  destination: { stateId: string; stateName: string; cityId: string; cityName: string } | null;
+  mode: BoxfulShippingMode;
+};
 
 export type CheckoutPrenda = {
   id: string;
@@ -66,8 +75,178 @@ function PrendaSummary({ prenda, tallaSeleccionada, costoEnvio, total }: {
   );
 }
 
+/* ──────── BOXFUL ADDRESS FIELDS (departamento + ciudad + cotización) ──────── */
+export function BoxfulAddressFields({ originCity, itemsCount, subtotal, onBoxfulChange, onCiudadChange }: {
+  originCity?: string | null;
+  itemsCount: number;
+  subtotal: number;
+  onBoxfulChange: (data: BoxfulChangeData) => void;
+  onCiudadChange?: (ciudad: string) => void;
+}) {
+  const boxfulMode: BoxfulShippingMode = 'boxful_dropoff';
+  const [boxfulStates, setBoxfulStates] = useState<BoxfulState[]>([]);
+  const [boxfulStateId, setBoxfulStateId] = useState('');
+  const [boxfulCityId, setBoxfulCityId] = useState('');
+  const [boxfulQuote, setBoxfulQuote] = useState<BoxfulQuote | null>(null);
+  const [boxfulQuoteLoading, setBoxfulQuoteLoading] = useState(false);
+  const [boxfulQuoteError, setBoxfulQuoteError] = useState('');
+
+  const boxfulState = boxfulStates.find(s => s.id === boxfulStateId) ?? null;
+  const boxfulCity = boxfulState?.cities.find(c => c.id === boxfulCityId) ?? null;
+
+  useEffect(() => {
+    let cancelled = false;
+    fetch('/api/boxful/states')
+      .then(r => r.ok ? r.json() : Promise.reject())
+      .then((payload: { states?: BoxfulState[] }) => {
+        if (cancelled) return;
+        setBoxfulStates(payload.states ?? []);
+      })
+      .catch(() => { if (!cancelled) setBoxfulStates([]); });
+    return () => { cancelled = true; };
+  }, []);
+
+  useEffect(() => {
+    if (!boxfulState || !boxfulCity) return;
+    const ctrl = new AbortController();
+    setBoxfulQuoteLoading(true);
+    setBoxfulQuoteError('');
+    fetch('/api/boxful/quote', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        mode: boxfulMode,
+        originCityName: originCity ?? PLATFORM.defaultCity,
+        destinationStateId: boxfulState.id,
+        destinationStateName: boxfulState.name,
+        destinationCityId: boxfulCity.id,
+        destinationCityName: boxfulCity.name,
+        itemsCount,
+        subtotal,
+      }),
+      signal: ctrl.signal,
+    })
+      .then(r => r.ok ? r.json() : Promise.reject())
+      .then((payload: { quote?: BoxfulQuote; error?: string }) => {
+        const q = payload.quote ?? null;
+        setBoxfulQuote(q);
+        setBoxfulQuoteError(payload.error ?? '');
+        onBoxfulChange({
+          isBoxful: true, quote: q, mode: boxfulMode,
+          destination: { stateId: boxfulState!.id, stateName: boxfulState!.name, cityId: boxfulCity!.id, cityName: boxfulCity!.name },
+        });
+      })
+      .catch(err => {
+        if (err?.name !== 'AbortError') {
+          setBoxfulQuote(null);
+          setBoxfulQuoteError('No pudimos calcular el envío. Probá otra ciudad.');
+          onBoxfulChange({ isBoxful: true, quote: null, destination: null, mode: boxfulMode });
+        }
+      })
+      .finally(() => setBoxfulQuoteLoading(false));
+    return () => ctrl.abort();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [boxfulStateId, boxfulCityId]);
+
+  return (
+    <div style={{ display: 'grid', gap: 12 }}>
+      <div className="buyer-checkout-two-col" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+        <div>
+          <label className="label">Departamento</label>
+          <select className="input input-lg" value={boxfulStateId}
+            onChange={e => { setBoxfulStateId(e.target.value); setBoxfulCityId(''); setBoxfulQuote(null); onBoxfulChange({ isBoxful: true, quote: null, destination: null, mode: boxfulMode }); }}>
+            <option value="">Seleccionar...</option>
+            {boxfulStates.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
+          </select>
+        </div>
+        <div>
+          <label className="label">Ciudad</label>
+          <select className="input input-lg" value={boxfulCityId} disabled={!boxfulState}
+            onChange={e => {
+              const nextId = e.target.value;
+              const nextCity = boxfulState?.cities.find(c => c.id === nextId);
+              setBoxfulCityId(nextId);
+              if (nextCity) onCiudadChange?.(nextCity.name);
+              setBoxfulQuote(null);
+              onBoxfulChange({ isBoxful: true, quote: null, destination: null, mode: boxfulMode });
+            }}>
+            <option value="">Seleccionar...</option>
+            {boxfulState?.cities.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+          </select>
+        </div>
+      </div>
+      {boxfulQuoteLoading && <div style={{ fontSize: 12, color: 'var(--ink-3)' }}>Calculando envío...</div>}
+      {boxfulQuote && (
+        <div style={{ border: '1px solid var(--line)', borderRadius: 10, padding: '10px 12px', background: 'var(--surface-2)' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, fontSize: 12 }}>
+            <span style={{ fontWeight: 700 }}>{boxfulQuote.courierName}</span>
+            <span className="mono tnum" style={{ fontWeight: 700 }}>{formatCurrency(boxfulQuote.price)}</span>
+          </div>
+          <div style={{ fontSize: 11, color: 'var(--ink-3)', marginTop: 3 }}>
+            {boxfulQuote.estimatedDelivery}
+            {boxfulQuote.source === 'local_estimate' ? ' · Estimado local' : ' · Cotización Boxful'}
+          </div>
+          {boxfulQuote.note && <div style={{ fontSize: 11, color: 'var(--ink-3)', marginTop: 3 }}>{boxfulQuote.note}</div>}
+        </div>
+      )}
+      {boxfulQuoteError && <div style={{ fontSize: 12, color: 'var(--urgent)' }}>{boxfulQuoteError}</div>}
+    </div>
+  );
+}
+
+/* ──────── SHIPPING SELECTOR (solo opciones de radio) ──────── */
+export function ShippingSelector({ metodosEnvio, metodoEnvioId, boxfulQuote, boxfulQuoteLoading, onChange }: {
+  metodosEnvio: MetodoEnvio[];
+  metodoEnvioId: string;
+  boxfulQuote?: BoxfulQuote | null;
+  boxfulQuoteLoading?: boolean;
+  onChange: (id: string) => void;
+}) {
+  const isBoxfulSelected = metodoEnvioId === BOXFUL_ID;
+  const boxfulResumen = boxfulQuote
+    ? formatCurrency(boxfulQuote.price)
+    : boxfulQuoteLoading ? 'Calculando...' : '—';
+
+  return (
+    <div style={{ display: 'grid', gap: 10 }}>
+      {/* Boxful */}
+      <div onClick={() => onChange(BOXFUL_ID)}
+        style={{ padding: '14px 16px', border: `1.5px solid ${isBoxfulSelected ? 'var(--ink)' : 'var(--line)'}`, borderRadius: 12, cursor: 'pointer', background: '#fff' }}>
+        <div style={{ display: 'flex', alignItems: 'flex-start', gap: 14 }}>
+          <input type="radio" name="envio" checked={isBoxfulSelected} onChange={() => onChange(BOXFUL_ID)}
+            style={{ marginTop: 3, accentColor: 'var(--ink)', width: 16, height: 16, flexShrink: 0 }} />
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12 }}>
+              <div style={{ fontSize: 14, fontWeight: 700 }}>Envío con Boxful</div>
+              <div className="mono tnum" style={{ fontSize: 14, fontWeight: 700, whiteSpace: 'nowrap' }}>
+                {isBoxfulSelected ? boxfulResumen : '—'}
+              </div>
+            </div>
+            <div style={{ fontSize: 12, color: 'var(--ink-3)', marginTop: 2 }}>Envíos a todo Honduras con seguimiento.</div>
+          </div>
+        </div>
+      </div>
+      {/* Métodos manuales de la tienda */}
+      {metodosEnvio.map(m => (
+        <label key={m.id} style={{ display: 'flex', alignItems: 'flex-start', gap: 14, padding: '14px 16px', border: `1.5px solid ${metodoEnvioId === m.id ? 'var(--ink)' : 'var(--line)'}`, borderRadius: 12, cursor: 'pointer', background: '#fff', transition: 'border-color .12s' }}>
+          <input type="radio" name="envio" checked={metodoEnvioId === m.id} onChange={() => onChange(m.id)}
+            style={{ marginTop: 3, accentColor: 'var(--ink)', width: 16, height: 16, flexShrink: 0 }} />
+          <div style={{ flex: 1 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+              <div style={{ fontSize: 14, fontWeight: 600 }}>{m.nombre}</div>
+              <div className="mono tnum" style={{ fontSize: 14, fontWeight: 600 }}>{formatCurrencyFree(m.precio)}</div>
+            </div>
+            <div style={{ fontSize: 12, color: 'var(--ink-3)', marginTop: 2 }}>{m.proveedor} · {m.tiempo_estimado}</div>
+            <div style={{ fontSize: 12, color: 'var(--ink-3)' }}>{m.cobertura}</div>
+          </div>
+        </label>
+      ))}
+    </div>
+  );
+}
+
 /* ──────── PANEL ENVÍO ──────── */
-export function EnvioPanel({ prenda, tallaSeleccionada, nombre, email, whatsapp, direccion, ciudad, buyer, metodoEnvioId, metodosEnvio, dropTarget, costoEnvio, total, errorMsg, onChange, onBuyer, onContinuar, onCerrar }: {
+export function EnvioPanel({ prenda, tallaSeleccionada, nombre, email, whatsapp, direccion, ciudad, buyer, metodoEnvioId, metodosEnvio, dropTarget, costoEnvio, total, errorMsg, boxfulOriginCity, boxfulData, onChange, onBuyer, onBoxfulChange, onContinuar, onCerrar }: {
   prenda: CheckoutPrenda;
   tallaSeleccionada: string | null;
   nombre: string; email: string; whatsapp: string; direccion: string; ciudad: string;
@@ -76,8 +255,11 @@ export function EnvioPanel({ prenda, tallaSeleccionada, nombre, email, whatsapp,
   metodosEnvio: MetodoEnvio[];
   dropTarget?: number;
   costoEnvio: number; total: number; errorMsg: string;
+  boxfulOriginCity?: string | null;
+  boxfulData?: BoxfulChangeData | null;
   onChange: (f: string, v: string) => void;
   onBuyer: (buyer: BuyerProfile) => void;
+  onBoxfulChange?: (data: BoxfulChangeData) => void;
   onContinuar: () => void;
   onCerrar: () => void;
 }) {
@@ -111,7 +293,7 @@ export function EnvioPanel({ prenda, tallaSeleccionada, nombre, email, whatsapp,
       </div>
       <div style={{ marginBottom: 14 }}>
         <label className="label">WhatsApp</label>
-        <input className="input input-lg" placeholder="+504 9876-5432" value={whatsapp} onChange={e => onChange('whatsapp', e.target.value)} />
+        <PhoneInput value={whatsapp} onChange={v => onChange('whatsapp', v)} size="lg" />
       </div>
       <div style={{ marginBottom: 6 }}>
         <label className="label">
@@ -124,36 +306,39 @@ export function EnvioPanel({ prenda, tallaSeleccionada, nombre, email, whatsapp,
         <label className="label">Dirección</label>
         <input className="input input-lg" placeholder="Col. Kennedy, Calle 5, Casa 12" value={direccion} onChange={e => onChange('direccion', e.target.value)} />
       </div>
-      <div className="buyer-checkout-two-col" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 24 }}>
-        <div>
-          <label className="label">Ciudad</label>
-          <input className="input input-lg" placeholder={PLATFORM.defaultCity} value={ciudad} onChange={e => onChange('ciudad', e.target.value)} />
+      {metodoEnvioId === BOXFUL_ID ? (
+        <div style={{ marginBottom: 24 }}>
+          <BoxfulAddressFields
+            originCity={boxfulOriginCity}
+            itemsCount={1}
+            subtotal={prenda.precio}
+            onBoxfulChange={data => { onBoxfulChange?.(data); onChange('ciudad', data.destination?.cityName ?? ciudad); }}
+            onCiudadChange={c => onChange('ciudad', c)}
+          />
         </div>
-        <div>
-          <label className="label">País</label>
-          <input className="input input-lg" value={PLATFORM.country} readOnly style={{ background: 'var(--surface-2)', color: 'var(--ink-3)' }} />
-        </div>
-      </div>
-      <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 12 }}>Método de envío</div>
-      {metodosEnvio.length === 0 ? (
-        <div style={{ fontSize: 13, color: 'var(--ink-3)', padding: '20px 0', textAlign: 'center' }}>Sin métodos configurados</div>
       ) : (
-        <div style={{ display: 'grid', gap: 10, marginBottom: 24 }}>
-          {metodosEnvio.map(m => (
-            <label key={m.id} style={{ display: 'flex', alignItems: 'flex-start', gap: 14, padding: '14px 16px', border: `1.5px solid ${metodoEnvioId === m.id ? 'var(--ink)' : 'var(--line)'}`, borderRadius: 12, cursor: 'pointer', background: '#fff', transition: 'border-color .12s' }}>
-              <input type="radio" name="envio" checked={metodoEnvioId === m.id} onChange={() => onChange('metodoEnvioId', m.id)} style={{ marginTop: 3, accentColor: 'var(--ink)', width: 16, height: 16, flexShrink: 0 }} />
-              <div style={{ flex: 1 }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                  <div style={{ fontSize: 14, fontWeight: 600 }}>{m.nombre}</div>
-                  <div className="mono tnum" style={{ fontSize: 14, fontWeight: 600 }}>{formatCurrencyFree(m.precio)}</div>
-                </div>
-                <div style={{ fontSize: 12, color: 'var(--ink-3)', marginTop: 2 }}>{m.proveedor} · {m.tiempo_estimado}</div>
-                <div style={{ fontSize: 12, color: 'var(--ink-3)' }}>{m.cobertura}</div>
-              </div>
-            </label>
-          ))}
+        <div className="buyer-checkout-two-col" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 24 }}>
+          <div>
+            <label className="label">Ciudad</label>
+            <input className="input input-lg" placeholder={PLATFORM.defaultCity} value={ciudad} onChange={e => onChange('ciudad', e.target.value)} />
+          </div>
+          <div>
+            <label className="label">País</label>
+            <input className="input input-lg" value={PLATFORM.country} readOnly style={{ background: 'var(--surface-2)', color: 'var(--ink-3)' }} />
+          </div>
         </div>
       )}
+      <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 12 }}>Método de envío</div>
+      <ShippingSelector
+        metodosEnvio={metodosEnvio}
+        metodoEnvioId={metodoEnvioId}
+        boxfulQuote={boxfulData?.quote}
+        onChange={id => {
+          onChange('metodoEnvioId', id);
+          if (id !== BOXFUL_ID) onBoxfulChange?.({ isBoxful: false, quote: null, destination: null, mode: 'boxful_dropoff' });
+        }}
+      />
+      <div style={{ height: 24 }} />
       {errorMsg && <div style={{ marginBottom: 12 }}><Alert type="error" message={errorMsg} /></div>}
       <button className="btn btn-primary btn-block" style={{ height: 52, fontSize: 15 }} onClick={onContinuar}>
         Continuar al pago <Icons.arrow width={15} height={15} />

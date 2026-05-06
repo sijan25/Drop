@@ -6,6 +6,8 @@ import { notificarCambioEstado, notificarPagoConfirmado } from '@/lib/resend/ema
 import { wsCambioEstado } from '@/lib/whatsapp/notifications'
 import { guardServerMutation } from '@/lib/security/request'
 import { restaurarInventarioPedido } from '@/lib/orders/restore-stock'
+import { createBoxfulShipment } from '@/lib/boxful/client'
+import type { BoxfulShippingMode } from '@/lib/boxful/types'
 
 const TRANSITIONS: Record<string, { siguiente: string; campo: string }> = {
   pagado:   { siguiente: 'empacado',  campo: 'empacado_at' },
@@ -33,8 +35,10 @@ async function getPedidoParaEmail(pedidoId: string, tiendaId: string) {
     .from('pedidos')
     .select(`
       numero, comprador_nombre, comprador_email, comprador_telefono, direccion, tienda_id,
-      monto_total, metodo_envio, estado,
+      monto_total, metodo_envio, estado, envio_modalidad, envio_courier_id,
+      envio_courier_nombre, envio_metadata,
       pedido_items (
+        precio,
         prendas ( nombre )
       )
     `)
@@ -50,9 +54,9 @@ async function getPedidoParaEmail(pedidoId: string, tiendaId: string) {
     .eq('id', tiendaId)
     .single()
 
-  const prendaNombre =
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (pedido.pedido_items as any)?.[0]?.prendas?.nombre ?? 'Prenda'
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const items = ((pedido as any).pedido_items ?? []) as Array<{ precio?: number; prendas?: { nombre?: string | null } | null }>
+  const prendaNombre = items[0]?.prendas?.nombre ?? 'Prenda'
 
   return {
     pedido,
@@ -60,6 +64,16 @@ async function getPedidoParaEmail(pedidoId: string, tiendaId: string) {
     tiendaEmail: tienda?.contact_email ?? null,
     prendaNombre,
   }
+}
+
+function metodoEnvioLabel(metodoEnvio: string | null | undefined) {
+  if (metodoEnvio === 'boxful_dropoff') return 'Boxful · Punto autorizado'
+  if (metodoEnvio === 'boxful_recoleccion') return 'Boxful · Recolección'
+  return metodoEnvio === 'domicilio' ? 'Envío a domicilio' : 'Pickup / Retiro en tienda'
+}
+
+function isBoxfulMode(value: string | null | undefined): value is BoxfulShippingMode {
+  return value === 'boxful_dropoff' || value === 'boxful_recoleccion'
 }
 
 export async function reenviarCorreoPagoConfirmado(pedidoId: string) {
@@ -87,7 +101,7 @@ export async function reenviarCorreoPagoConfirmado(pedidoId: string) {
     montoTotal: ctx.pedido.monto_total,
     tiendaNombre: ctx.tiendaNombre,
     tiendaEmail: ctx.tiendaEmail,
-    metodoEnvio: ctx.pedido.metodo_envio === 'domicilio' ? 'Envío a domicilio' : 'Pickup / Retiro en tienda',
+    metodoEnvio: metodoEnvioLabel(ctx.pedido.metodo_envio),
     direccion: ctx.pedido.direccion,
   })
 
@@ -141,6 +155,59 @@ export async function avanzarEstado(
   if (t.siguiente === 'en_camino') {
     update.tracking_numero = tracking?.numero?.trim() || null
     update.tracking_url = tracking?.url?.trim() || null
+
+    const ctx = await getPedidoParaEmail(pedidoId, auth.tiendaId)
+    if (ctx && isBoxfulMode(ctx.pedido.metodo_envio) && !update.tracking_numero) {
+      try {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const metadata = ((ctx.pedido as any).envio_metadata ?? {}) as {
+          destination?: {
+            stateId?: string
+            cityId?: string
+            stateName?: string
+            cityName?: string
+          }
+        }
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const orderItems = ((ctx.pedido as any).pedido_items ?? []) as Array<{ precio?: number; prendas?: { nombre?: string | null } | null }>
+
+        const shipment = await createBoxfulShipment({
+          orderId: pedidoId,
+          orderNumber: ctx.pedido.numero,
+          mode: ctx.pedido.metodo_envio,
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          courierId: (ctx.pedido as any).envio_courier_id ?? null,
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          courierName: (ctx.pedido as any).envio_courier_nombre ?? null,
+          customerName: ctx.pedido.comprador_nombre,
+          customerPhone: ctx.pedido.comprador_telefono,
+          customerEmail: ctx.pedido.comprador_email,
+          customerAddress: ctx.pedido.direccion ?? '',
+          customerStateId: metadata.destination?.stateId ?? null,
+          customerCityId: metadata.destination?.cityId ?? null,
+          customerStateName: metadata.destination?.stateName ?? null,
+          customerCityName: metadata.destination?.cityName ?? null,
+          parcels: (orderItems.length ? orderItems : [{ precio: ctx.pedido.monto_total, prendas: { nombre: ctx.prendaNombre } }]).map((item, index) => ({
+            content: item.prendas?.nombre ?? `Prenda ${index + 1}`,
+            price: Number(item.precio ?? 0),
+            weight: 1,
+            width: 20,
+            height: 8,
+            length: 25,
+          })),
+        })
+
+        update.tracking_numero = shipment.shipmentNumber
+        update.tracking_url = shipment.trackingUrl
+        update.envio_tracking_url = shipment.trackingUrl
+        update.envio_label_url = shipment.labelUrl
+        update.envio_estado = shipment.statusDescription
+        update.envio_courier_nombre = shipment.courierName
+      } catch (error) {
+        console.error('[boxful] No se pudo crear envío:', error)
+        return { error: 'No pudimos crear la guía de Boxful. Intentá de nuevo o ingresá tracking manual.' }
+      }
+    }
   }
 
   const { error } = await supabase
@@ -156,8 +223,12 @@ export async function avanzarEstado(
   if (ESTADOS_CON_EMAIL.has(t.siguiente)) {
     const ctx = await getPedidoParaEmail(pedidoId, auth.tiendaId)
     if (ctx) {
-      const trackingNumero = t.siguiente === 'en_camino' ? (tracking?.numero?.trim() || null) : null
-      const trackingUrlEnvio = t.siguiente === 'en_camino' ? (tracking?.url?.trim() || null) : null
+      const trackingNumero = t.siguiente === 'en_camino'
+        ? (String(update.tracking_numero ?? '').trim() || tracking?.numero?.trim() || null)
+        : null
+      const trackingUrlEnvio = t.siguiente === 'en_camino'
+        ? (String(update.tracking_url ?? '').trim() || tracking?.url?.trim() || null)
+        : null
       await Promise.all([
         notificarCambioEstado({
           compradorEmail: ctx.pedido.comprador_email,
@@ -169,7 +240,7 @@ export async function avanzarEstado(
           tiendaEmail: ctx.tiendaEmail,
           nuevoEstado: t.siguiente as 'empacado' | 'en_camino',
           direccion: ctx.pedido.direccion,
-          metodoEnvio: ctx.pedido.metodo_envio,
+          metodoEnvio: metodoEnvioLabel(ctx.pedido.metodo_envio),
           trackingNumero,
           trackingUrlEnvio,
         }),

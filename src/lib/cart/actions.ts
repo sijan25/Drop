@@ -11,7 +11,8 @@ import {
   isProductSizeInStock,
   normalizeSelectedProductSize,
 } from '@/lib/product-sizes';
-import type { Database } from '@/types/database';
+import type { Carrito } from '@/types/buyer';
+import type { Prenda } from '@/types/prenda';
 
 export type CartItemDTO = {
   prendaId: string;
@@ -26,11 +27,8 @@ export type CartItemDTO = {
 };
 
 type ServiceClient = Awaited<ReturnType<typeof createServiceClient>>;
-type CartRow = Database['public']['Tables']['carritos']['Row'];
-type PrendaRow = Pick<
-  Database['public']['Tables']['prendas']['Row'],
-  'id' | 'tienda_id' | 'nombre' | 'marca' | 'talla' | 'tallas' | 'cantidades_por_talla' | 'precio' | 'fotos' | 'estado' | 'cantidad'
->;
+type CartRow = Carrito;
+type PrendaRow = Pick<Prenda, 'id' | 'tienda_id' | 'nombre' | 'marca' | 'talla' | 'tallas' | 'cantidades_por_talla' | 'precio' | 'fotos' | 'estado' | 'cantidad'>;
 
 const SESSION_MAX_AGE = 60 * 60 * 24 * 7;
 const MAX_CART_ITEMS = 20;

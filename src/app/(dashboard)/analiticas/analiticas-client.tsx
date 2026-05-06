@@ -14,6 +14,7 @@ interface PedidoItem {
 
 interface Pedido {
   id: string;
+  numero: string;
   comprador_nombre: string;
   comprador_email: string | null;
   monto_total: number;
@@ -59,11 +60,17 @@ function fmtL(n: number) {
   return formatCurrency(n);
 }
 
+function fmtFecha(iso: string | null | undefined) {
+  if (!iso) return '—';
+  const d = new Date(iso);
+  return d.toLocaleDateString('es-HN', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' });
+}
+
 function dayKey(iso: string) {
   return iso.slice(0, 10);
 }
 
-interface DayPoint { date: string; label: string; total: number }
+interface DayPoint { date: string; label: string; total: number; desde: string; hasta: string }
 interface TopCliente { nombre: string; email: string | null; total: number; pedidos: number }
 interface TopPrenda { nombre: string; talla: string; unidades: number; total: number }
 interface TallaStats { talla: string; unidades: number; total: number }
@@ -96,8 +103,11 @@ function buildChartData(pedidos: Pedido[], desde: Date, hasta: Date): DayPoint[]
         total += map[d.toISOString().slice(0, 10)] ?? 0;
       }
     }
+    const bucketEnd = new Date(cur);
+    bucketEnd.setDate(bucketEnd.getDate() + step - 1);
+    if (bucketEnd > end) bucketEnd.setTime(end.getTime());
     const label = cur.toLocaleDateString('es-HN', step === 1 ? { day: 'numeric', month: 'short' } : { day: 'numeric', month: 'short' });
-    days.push({ date: k, label, total });
+    days.push({ date: k, label, total, desde: k, hasta: bucketEnd.toISOString().slice(0, 10) });
     cur.setDate(cur.getDate() + step);
   }
   return days;
@@ -151,7 +161,7 @@ function MiniBar({ value, max, color = 'var(--accent)' }: { value: number; max: 
   );
 }
 
-function BarChart({ data }: { data: DayPoint[] }) {
+function BarChart({ data, selectedDate, onSelect }: { data: DayPoint[]; selectedDate: string | null; onSelect: (date: string) => void }) {
   const max = Math.max(...data.map(d => d.total), 1);
   const hasData = data.some(d => d.total > 0);
   const showLabels = data.length <= 31;
@@ -168,13 +178,20 @@ function BarChart({ data }: { data: DayPoint[] }) {
     <div style={{ display: 'flex', alignItems: 'flex-end', gap: data.length > 60 ? 1 : 3, height: 100, paddingBottom: showLabels ? 20 : 0, position: 'relative' }}>
       {data.map((d, i) => {
         const h = max > 0 ? Math.max((d.total / max) * 82, d.total > 0 ? 3 : 0) : 0;
+        const selected = selectedDate === d.date;
         return (
-          <div key={i} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'flex-end', gap: 0, position: 'relative', minWidth: 0 }} title={`${d.label}: ${fmtL(d.total)}`}>
-            <div style={{ width: '100%', height: h, background: d.total > 0 ? 'var(--accent)' : 'var(--line)', borderRadius: '3px 3px 0 0', opacity: d.total > 0 ? 1 : 0.4, transition: 'height .3s' }} />
+          <button
+            key={i}
+            type="button"
+            onClick={() => d.total > 0 && onSelect(d.date)}
+            style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'flex-end', gap: 0, position: 'relative', minWidth: 0, height: '100%', cursor: d.total > 0 ? 'pointer' : 'default', padding: 0, background: 'transparent' }}
+            title={`${d.label}: ${fmtL(d.total)}`}
+          >
+            <div style={{ width: '100%', height: h, background: d.total > 0 ? (selected ? 'var(--accent-3)' : 'var(--accent)') : 'var(--line)', borderRadius: '3px 3px 0 0', opacity: d.total > 0 ? 1 : 0.4, transition: 'height .3s, background .15s', outline: selected ? '2px solid rgba(201,100,66,0.28)' : 'none', outlineOffset: 2 }} />
             {showLabels && i % Math.ceil(data.length / 8) === 0 && (
               <div style={{ position: 'absolute', bottom: -18, fontSize: 9, color: 'var(--ink-3)', whiteSpace: 'nowrap', transform: 'translateX(-50%)', left: '50%' }}>{d.label}</div>
             )}
-          </div>
+          </button>
         );
       })}
     </div>
@@ -183,12 +200,16 @@ function BarChart({ data }: { data: DayPoint[] }) {
 
 export default function AnaliticasClient() {
   const router = useRouter();
+  const shellRef = useRef<HTMLDivElement>(null);
   const [preset, setPreset] = useState<Preset>('mes');
   const [customDesde, setCustomDesde] = useState('');
   const [customHasta, setCustomHasta] = useState('');
   const [showCustom, setShowCustom] = useState(false);
   const [pedidos, setPedidos] = useState<Pedido[]>([]);
+  const [selectedDate, setSelectedDate] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [isCompact, setIsCompact] = useState(false);
+  const [isNarrow, setIsNarrow] = useState(false);
   const tiendaId = useRef<string | null>(null);
 
   async function cargar(p: Preset, cDesde?: string, cHasta?: string) {
@@ -199,32 +220,48 @@ export default function AnaliticasClient() {
     if (!tiendaId.current) {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) { router.push('/login'); return; }
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const uid = user.id as unknown as never;
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const { data: t } = await (supabase.from('tiendas').select('id').eq('user_id', uid).maybeSingle() as any);
+      const { data: t } = await supabase.from('tiendas').select('id').eq('user_id', user.id as never).maybeSingle();
       if (!t) { router.push('/onboarding'); return; }
       tiendaId.current = (t as { id: string }).id;
     }
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data } = await (supabase
+    const { data } = await supabase
       .from('pedidos')
       .select(`
-        id, comprador_nombre, comprador_email, monto_total, estado, created_at,
+        id, numero, comprador_nombre, comprador_email, monto_total, estado, created_at,
         pedido_items ( precio, talla_seleccionada, prendas ( nombre, marca ) )
-      `) as any)
-      .eq('tienda_id', tiendaId.current!)
+      `)
+      .eq('tienda_id', tiendaId.current! as never)
       .not('estado', 'in', '(cancelado,apartado)')
       .gte('created_at', desde.toISOString())
       .lte('created_at', hasta.toISOString())
       .order('created_at', { ascending: true });
 
     setPedidos((data as unknown as Pedido[]) ?? []);
+    setSelectedDate(null);
     setLoading(false);
   }
 
-  useEffect(() => { cargar('mes'); }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      void cargar('mes');
+    }, 0);
+    return () => window.clearTimeout(timer);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  useEffect(() => {
+    const node = shellRef.current;
+    if (!node) return;
+    const update = () => {
+      setIsCompact(node.clientWidth <= 900);
+      setIsNarrow(node.clientWidth <= 560);
+    };
+    update();
+    const observer = new ResizeObserver(update);
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, []);
 
   function handlePreset(p: Preset) {
     setPreset(p);
@@ -245,6 +282,14 @@ export default function AnaliticasClient() {
   const totalItems = pedidos.reduce((s, p) => s + p.pedido_items.length, 0);
 
   const chartData = buildChartData(pedidos, desde, hasta);
+  const selectedPoint = selectedDate ? chartData.find(d => d.date === selectedDate) ?? null : null;
+  const selectedPedidos = selectedPoint
+    ? pedidos.filter(p => {
+        if (!p.created_at) return false;
+        const k = dayKey(p.created_at);
+        return k >= selectedPoint.desde && k <= selectedPoint.hasta;
+      })
+    : [];
   const topClientes = buildTopClientes(pedidos);
   const topPrendas = buildTopPrendas(pedidos);
   const tallaStats = buildTallaStats(pedidos);
@@ -261,24 +306,25 @@ export default function AnaliticasClient() {
   const todayStr = new Date().toISOString().slice(0, 10);
 
   return (
-    <div style={{ height: '100%', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+    <div ref={shellRef} className="analytics-shell" style={{ height: '100%', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
       {/* Header */}
-      <div style={{
-        padding: '18px 28px 14px',
+      <div className="analytics-header" style={{
+        padding: isCompact ? '18px 16px 14px' : '18px 28px 14px',
         borderBottom: '1px solid var(--line)',
-        display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 20,
+        display: 'flex', alignItems: isCompact ? 'stretch' : 'center', justifyContent: 'space-between', gap: isCompact ? 12 : 20,
         flexShrink: 0,
         background: 'rgba(255,255,255,0.68)',
         backdropFilter: 'blur(18px)',
         flexWrap: 'wrap',
+        flexDirection: isCompact ? 'column' : undefined,
       }}>
         <div>
           <div style={{ fontSize: 20, fontWeight: 900, letterSpacing: '-0.025em' }}>Analíticas</div>
           <div className="t-mute" style={{ fontSize: 13, marginTop: 2 }}>{label}</div>
         </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-          <div style={{ display: 'flex', gap: 4, background: 'var(--surface-2)', borderRadius: 10, padding: 3 }}>
+        <div className="analytics-header-actions" style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+          <div className="analytics-period-tabs" style={{ display: 'flex', gap: 4, background: 'var(--surface-2)', borderRadius: 10, padding: 3, width: isCompact ? '100%' : undefined }}>
             {PRESETS.map(pr => (
               <button
                 key={pr.id}
@@ -289,7 +335,8 @@ export default function AnaliticasClient() {
                   color: preset === pr.id ? 'var(--accent-3)' : 'var(--ink-3)',
                   boxShadow: preset === pr.id ? '0 1px 4px rgba(0,0,0,0.08)' : 'none',
                   transition: 'all .12s',
-                  display: 'flex', alignItems: 'center', gap: 5,
+                  display: 'flex', alignItems: 'center', justifyContent: isCompact ? 'center' : undefined, gap: 5,
+                  flex: isCompact ? 1 : undefined,
                 }}
               >
                 {pr.id === 'custom' && <Icons.filter width={11} height={11} />}
@@ -300,7 +347,7 @@ export default function AnaliticasClient() {
 
           {/* Custom date range inputs */}
           {showCustom && (
-            <div style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'var(--surface-2)', borderRadius: 10, padding: '5px 10px', border: '1.5px solid rgba(201,100,66,0.25)' }}>
+            <div className="analytics-custom-range" style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'var(--surface-2)', borderRadius: 10, padding: '5px 10px', border: '1.5px solid rgba(201,100,66,0.25)', width: isCompact ? '100%' : undefined, flexWrap: isCompact ? 'wrap' : undefined }}>
               <input
                 type="date"
                 value={customDesde}
@@ -334,17 +381,17 @@ export default function AnaliticasClient() {
         </div>
       </div>
 
-      <div style={{ flex: 1, overflowY: 'auto', padding: '20px 28px 28px' }}>
+      <div className="analytics-content" style={{ flex: 1, overflowY: 'auto', padding: isCompact ? '14px 14px 120px' : '20px 28px 28px' }}>
         {/* KPIs */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, marginBottom: 24 }}>
+        <div className="analytics-kpi-grid" style={{ display: 'grid', gridTemplateColumns: isNarrow ? '1fr' : isCompact ? 'repeat(2, minmax(0, 1fr))' : 'repeat(4, 1fr)', gap: isCompact ? 10 : 12, marginBottom: isCompact ? 16 : 24 }}>
           {[
             { label: 'Ingresos totales', value: loading ? '…' : fmtL(totalVentas), sub: 'pedidos cobrados', accent: true },
             { label: 'Pedidos', value: loading ? '…' : String(totalPedidos), sub: 'confirmados en el período', accent: false },
             { label: 'Ticket promedio', value: loading ? '…' : fmtL(ticketPromedio), sub: 'por pedido', accent: false },
             { label: 'Prendas vendidas', value: loading ? '…' : String(totalItems), sub: 'unidades en el período', accent: false },
           ].map(k => (
-            <div key={k.label} className="card" style={{
-              padding: '18px 20px',
+            <div key={k.label} className="card analytics-kpi-card" style={{
+              padding: isCompact ? '16px 16px' : '18px 20px',
               ...(k.accent ? {
                 background: 'linear-gradient(135deg, #E78C61 0%, #C96442 100%)',
                 border: 'none',
@@ -354,7 +401,7 @@ export default function AnaliticasClient() {
               <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.06, color: k.accent ? 'rgba(255,255,255,0.75)' : 'var(--ink-3)', marginBottom: 8 }}>
                 {k.label}
               </div>
-              <div className="tnum" style={{ fontSize: 26, fontWeight: 900, letterSpacing: '-0.03em', color: k.accent ? '#fff' : 'var(--ink)' }}>
+              <div className="tnum" style={{ fontSize: isCompact ? 22 : 26, fontWeight: 900, letterSpacing: '-0.03em', color: k.accent ? '#fff' : 'var(--ink)' }}>
                 {k.value}
               </div>
               <div style={{ fontSize: 11, marginTop: 4, color: k.accent ? 'rgba(255,255,255,0.7)' : 'var(--ink-3)' }}>{k.sub}</div>
@@ -363,7 +410,7 @@ export default function AnaliticasClient() {
         </div>
 
         {/* Ventas por día */}
-        <div className="card" style={{ padding: '20px 22px', marginBottom: 20 }}>
+        <div className="card analytics-chart-card" style={{ padding: isCompact ? '16px 14px' : '20px 22px', marginBottom: isCompact ? 14 : 20 }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
             <div style={{ fontSize: 14, fontWeight: 800 }}>Ventas por día</div>
             {!loading && totalVentas > 0 && (
@@ -375,14 +422,52 @@ export default function AnaliticasClient() {
           {loading ? (
             <div style={{ height: 100, background: 'var(--surface-2)', borderRadius: 8, animation: 'pulse 1.5s infinite' }} />
           ) : (
-            <BarChart data={chartData} />
+            <BarChart data={chartData} selectedDate={selectedDate} onSelect={setSelectedDate} />
+          )}
+          {!loading && totalVentas > 0 && (
+            <div style={{ marginTop: 16, borderTop: '1px solid var(--line)', paddingTop: 14 }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, marginBottom: 10 }}>
+                <div style={{ fontSize: 13, fontWeight: 800 }}>
+                  {selectedPoint ? `Detalle · ${selectedPoint.label}` : 'Detalle de barra'}
+                </div>
+                {selectedPoint && (
+                  <button type="button" className="btn btn-outline btn-sm" onClick={() => setSelectedDate(null)}>
+                    Limpiar
+                  </button>
+                )}
+              </div>
+              {!selectedPoint ? (
+                <div className="t-mute" style={{ fontSize: 12, padding: '10px 0' }}>Seleccioná una barrita para ver solo sus pedidos.</div>
+              ) : selectedPedidos.length === 0 ? (
+                <div className="t-mute" style={{ fontSize: 12, padding: '10px 0' }}>No hay pedidos en esta barra.</div>
+              ) : (
+                <div style={{ maxHeight: 240, overflowY: 'auto', border: '1px solid var(--line)', borderRadius: 8 }}>
+                  <div className="mono" style={{ display: 'grid', gridTemplateColumns: '100px 1fr 1fr 110px 110px', gap: 10, padding: '9px 12px', borderBottom: '1px solid var(--line)', fontSize: 10, color: 'var(--ink-3)', textTransform: 'uppercase', position: 'sticky', top: 0, background: '#fff', zIndex: 1 }}>
+                    <div>Pedido</div><div>Comprador</div><div>Prenda</div><div>Monto</div><div>Fecha</div>
+                  </div>
+                  {selectedPedidos.map(p => {
+                    const item = p.pedido_items[0];
+                    const prenda = item?.prendas ? [item.prendas.marca, item.prendas.nombre].filter(Boolean).join(' ') : '—';
+                    return (
+                      <div key={p.id} style={{ display: 'grid', gridTemplateColumns: '100px 1fr 1fr 110px 110px', gap: 10, padding: '10px 12px', borderBottom: '1px solid var(--line-2)', alignItems: 'center', fontSize: 12 }}>
+                        <div className="mono tnum" style={{ fontWeight: 800 }}>{p.numero}</div>
+                        <div style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{p.comprador_nombre}</div>
+                        <div className="t-mute" style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{prenda}</div>
+                        <div className="mono tnum" style={{ fontWeight: 800 }}>{fmtL(p.monto_total)}</div>
+                        <div className="t-mute">{fmtFecha(p.created_at)}</div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
           )}
         </div>
 
         {/* Bottom grid */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20, marginBottom: 20 }}>
+        <div className="analytics-bottom-grid" style={{ display: 'grid', gridTemplateColumns: isCompact ? '1fr' : '1fr 1fr', gap: isCompact ? 14 : 20, marginBottom: isCompact ? 14 : 20 }}>
           {/* Top clientes */}
-          <div className="card" style={{ overflow: 'hidden' }}>
+          <div className="card analytics-list-card" style={{ overflow: 'hidden' }}>
             <div style={{ padding: '16px 18px 12px', borderBottom: '1px solid var(--line)', display: 'flex', alignItems: 'center', gap: 8 }}>
               <Icons.user width={14} height={14} style={{ color: 'var(--accent)' }} />
               <div style={{ fontSize: 14, fontWeight: 800 }}>Mejores clientes</div>
@@ -391,7 +476,7 @@ export default function AnaliticasClient() {
               <div style={{ padding: 28, textAlign: 'center', color: 'var(--ink-3)', fontSize: 13 }}>Cargando...</div>
             ) : topClientes.length === 0 ? (
               <div style={{ padding: 28, textAlign: 'center', color: 'var(--ink-3)', fontSize: 13 }}>Sin datos en este período</div>
-            ) : topClientes.map((c, i) => (
+            ) : <div style={{ maxHeight: 320, overflowY: 'auto' }}>{topClientes.map((c, i) => (
               <div key={i} style={{ padding: '10px 18px', borderBottom: i < topClientes.length - 1 ? '1px solid var(--line-2)' : 'none' }}>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 5 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0 }}>
@@ -415,11 +500,11 @@ export default function AnaliticasClient() {
                 </div>
                 <MiniBar value={c.total} max={maxCliente} />
               </div>
-            ))}
+            ))}</div>}
           </div>
 
           {/* Tallas */}
-          <div className="card" style={{ overflow: 'hidden' }}>
+          <div className="card analytics-list-card" style={{ overflow: 'hidden' }}>
             <div style={{ padding: '16px 18px 12px', borderBottom: '1px solid var(--line)', display: 'flex', alignItems: 'center', gap: 8 }}>
               <Icons.grid width={14} height={14} style={{ color: 'var(--accent)' }} />
               <div style={{ fontSize: 14, fontWeight: 800 }}>Ventas por talla</div>
@@ -428,7 +513,7 @@ export default function AnaliticasClient() {
               <div style={{ padding: 28, textAlign: 'center', color: 'var(--ink-3)', fontSize: 13 }}>Cargando...</div>
             ) : tallaStats.length === 0 ? (
               <div style={{ padding: 28, textAlign: 'center', color: 'var(--ink-3)', fontSize: 13 }}>Sin datos en este período</div>
-            ) : tallaStats.map((t, i) => (
+            ) : <div style={{ maxHeight: 320, overflowY: 'auto' }}>{tallaStats.map((t, i) => (
               <div key={i} style={{ padding: '10px 18px', borderBottom: i < tallaStats.length - 1 ? '1px solid var(--line-2)' : 'none' }}>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 5 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -445,12 +530,12 @@ export default function AnaliticasClient() {
                 </div>
                 <MiniBar value={t.unidades} max={maxTalla} color="#7B6B8F" />
               </div>
-            ))}
+            ))}</div>}
           </div>
         </div>
 
         {/* Top prendas */}
-        <div className="card" style={{ overflow: 'hidden' }}>
+        <div className="card analytics-top-products-card" style={{ overflow: 'hidden' }}>
           <div style={{ padding: '16px 18px 12px', borderBottom: '1px solid var(--line)', display: 'flex', alignItems: 'center', gap: 8 }}>
             <Icons.sparkle width={14} height={14} style={{ color: 'var(--accent)' }} />
             <div style={{ fontSize: 14, fontWeight: 800 }}>Prendas más vendidas</div>
@@ -461,25 +546,27 @@ export default function AnaliticasClient() {
             <div style={{ padding: 28, textAlign: 'center', color: 'var(--ink-3)', fontSize: 13 }}>Sin datos en este período</div>
           ) : (
             <>
-              <div style={{ display: 'grid', gridTemplateColumns: '28px 1fr 80px 80px 80px 120px', padding: '9px 18px', borderBottom: '1px solid var(--line-2)', fontSize: 10, color: 'var(--ink-3)', textTransform: 'uppercase', letterSpacing: 0.05 }} className="mono">
+              <div className="analytics-products-head mono" style={{ display: isCompact ? 'none' : 'grid', gridTemplateColumns: '28px 1fr 80px 80px 80px 120px', padding: '9px 18px', borderBottom: '1px solid var(--line-2)', fontSize: 10, color: 'var(--ink-3)', textTransform: 'uppercase', letterSpacing: 0.05 }}>
                 <div>#</div><div>Prenda</div><div>Talla</div><div style={{ textAlign: 'right' }}>Und.</div><div style={{ textAlign: 'right' }}>Total</div><div style={{ paddingLeft: 8 }}>Popularidad</div>
               </div>
+              <div style={{ maxHeight: 360, overflowY: 'auto' }}>
               {topPrendas.map((p, i) => (
-                <div key={i} style={{ display: 'grid', gridTemplateColumns: '28px 1fr 80px 80px 80px 120px', padding: '10px 18px', borderBottom: i < topPrendas.length - 1 ? '1px solid var(--line-2)' : 'none', alignItems: 'center' }}>
+                <div className="analytics-product-row" key={i} style={{ display: 'grid', gridTemplateColumns: isCompact ? '28px minmax(0, 1fr) auto' : '28px 1fr 80px 80px 80px 120px', gap: isCompact ? '6px 10px' : undefined, padding: isCompact ? '12px 14px' : '10px 18px', borderBottom: i < topPrendas.length - 1 ? '1px solid var(--line-2)' : 'none', alignItems: 'center' }}>
                   <div className="mono t-mute" style={{ fontSize: 11 }}>{i + 1}</div>
-                  <div style={{ fontSize: 12, fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', paddingRight: 12 }}>{p.nombre}</div>
+                  <div style={{ fontSize: 12, fontWeight: 600, whiteSpace: isCompact ? 'normal' : 'nowrap', overflow: 'hidden', textOverflow: isCompact ? undefined : 'ellipsis', paddingRight: isCompact ? 0 : 12 }}>{p.nombre}</div>
                   <div>
                     <span style={{ display: 'inline-block', padding: '2px 7px', borderRadius: 4, background: 'var(--surface-2)', fontSize: 10, fontWeight: 800, fontFamily: 'var(--font-mono)' }}>
                       {p.talla}
                     </span>
                   </div>
-                  <div className="mono tnum" style={{ fontSize: 12, fontWeight: 700, textAlign: 'right' }}>{p.unidades}</div>
+                  <div className="mono tnum" style={{ fontSize: 12, fontWeight: 700, textAlign: 'right', gridColumn: isCompact ? '2 / 3' : undefined }}>{isCompact ? `${p.unidades} und.` : p.unidades}</div>
                   <div className="mono tnum" style={{ fontSize: 12, fontWeight: 700, textAlign: 'right' }}>{fmtL(p.total)}</div>
-                  <div style={{ paddingLeft: 8 }}>
+                  <div style={{ paddingLeft: isCompact ? 0 : 8, gridColumn: isCompact ? '2 / 4' : undefined, width: '100%' }}>
                     <MiniBar value={p.unidades} max={maxPrenda} color="var(--accent)" />
                   </div>
                 </div>
               ))}
+              </div>
             </>
           )}
         </div>

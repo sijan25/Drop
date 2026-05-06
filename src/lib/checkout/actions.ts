@@ -9,9 +9,22 @@ import { buildOrderTrackingUrl } from '@/lib/security/order-access';
 import { guardServerMutation } from '@/lib/security/request';
 import { createBuyerClient, createServiceClient, getServiceRoleConfigError } from '@/lib/supabase/server';
 import { formatCurrencyFree } from '@/lib/config/platform';
-import type { Database } from '@/types/database';
+import { quoteBoxful } from '@/lib/boxful/client';
+import type { BoxfulQuote, BoxfulShippingMode } from '@/lib/boxful/types';
+import type { MetodoPago } from '@/types/envio';
 
-type MetodoPago = Database['public']['Tables']['metodos_pago']['Row'];
+const boxfulQuoteSchema = z.object({
+  provider: z.literal('boxful'),
+  mode: z.enum(['boxful_dropoff', 'boxful_recoleccion']),
+  courierId: z.string().nullable(),
+  courierName: z.string().trim().min(1).max(120),
+  courierLogo: z.string().trim().url().nullable(),
+  price: z.number().min(0).max(10000),
+  estimatedDelivery: z.string().trim().min(1).max(80),
+  deliveryType: z.string().trim().max(80).nullable(),
+  source: z.enum(['boxful', 'local_estimate']),
+  note: z.string().trim().max(240).nullable(),
+});
 
 const checkoutSchema = z.object({
   tiendaId: z.uuid(),
@@ -25,9 +38,20 @@ const checkoutSchema = z.object({
   whatsapp: z.string().trim().min(7).max(40),
   direccion: z.string().trim().min(4).max(240),
   ciudad: z.string().trim().min(2).max(90),
-  metodoEnvioId: z.uuid(),
+  metodoEnvioId: z.uuid().nullable().optional(),
   metodoPagoId: z.uuid(),
   comprobanteUrl: z.string().trim().url().max(600).nullable().optional(),
+  envioBoxful: z.object({
+    mode: z.enum(['boxful_dropoff', 'boxful_recoleccion']),
+    quote: boxfulQuoteSchema,
+    destination: z.object({
+      stateId: z.string().trim().min(1).max(80),
+      stateName: z.string().trim().min(2).max(90),
+      cityId: z.string().trim().min(1).max(80),
+      cityName: z.string().trim().min(2).max(90),
+    }),
+    originCityName: z.string().trim().max(90).nullable().optional(),
+  }).optional(),
 });
 
 type CheckoutInput = z.input<typeof checkoutSchema>;
@@ -57,6 +81,10 @@ type CheckoutRpcClient = {
   ) => Promise<{ data: CheckoutRpcRow[] | null; error: { message: string; code?: string } | null }>;
 };
 
+function boxfulModeLabel(mode: BoxfulShippingMode) {
+  return mode === 'boxful_dropoff' ? 'Boxful · Punto autorizado' : 'Boxful · Recolección';
+}
+
 function publicUrlIsAllowed(url: string | null | undefined) {
   if (!url) return true;
 
@@ -67,7 +95,7 @@ function publicUrlIsAllowed(url: string | null | undefined) {
 
     const cloudName = process.env.CLOUDINARY_CLOUD_NAME ?? process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME;
     if (cloudName && parsed.origin === 'https://res.cloudinary.com') {
-      return parsed.pathname.startsWith(`/${cloudName}/fardodrops/comprobantes/`);
+      return parsed.pathname.startsWith(`/${cloudName}/`) && parsed.pathname.includes('/fardodrops/comprobantes/');
     }
 
     return false;
@@ -103,7 +131,7 @@ export async function crearCheckoutPublico(input: CheckoutInput): Promise<{
   error?: string;
   pedido?: { id: string; numero: string; trackingUrl: string };
 }> {
-  const guardError = await guardServerMutation('checkout:create', 8, 10 * 60);
+  const guardError = await guardServerMutation('checkout:create', 20, 10 * 60);
   if (guardError) return { error: guardError };
 
   const parsed = checkoutSchema.safeParse(input);
@@ -112,6 +140,10 @@ export async function crearCheckoutPublico(input: CheckoutInput): Promise<{
   }
 
   const data = parsed.data;
+  if (!data.metodoEnvioId && !data.envioBoxful) {
+    return { error: 'Seleccioná un método de envío válido.' };
+  }
+
   if (!publicUrlIsAllowed(data.comprobanteUrl)) {
     return { error: 'El comprobante no pertenece al almacenamiento permitido.' };
   }
@@ -126,7 +158,7 @@ export async function crearCheckoutPublico(input: CheckoutInput): Promise<{
   const service = await createServiceClient();
   const { data: prendasParaValidar, error: prendasError } = await service
     .from('prendas')
-    .select('id, talla, tallas, cantidad, cantidades_por_talla')
+    .select('id, talla, tallas, cantidad, cantidades_por_talla, precio')
     .eq('tienda_id', data.tiendaId)
     .in('id', itemIds);
 
@@ -151,6 +183,25 @@ export async function crearCheckoutPublico(input: CheckoutInput): Promise<{
     }
 
     itemsNormalizados.push({ prendaId: item.prendaId, talla: tallaSeleccionada });
+  }
+
+  let boxfulQuote: BoxfulQuote | null = null;
+  if (data.envioBoxful) {
+    const subtotal = itemsNormalizados.reduce((total, item) => {
+      const prenda = prendasPorId.get(item.prendaId);
+      return total + Number((prenda as { precio?: number | string } | undefined)?.precio ?? 0);
+    }, 0);
+
+    boxfulQuote = await quoteBoxful({
+      mode: data.envioBoxful.mode,
+      originCityName: data.envioBoxful.originCityName,
+      destinationStateId: data.envioBoxful.destination.stateId,
+      destinationStateName: data.envioBoxful.destination.stateName,
+      destinationCityId: data.envioBoxful.destination.cityId,
+      destinationCityName: data.envioBoxful.destination.cityName,
+      itemsCount: itemsNormalizados.length,
+      subtotal,
+    });
   }
 
   const buyer = await createBuyerClient();
@@ -183,9 +234,20 @@ export async function crearCheckoutPublico(input: CheckoutInput): Promise<{
       p_comprador_telefono: data.whatsapp,
       p_direccion: data.direccion,
       p_ciudad: data.ciudad,
-      p_metodo_envio_id: data.metodoEnvioId,
+      p_metodo_envio_id: data.envioBoxful ? null : data.metodoEnvioId,
       p_metodo_pago_id: data.metodoPagoId,
       p_comprobante_url: data.comprobanteUrl ?? null,
+      p_envio_proveedor: data.envioBoxful ? 'boxful' : null,
+      p_envio_modalidad: data.envioBoxful?.mode ?? null,
+      p_envio_monto: boxfulQuote?.price ?? null,
+      p_envio_courier_id: boxfulQuote?.courierId ?? null,
+      p_envio_courier_nombre: boxfulQuote?.courierName ?? null,
+      p_envio_courier_logo: boxfulQuote?.courierLogo ?? null,
+      p_envio_metadata: data.envioBoxful ? {
+        destination: data.envioBoxful.destination,
+        originCityName: data.envioBoxful.originCityName ?? null,
+        quote: boxfulQuote,
+      } : null,
     }
   );
 
@@ -234,7 +296,9 @@ export async function crearCheckoutPublico(input: CheckoutInput): Promise<{
         tiendaUsername: checkout.tienda_username,
         tiendaEmail,
         metodoPago: metodoPagoLabelDesdeRpc(checkout),
-        metodoEnvio: metodoEnvioLabelDesdeRpc(checkout),
+        metodoEnvio: data.envioBoxful && boxfulQuote
+          ? `${boxfulModeLabel(data.envioBoxful.mode)} · ${formatCurrencyFree(boxfulQuote.price)}`
+          : metodoEnvioLabelDesdeRpc(checkout),
         direccion: direccionCompleta,
         comprobanteUrl: data.comprobanteUrl ?? null,
       });
@@ -266,10 +330,21 @@ export async function crearCheckoutPublico(input: CheckoutInput): Promise<{
       const producto = checkout.prendas_count > 1
         ? `${checkout.prendas_count} prendas`
         : [checkout.prenda_nombre, checkout.prenda_marca].filter(Boolean).join(' ');
-      await service.from('actividad').insert({
+      const texto = `${nombreCorto} · ${producto}${talla}`;
+      const { data: actividadExistente } = await service
+        .from('actividad')
+        .select('id')
+        .eq('drop_id', data.dropId)
+        .eq('tipo', 'compra')
+        .eq('texto', texto)
+        .gt('created_at', new Date(Date.now() - 5 * 60 * 1000).toISOString())
+        .limit(1)
+        .maybeSingle();
+
+      if (!actividadExistente) await service.from('actividad').insert({
         drop_id: data.dropId,
         tipo: 'compra',
-        texto: `${nombreCorto} · ${producto}${talla}`,
+        texto,
       });
     } catch {
       // no-op: activity is non-critical

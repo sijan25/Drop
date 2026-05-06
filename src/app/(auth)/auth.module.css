@@ -373,6 +373,10 @@
   color: #0a0a0a;
 }
 
+.obLoginText {
+  white-space: nowrap;
+}
+
 .obContent {
   flex: 1;
   display: flex;
@@ -426,6 +430,22 @@
   }
 }
 
+.obCard {
+  padding: 36px;
+}
+
+.obGrid2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+
+.obGrid3 {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 10px;
+}
+
 @media (max-width: 640px) {
   .obTopbar {
     padding: 0 16px;
@@ -440,17 +460,34 @@
     width: 16px;
   }
 
-  .obLoginLink span {
+  .obLoginLink {
     display: none;
   }
 
   .obContent {
-    padding: 24px 16px;
+    padding: 20px 12px;
+  }
+
+  .obCard {
+    padding: 24px 18px;
+  }
+
+  .obGrid2 {
+    grid-template-columns: 1fr;
+  }
+
+  .obGrid3 {
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 8px;
   }
 }
 
 @media (max-width: 400px) {
   .obContent {
-    padding: 16px 12px;
+    padding: 12px 10px;
+  }
+
+  .obCard {
+    padding: 20px 14px;
   }
 }

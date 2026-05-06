@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import { ArrowLeft, ArrowRight, Shirt, ShoppingBag, SportShoe } from 'lucide-react';
@@ -23,10 +23,15 @@ interface StepOneData {
   tipo_negocio: 'ropa' | 'zapatos' | 'mixto';
 }
 
+interface MetodoEnvioForm {
+  nombre: string; proveedor: string; precio: number; tiempoEstimado: string; cobertura: string; trackingUrl: string;
+}
+
 interface StepTwoData {
   ciudad: string;
   direccion: string;
-  envios: { domicilio: boolean; nacional: boolean };
+  metodosEnvio: MetodoEnvioForm[];
+  formActivo: MetodoEnvioForm | null;
 }
 
 const CIUDADES = PLATFORM.cities;
@@ -49,25 +54,11 @@ export default function OnboardingPage() {
     password: '', passwordConfirm: '', tipo_negocio: 'ropa',
   });
   const [two, setTwo] = useState<StepTwoData>({
-    ciudad: PLATFORM.cities[0], direccion: '', envios: { domicilio: true, nacional: false },
+    ciudad: PLATFORM.cities[0], direccion: '', metodosEnvio: [], formActivo: null,
   });
   const [cuentaBancaria, setCuentaBancaria] = useState({ banco: '', cuenta: '', titular: '' });
   const [showCuentaForm, setShowCuentaForm] = useState(false);
   const router = useRouter();
-  const checked = useRef(false);
-
-  useEffect(() => {
-    if (checked.current) return;
-    checked.current = true;
-    async function checkAuth() {
-      const supabase = createClient();
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
-      const { data: tienda } = await supabase.from('tiendas').select('id').eq('user_id', user.id).maybeSingle();
-      if (tienda) router.replace('/dashboard');
-    }
-    checkAuth();
-  }, [router]);
 
   async function handleNextStep() {
     setError('');
@@ -106,13 +97,25 @@ export default function OnboardingPage() {
       facebook: one.facebook.trim() || null,
       ubicacion: ubicacion || null,
       tipo_negocio: one.tipo_negocio,
-      envios: two.envios,
+      metodosEnvio: two.metodosEnvio.map(m => ({
+        nombre: m.nombre.trim(),
+        proveedor: m.proveedor.trim() || m.nombre.trim(),
+        precio: m.precio,
+        tiempoEstimado: m.tiempoEstimado.trim() || null,
+        cobertura: m.cobertura.trim() || null,
+        trackingUrl: m.trackingUrl.trim() || null,
+      })),
       cuentaBancaria: (showCuentaForm && cuentaBancaria.banco && cuentaBancaria.cuenta)
         ? cuentaBancaria : null,
     });
     if (result.error) { setError(result.error); setLoading(false); return; }
     if (result.needsConfirmation) { setNeedsConfirmation(true); setLoading(false); return; }
     router.push('/drops');
+  }
+
+  async function handleExistingAccount() {
+    await createClient().auth.signOut();
+    window.location.assign('/login');
   }
 
   if (needsConfirmation) {
@@ -162,8 +165,8 @@ export default function OnboardingPage() {
             );
           })}
         </div>
-        <button onClick={() => router.push('/login')} className={s.obLoginLink}>
-          Ya tengo cuenta <ArrowRight size={14}/>
+        <button onClick={handleExistingAccount} className={s.obLoginLink}>
+          <span className={s.obLoginText}>Ya tengo cuenta</span> <ArrowRight size={14}/>
         </button>
       </div>
 
@@ -172,7 +175,7 @@ export default function OnboardingPage() {
 
           {/* ── Step 0: Cuenta y tienda ── */}
           {step === 0 && (
-            <div className="card" style={{ padding: 36 }}>
+            <div className={`card ${s.obCard}`}>
               <div style={{ fontSize: 20, fontWeight: 600, letterSpacing: '-0.015em', marginBottom: 4 }}>Creá tu cuenta</div>
               <div className="t-mute" style={{ fontSize: 14, marginBottom: 28 }}>Datos de acceso y perfil público de tu tienda.</div>
 
@@ -197,7 +200,7 @@ export default function OnboardingPage() {
 
                 <div>
                   <label className="label">¿Qué vendés?</label>
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 10 }}>
+                  <div className={s.obGrid3}>
                     {STORE_TYPES.map(opt => (
                       <button key={opt.value} type="button" onClick={() => setOne(o => ({ ...o, tipo_negocio: opt.value }))}
                         style={{
@@ -234,7 +237,7 @@ export default function OnboardingPage() {
 
                 <hr className="hr"/>
 
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
+                <div className={s.obGrid2}>
                   <div>
                     <label className="label">Contraseña</label>
                     <div style={{ position: 'relative' }}>
@@ -268,7 +271,7 @@ export default function OnboardingPage() {
                   <input className="input input-lg" placeholder="@miciclita.paca" value={one.instagram}
                     onChange={e => setOne(o => ({ ...o, instagram: e.target.value }))}/>
                 </div>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
+                <div className={s.obGrid2}>
                   <div>
                     <label className="label">TikTok <span className="t-mute" style={{ fontWeight: 400 }}>(opcional)</span></label>
                     <input className="input input-lg" placeholder="@miciclita" value={one.tiktok}
@@ -288,17 +291,23 @@ export default function OnboardingPage() {
                 style={{ marginTop: 24, opacity: loading ? 0.6 : 1 }}>
                 {loading ? 'Verificando...' : <>Siguiente <ArrowRight size={16}/></>}
               </button>
+              <p style={{ textAlign: 'center', marginTop: 16, fontSize: 13, color: 'var(--ink-3)' }}>
+                ¿Ya tenés cuenta?{' '}
+                <button onClick={handleExistingAccount} style={{ background: 'none', border: 'none', color: 'var(--accent)', fontWeight: 500, cursor: 'pointer', fontSize: 13, padding: 0, fontFamily: 'inherit' }}>
+                  Iniciá sesión
+                </button>
+              </p>
             </div>
           )}
 
           {/* ── Step 1: Ubicación y envíos ── */}
           {step === 1 && (
-            <div className="card" style={{ padding: 36 }}>
+            <div className={`card ${s.obCard}`}>
               <div style={{ fontSize: 20, fontWeight: 600, letterSpacing: '-0.015em', marginBottom: 4 }}>Ubicación y envíos</div>
               <div className="t-mute" style={{ fontSize: 14, marginBottom: 28 }}>Dónde estás y cómo entregás a tus compradoras.</div>
 
               <div style={{ display: 'grid', gap: 16 }}>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
+                <div className={s.obGrid2}>
                   <div>
                     <label className="label">Ciudad</label>
                     <select className="input input-lg" value={two.ciudad} onChange={e => setTwo(t => ({ ...t, ciudad: e.target.value }))}>
@@ -313,31 +322,69 @@ export default function OnboardingPage() {
                 </div>
 
                 <div>
-                  <label className="label" style={{ marginBottom: 10 }}>Opciones de envío que ofrezco</label>
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 10 }}>
-                    {[
-                      { key: 'pickup', label: 'Retiro en tienda', desc: 'Gratis', fixed: true },
-                      { key: 'domicilio', label: 'Envío en ciudad', desc: 'L 60', field: 'domicilio' as const },
-                      { key: 'nacional', label: 'Envío nacional', desc: 'L 120 · 2-3 días', field: 'nacional' as const },
-                    ].map(o => (
-                      <label key={o.key} style={{
-                        padding: '12px 14px',
-                        border: `1px solid ${o.fixed || two.envios[o.field as keyof typeof two.envios] ? 'var(--accent)' : 'var(--line)'}`,
-                        borderRadius: 10, display: 'flex', flexDirection: 'column', gap: 6, cursor: 'pointer',
-                        background: o.fixed || two.envios[o.field as keyof typeof two.envios] ? 'var(--accent-2)' : '#fff',
-                      }}>
-                        <input type="checkbox"
-                          checked={o.fixed || (o.field ? two.envios[o.field] : false)}
-                          readOnly={o.fixed}
-                          onChange={o.field ? e => setTwo(t => ({ ...t, envios: { ...t.envios, [o.field!]: e.target.checked } })) : undefined}
-                          style={{ alignSelf: 'flex-start', accentColor: 'var(--accent)' }}/>
+                  <label className="label" style={{ marginBottom: 10 }}>Métodos de envío <span className="t-mute" style={{ fontWeight: 400 }}>(opc.)</span></label>
+
+                  {/* Lista de métodos agregados */}
+                  {two.metodosEnvio.map((m, i) => (
+                    <div key={i} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 14px', border: '1px solid var(--line)', borderRadius: 10, marginBottom: 8, background: 'var(--surface-2)' }}>
+                      <div>
+                        <div style={{ fontSize: 13, fontWeight: 500 }}>{m.nombre}</div>
+                        <div className="t-mute" style={{ fontSize: 11 }}>L {m.precio}{m.tiempoEstimado ? ` · ${m.tiempoEstimado}` : ''}</div>
+                      </div>
+                      <button type="button" onClick={() => setTwo(t => ({ ...t, metodosEnvio: t.metodosEnvio.filter((_, j) => j !== i) }))}
+                        style={{ fontSize: 11, color: 'var(--ink-3)', background: 'none', border: 'none', cursor: 'pointer' }}>Quitar</button>
+                    </div>
+                  ))}
+
+                  {/* Formulario inline */}
+                  {two.formActivo ? (
+                    <div style={{ border: '1px solid var(--accent)', borderRadius: 10, padding: '14px 16px', background: 'var(--accent-2)', display: 'grid', gap: 10 }}>
+                      <div className={s.obGrid2} style={{ gap: 10 }}>
                         <div>
-                          <div style={{ fontSize: 13, fontWeight: 500 }}>{o.label}</div>
-                          <div className="t-mute" style={{ fontSize: 11 }}>{o.desc}</div>
+                          <label className="label">Nombre público</label>
+                          <input className="input" placeholder="Ej: Envío express" value={two.formActivo.nombre}
+                            onChange={e => setTwo(t => ({ ...t, formActivo: t.formActivo ? { ...t.formActivo, nombre: e.target.value } : null }))}/>
                         </div>
-                      </label>
-                    ))}
-                  </div>
+                        <div>
+                          <label className="label">Precio (L)</label>
+                          <input className="input" type="number" min={0} placeholder="0" value={two.formActivo.precio === 0 ? '' : two.formActivo.precio}
+                            onChange={e => setTwo(t => ({ ...t, formActivo: t.formActivo ? { ...t.formActivo, precio: Number(e.target.value) || 0 } : null }))}/>
+                        </div>
+                        <div>
+                          <label className="label">Empresa / Proveedor</label>
+                          <input className="input" placeholder="Ej: DHL" value={two.formActivo.proveedor}
+                            onChange={e => setTwo(t => ({ ...t, formActivo: t.formActivo ? { ...t.formActivo, proveedor: e.target.value } : null }))}/>
+                        </div>
+                        <div>
+                          <label className="label">Tiempo estimado</label>
+                          <input className="input" placeholder="Ej: 1-3 días" value={two.formActivo.tiempoEstimado}
+                            onChange={e => setTwo(t => ({ ...t, formActivo: t.formActivo ? { ...t.formActivo, tiempoEstimado: e.target.value } : null }))}/>
+                        </div>
+                        <div>
+                          <label className="label">Zona de cobertura</label>
+                          <input className="input" placeholder="Ej: Todo HN" value={two.formActivo.cobertura}
+                            onChange={e => setTwo(t => ({ ...t, formActivo: t.formActivo ? { ...t.formActivo, cobertura: e.target.value } : null }))}/>
+                        </div>
+                        <div>
+                          <label className="label">URL de rastreo <span className="t-mute" style={{ fontWeight: 400 }}>(opc.)</span></label>
+                          <input className="input" placeholder="https://..." value={two.formActivo.trackingUrl}
+                            onChange={e => setTwo(t => ({ ...t, formActivo: t.formActivo ? { ...t.formActivo, trackingUrl: e.target.value } : null }))}/>
+                        </div>
+                      </div>
+                      <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+                        <button type="button" onClick={() => setTwo(t => ({ ...t, formActivo: null }))} className="btn btn-outline btn-sm">Cancelar</button>
+                        <button type="button" onClick={() => {
+                          if (!two.formActivo?.nombre.trim()) return;
+                          setTwo(t => ({ ...t, metodosEnvio: [...t.metodosEnvio, t.formActivo!], formActivo: null }));
+                        }} className="btn btn-primary btn-sm">Guardar método</button>
+                      </div>
+                    </div>
+                  ) : (
+                    <button type="button" onClick={() => setTwo(t => ({ ...t, formActivo: { nombre: '', proveedor: '', precio: 0, tiempoEstimado: '', cobertura: '', trackingUrl: '' } }))}
+                      style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, color: 'var(--accent)', background: 'none', border: '1px dashed var(--accent)', borderRadius: 10, padding: '9px 14px', cursor: 'pointer', width: '100%', justifyContent: 'center' }}>
+                      + Agregar método de envío
+                    </button>
+                  )}
                 </div>
               </div>
 
@@ -352,7 +399,7 @@ export default function OnboardingPage() {
 
           {/* ── Step 2: Métodos de pago ── */}
           {step === 2 && (
-            <div className="card" style={{ padding: 36 }}>
+            <div className={`card ${s.obCard}`}>
               <div style={{ fontSize: 20, fontWeight: 600, letterSpacing: '-0.015em', marginBottom: 4 }}>Métodos de pago</div>
               <div className="t-mute" style={{ fontSize: 14, marginBottom: 24 }}>
                 Configurá cómo recibís el dinero. Podés agregar más en Configuración.
@@ -392,7 +439,7 @@ export default function OnboardingPage() {
                           ))}
                         </select>
                       </div>
-                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+                      <div className={s.obGrid2} style={{ gap: 10 }}>
                         <div>
                           <label className="label">Número de cuenta</label>
                           <input className="input mono" placeholder="123-456-7890" value={cuentaBancaria.cuenta} onChange={e => setCuentaBancaria(c => ({ ...c, cuenta: e.target.value }))}/>

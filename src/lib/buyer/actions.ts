@@ -3,7 +3,8 @@
 import { z } from 'zod';
 import { guardServerMutation } from '@/lib/security/request';
 import { createBuyerClient } from '@/lib/supabase/server';
-import type { Database } from '@/types/database';
+import { APP_URL } from '@/lib/config/platform';
+import type { Pedido } from '@/types/pedido';
 
 const PHONE_RE = /^[+\d][\d\s().-]{6,39}$/;
 const OWNER_BUYER_ERROR = 'Ese correo pertenece a una tienda. Usá otro correo para comprar o iniciá sesión como tienda.';
@@ -24,7 +25,7 @@ export type CompradorSesionResultado = {
 };
 
 export type CompradorPedidoResumen = Pick<
-  Database['public']['Tables']['pedidos']['Row'],
+  Pedido,
   'id' | 'numero' | 'estado' | 'monto_total' | 'created_at' | 'metodo_envio' | 'apartado_expira_at'
 > & {
   drop: { nombre: string | null } | null;
@@ -268,6 +269,28 @@ export async function registrarComprador(input: RegisterInput): Promise<Comprado
   }
 
   return prepareBuyerSessionInternal(supabase);
+}
+
+export async function solicitarResetPasswordComprador(input: { email: string }): Promise<{ error?: string; sent?: boolean }> {
+  const guardError = await guardServerMutation('buyer:reset', 5, 10 * 60);
+  if (guardError) return { error: guardError };
+
+  const email = input.email.trim().toLowerCase();
+  if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    return { error: 'Ingresá un correo válido.' };
+  }
+
+  const supabase = await createBuyerClient();
+
+  const { error } = await supabase.auth.resetPasswordForEmail(email, {
+    redirectTo: `${APP_URL}/auth/callback?next=/auth/reset-password&scope=buyer`,
+  });
+
+  if (error) {
+    console.error('No se pudo enviar recuperación de comprador', error);
+  }
+
+  return { sent: true };
 }
 
 export async function cerrarSesionComprador(): Promise<{ error?: string }> {

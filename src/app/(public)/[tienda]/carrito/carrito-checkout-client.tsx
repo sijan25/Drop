@@ -12,11 +12,14 @@ import { crearCheckoutPublico } from '@/lib/checkout/actions';
 import { PLATFORM, formatCurrency, formatCurrencyFree } from '@/lib/config/platform';
 import { obtenerCarrito } from '@/lib/cart/actions';
 import { uploadImage } from '@/lib/cloudinary/client';
-import type { Database } from '@/types/database';
+import { ShippingSelector, BoxfulAddressFields } from '@/components/checkout/checkout-panels';
+import { PhoneInput } from '@/components/shared/phone-input';
+import type { BoxfulChangeData } from '@/components/checkout/checkout-panels';
+import type { BoxfulQuote } from '@/lib/boxful/types';
+import type { Tienda } from '@/types/tienda';
+import type { MetodoPago, MetodoEnvio } from '@/types/envio';
 
-type Tienda = Database['public']['Tables']['tiendas']['Row'];
-type MetodoPago = Database['public']['Tables']['metodos_pago']['Row'];
-type MetodoEnvio = Database['public']['Tables']['metodos_envio']['Row'];
+const BOXFUL_SHIPPING_ID = 'boxful';
 
 export function CarritoCheckoutClient({
   tienda,
@@ -42,7 +45,8 @@ export function CarritoCheckoutClient({
   const [direccion, setDireccion] = useState('');
   const [ciudad, setCiudad] = useState('');
   const [buyer, setBuyer] = useState<BuyerProfile | null>(null);
-  const [metodoEnvioId, setMetodoEnvioId] = useState(metodosEnvio[0]?.id ?? '');
+  const [metodoEnvioId, setMetodoEnvioId] = useState(BOXFUL_SHIPPING_ID);
+  const [boxfulData, setBoxfulData] = useState<BoxfulChangeData>({ isBoxful: true, quote: null, destination: null, mode: 'boxful_dropoff' });
   const [metodoPagoId, setMetodoPagoId] = useState(metodosPago[0]?.id ?? '');
   const [uploading, setUploading] = useState(false);
   const [comprobanteUrl, setComprobanteUrl] = useState<string | null>(null);
@@ -53,11 +57,15 @@ export function CarritoCheckoutClient({
   const [pedidoTrackingUrls, setPedidoTrackingUrls] = useState<string[]>([]);
 
   const metodoEnvioSel = metodosEnvio.find(m => m.id === metodoEnvioId);
+  const isBoxfulSelected = metodoEnvioId === BOXFUL_SHIPPING_ID;
   const metodoPagoSel = metodosPago.find(m => m.id === metodoPagoId);
-  const costoEnvio = metodoEnvioSel?.precio ?? 0;
+  const costoEnvio = boxfulData.isBoxful ? (boxfulData.quote?.price ?? 0) : (metodoEnvioSel?.precio ?? 0);
   const total = totalPrendas + costoEnvio;
   const esTransferencia = metodoPagoSel?.tipo === 'transferencia';
   const initials = tienda.nombre.split(' ').map(w => w[0]).slice(0, 2).join('').toUpperCase();
+  const envioResumen = isBoxfulSelected
+    ? (boxfulData.quote ? formatCurrency(boxfulData.quote.price) : 'Seleccioná ciudad')
+    : formatCurrencyFree(costoEnvio);
 
   // Redirigir si carrito vacío
   useEffect(() => {
@@ -111,6 +119,10 @@ export function CarritoCheckoutClient({
     if (!direccion.trim()) errs.direccion = 'Ingresá tu dirección.';
     if (!ciudad.trim()) errs.ciudad = 'Ingresá tu ciudad.';
     if (!metodoEnvioId) errs.envio = 'Seleccioná un método de envío.';
+    if (isBoxfulSelected) {
+      if (!boxfulData.destination) errs.envio = 'Seleccioná departamento y ciudad para calcular Boxful.';
+      else if (!boxfulData.quote) errs.envio = 'Esperá la cotización de Boxful o elegí otro método.';
+    }
     if (!metodoPagoId) errs.pago = 'Seleccioná un método de pago.';
     if (esTransferencia && !comprobanteUrl) errs.comprobante = 'Debés subir el comprobante de transferencia.';
 
@@ -149,10 +161,16 @@ export function CarritoCheckoutClient({
       email: email.trim() || null,
       whatsapp: whatsapp.trim(),
       direccion: direccion.trim(),
-      ciudad: ciudad.trim(),
-      metodoEnvioId,
+      ciudad: isBoxfulSelected && boxfulData.destination ? boxfulData.destination.cityName : ciudad.trim(),
+      metodoEnvioId: isBoxfulSelected ? null : metodoEnvioId,
       metodoPagoId,
       comprobanteUrl,
+      envioBoxful: isBoxfulSelected && boxfulData.quote && boxfulData.destination ? {
+        mode: boxfulData.mode,
+        quote: boxfulData.quote,
+        destination: boxfulData.destination,
+        originCityName: tienda.ciudad ?? PLATFORM.defaultCity,
+      } : undefined,
     });
 
     if (res.error || !res.pedido) {
@@ -300,9 +318,7 @@ export function CarritoCheckoutClient({
               </div>
               <div id="field-whatsapp">
                 <label className="label">WhatsApp</label>
-                <input className="input input-lg" placeholder="+504 9876-5432" value={whatsapp}
-                  onChange={e => { setWhatsapp(e.target.value); clearFe('whatsapp'); }}
-                  style={fe('whatsapp') ? { borderColor: 'var(--urgent)' } : undefined} />
+                <PhoneInput value={whatsapp} onChange={v => { setWhatsapp(v); clearFe('whatsapp'); }} size="lg" />
                 {fe('whatsapp') && <div style={{ marginTop: 4, fontSize: 12, color: 'var(--urgent)' }}>{fe('whatsapp')}</div>}
               </div>
               <div style={{ fontSize: 12, color: 'var(--ink-3)', marginTop: -4 }}>Te avisamos por WhatsApp y email cuando salgan tus pedidos</div>
@@ -320,50 +336,49 @@ export function CarritoCheckoutClient({
                   style={fe('direccion') ? { borderColor: 'var(--urgent)' } : undefined} />
                 {fe('direccion') && <div style={{ marginTop: 4, fontSize: 12, color: 'var(--urgent)' }}>{fe('direccion')}</div>}
               </div>
-              <div className="buyer-checkout-two-col" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+              {metodoEnvioId === BOXFUL_SHIPPING_ID ? (
                 <div id="field-ciudad">
-                  <label className="label">Ciudad</label>
-                  <input className="input input-lg" placeholder={PLATFORM.defaultCity} value={ciudad}
-                    onChange={e => { setCiudad(e.target.value); clearFe('ciudad'); }}
-                    style={fe('ciudad') ? { borderColor: 'var(--urgent)' } : undefined} />
+                  <BoxfulAddressFields
+                    originCity={tienda.ciudad}
+                    itemsCount={items.length}
+                    subtotal={totalPrendas}
+                    onBoxfulChange={data => { setBoxfulData(data); clearFe('envio'); clearFe('ciudad'); }}
+                    onCiudadChange={setCiudad}
+                  />
                   {fe('ciudad') && <div style={{ marginTop: 4, fontSize: 12, color: 'var(--urgent)' }}>{fe('ciudad')}</div>}
                 </div>
-                <div>
-                  <label className="label">País</label>
-                  <input className="input input-lg" value={PLATFORM.country} readOnly style={{ background: 'var(--surface-2)', color: 'var(--ink-3)' }} />
+              ) : (
+                <div className="buyer-checkout-two-col" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                  <div id="field-ciudad">
+                    <label className="label">Ciudad</label>
+                    <input className="input input-lg" placeholder={PLATFORM.defaultCity} value={ciudad}
+                      onChange={e => { setCiudad(e.target.value); clearFe('ciudad'); }}
+                      style={fe('ciudad') ? { borderColor: 'var(--urgent)' } : undefined} />
+                    {fe('ciudad') && <div style={{ marginTop: 4, fontSize: 12, color: 'var(--urgent)' }}>{fe('ciudad')}</div>}
+                  </div>
+                  <div>
+                    <label className="label">País</label>
+                    <input className="input input-lg" value={PLATFORM.country} readOnly style={{ background: 'var(--surface-2)', color: 'var(--ink-3)' }} />
+                  </div>
                 </div>
-              </div>
+              )}
             </div>
           </section>
 
           {/* Métodos de envío */}
           <section style={{ marginBottom: 32 }}>
             <div style={{ fontSize: 20, fontWeight: 700, letterSpacing: '-0.015em', marginBottom: 16 }}>Método de envío</div>
-            {metodosEnvio.length === 0
-              ? <div style={{ fontSize: 13, color: 'var(--ink-3)' }}>Sin métodos configurados</div>
-              : (
-                <div style={{ display: 'grid', gap: 10 }}>
-                  {metodosEnvio.map(m => (
-                    <label key={m.id} style={{
-                      display: 'flex', alignItems: 'flex-start', gap: 14,
-                      padding: '14px 16px',
-                      border: `1.5px solid ${metodoEnvioId === m.id ? 'var(--ink)' : 'var(--line)'}`,
-                      borderRadius: 12, cursor: 'pointer', background: '#fff',
-                    }}>
-                      <input type="radio" name="envio" checked={metodoEnvioId === m.id} onChange={() => setMetodoEnvioId(m.id)}
-                        style={{ marginTop: 3, accentColor: 'var(--ink)', width: 16, height: 16, flexShrink: 0 }} />
-                      <div style={{ flex: 1 }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                          <div style={{ fontSize: 14, fontWeight: 600 }}>{m.nombre}</div>
-                          <div className="mono tnum" style={{ fontSize: 14, fontWeight: 600 }}>{formatCurrencyFree(m.precio)}</div>
-                        </div>
-                        <div style={{ fontSize: 12, color: 'var(--ink-3)', marginTop: 2 }}>{m.proveedor} · {m.tiempo_estimado}</div>
-                        <div style={{ fontSize: 12, color: 'var(--ink-3)' }}>{m.cobertura}</div>
-                      </div>
-                    </label>
-                  ))}
-                </div>
-              )}
+            <ShippingSelector
+              metodosEnvio={metodosEnvio}
+              metodoEnvioId={metodoEnvioId}
+              boxfulQuote={boxfulData.quote}
+              onChange={id => {
+                setMetodoEnvioId(id);
+                clearFe('envio');
+                if (id !== BOXFUL_SHIPPING_ID) setBoxfulData({ isBoxful: false, quote: null, destination: null, mode: 'boxful_dropoff' });
+              }}
+            />
+            {fe('envio') && <div style={{ marginTop: 8, fontSize: 12, color: 'var(--urgent)' }}>{fe('envio')}</div>}
           </section>
 
           {/* Método de pago */}
@@ -499,7 +514,7 @@ export function CarritoCheckoutClient({
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, color: 'var(--ink-2)', marginBottom: 12 }}>
                 <span>Envío</span>
-                <span className="mono tnum">{formatCurrencyFree(costoEnvio)}</span>
+                <span className="mono tnum">{envioResumen}</span>
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
                 <span style={{ fontSize: 16, fontWeight: 700 }}>Total</span>

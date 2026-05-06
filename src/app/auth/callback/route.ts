@@ -1,44 +1,44 @@
-import { createServerClient } from '@supabase/ssr';
-import { cookies } from 'next/headers';
 import { NextResponse, type NextRequest } from 'next/server';
-import type { Database } from '@/types/database';
+import { createBuyerClient, createClient as createServerAuthClient } from '@/lib/supabase/server';
+
+function getSafeNext(rawNext: string | null, fallback: string) {
+  const next = rawNext ?? fallback;
+  return next.startsWith('/') && !next.startsWith('//') && !next.startsWith('/\\')
+    ? next
+    : fallback;
+}
 
 export async function GET(request: NextRequest) {
   const { searchParams, origin } = new URL(request.url);
   const code = searchParams.get('code');
-  const rawNext = searchParams.get('next') ?? '/dashboard';
-  const next = rawNext.startsWith('/') && !rawNext.startsWith('//') && !rawNext.startsWith('/\\')
-    ? rawNext
-    : '/dashboard';
+  const scope = searchParams.get('scope') === 'buyer' ? 'buyer' : 'seller';
+  const next = getSafeNext(
+    searchParams.get('next'),
+    scope === 'buyer' ? '/auth/reset-password?scope=buyer' : '/dashboard',
+  );
 
   if (!code) {
     return NextResponse.redirect(`${origin}/login?error=missing_code`);
   }
 
-  const cookieStore = await cookies();
-  const supabase = createServerClient<Database>(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        getAll() { return cookieStore.getAll(); },
-        setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value, options }) =>
-            cookieStore.set(name, value, options)
-          );
-        },
-      },
-    }
-  );
+  const supabase = scope === 'buyer'
+    ? await createBuyerClient()
+    : await createServerAuthClient();
 
   const { error } = await supabase.auth.exchangeCodeForSession(code);
   if (error) {
-    return NextResponse.redirect(`${origin}/login?error=exchange_failed`);
+    return NextResponse.redirect(
+      scope === 'buyer'
+        ? `${origin}/auth/reset-password?scope=buyer&error=exchange_failed`
+        : `${origin}/login?error=exchange_failed`,
+    );
   }
 
-  // For password recovery, go directly to reset page without tienda check
-  if (next === '/auth/reset-password') {
-    return NextResponse.redirect(`${origin}/auth/reset-password`);
+  const nextUrl = new URL(next, origin);
+
+  if (nextUrl.pathname === '/auth/reset-password') {
+    if (scope === 'buyer') nextUrl.searchParams.set('scope', 'buyer');
+    return NextResponse.redirect(nextUrl);
   }
 
   const { data: { user } } = await supabase.auth.getUser();

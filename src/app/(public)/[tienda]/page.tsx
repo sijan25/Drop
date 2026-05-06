@@ -1,6 +1,6 @@
 import { createClient, createServiceClient } from '@/lib/supabase/server';
 import { getPublicTiendaOrRedirect } from '@/lib/stores/public-store';
-import type { Database } from '@/types/database';
+import type { Prenda } from '@/types/prenda';
 import { TiendaPageClient } from './tienda-page-client';
 
 export const dynamic = 'force-dynamic';
@@ -43,9 +43,7 @@ export default async function TiendaPage({ params }: { params: Promise<{ tienda:
     .or('estado.is.null,estado.eq.disponible,estado.eq.remanente')
     .order('created_at', { ascending: false });
 
-  let prendasDrops = [] as Array<
-    Pick<Database['public']['Tables']['prendas']['Row'], 'id' | 'drop_id' | 'talla' | 'tallas' | 'cantidad' | 'cantidades_por_talla' | 'estado' | 'nombre' | 'precio' | 'fotos' | 'marca'>
-  >;
+  let prendasDrops = [] as Array<Pick<Prenda, 'id' | 'drop_id' | 'talla' | 'tallas' | 'cantidad' | 'cantidades_por_talla' | 'estado' | 'nombre' | 'precio' | 'fotos' | 'marca'>>;
 
   if (dropIds.length > 0) {
     const { data } = await supabase

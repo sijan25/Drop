@@ -2,6 +2,7 @@ export const USERNAME_MIN_LENGTH = 3;
 export const USERNAME_MAX_LENGTH = 32;
 export const USERNAME_CHANGE_LIMIT = 3;
 export const USERNAME_CHANGE_COOLDOWN_DAYS = 30;
+export const STORE_USERNAME_TAKEN_ERROR = 'Ese link público ya está en uso. Probá con otro nombre.';
 
 export const RESERVED_STORE_USERNAMES = new Set([
   '_next',

@@ -59,58 +59,54 @@ export default function ComprobantesClient({ comprobantes, historial }: { compro
   const router = useRouter()
   const [tab, setTab] = useState<'pendientes' | 'historial'>('pendientes')
   const [idx, setIdx] = useState(0)
-  const [decided, setDecided] = useState<'ok' | 'no' | null>(null)
-  const [error, setError] = useState<string | null>(null)
-  const [notice, setNotice] = useState<string | null>(null)
+  const [decided, setDecided] = useState<{ id: string; status: 'ok' | 'no' } | null>(null)
+  const [error, setError] = useState<{ id: string; message: string } | null>(null)
+  const [notice, setNotice] = useState<{ id: string; message: string } | null>(null)
   const [pending, startTransition] = useTransition()
 
-  const current = comprobantes[idx]
+  const safeIdx = Math.min(idx, Math.max(0, comprobantes.length - 1))
+  const current = comprobantes[safeIdx]
   const pedido = current?.pedido
-
-  function avanzarTras(ms: number) {
-    setTimeout(() => {
-      if (idx < comprobantes.length - 1) {
-        navSiguiente()
-      }
-    }, ms)
-  }
+  const currentDecision = current && decided?.id === current.id ? decided.status : null
+  const currentError = current && error?.id === current.id ? error.message : null
+  const currentNotice = current && notice?.id === current.id ? notice.message : null
 
   function handleConfirmar() {
     if (!current) return
+    const target = current
     startTransition(async () => {
       setError(null)
       setNotice(null)
-      const result = await confirmarPago(current.id, current.pedido_id)
+      const result = await confirmarPago(target.id, target.pedido_id)
       if ('error' in result) {
-        setError(result.error ?? 'No pudimos confirmar este comprobante.')
+        setError({ id: target.id, message: result.error ?? 'No pudimos confirmar este comprobante.' })
         return
       }
-      setDecided('ok')
+      setDecided({ id: target.id, status: 'ok' })
       window.dispatchEvent(new Event('fd-dashboard-counts-refresh'))
-      router.refresh()
       if (result.email?.status === 'sent') {
-        setNotice('Correo de confirmación enviado al comprador.')
+        setNotice({ id: target.id, message: 'Correo de confirmación enviado al comprador.' })
       } else if (result.email?.status === 'failed') {
-        setError(`No pudimos enviar el correo al comprador.`)
+        setError({ id: target.id, message: `No pudimos enviar el correo al comprador.` })
       }
-      avanzarTras(1800)
+      setTimeout(() => router.refresh(), 1500)
     })
   }
 
   function handleRechazar() {
     if (!current) return
+    const target = current
     startTransition(async () => {
       setError(null)
       setNotice(null)
-      const result = await rechazarPago(current.id, current.pedido_id)
+      const result = await rechazarPago(target.id, target.pedido_id)
       if ('error' in result) {
-        setError(result.error ?? 'No pudimos rechazar este comprobante.')
+        setError({ id: target.id, message: result.error ?? 'No pudimos rechazar este comprobante.' })
         return
       }
-      setDecided('no')
+      setDecided({ id: target.id, status: 'no' })
       window.dispatchEvent(new Event('fd-dashboard-counts-refresh'))
-      router.refresh()
-      avanzarTras(1800)
+      setTimeout(() => router.refresh(), 1500)
     })
   }
 
@@ -165,19 +161,19 @@ export default function ComprobantesClient({ comprobantes, historial }: { compro
   if (tab === 'historial') {
     return (
       <div style={{ height: '100%', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-        <div style={{ padding: '20px 28px 0', flexShrink: 0 }}>
+        <div className="comprobantes-title-bar" style={{ padding: '20px 28px 0', flexShrink: 0 }}>
           <div style={{ fontSize: 20, fontWeight: 600, letterSpacing: '-0.015em' }}>Comprobantes</div>
         </div>
         {tabBar}
-        <div style={{ flex: 1, overflowY: 'auto', padding: '0 28px 28px' }}>
+        <div className="comprobantes-historial-content" style={{ flex: 1, overflowY: 'auto', overflowX: 'hidden', padding: '0 28px 28px' }}>
           {historial.length === 0 ? (
             <div style={{ paddingTop: 60, textAlign: 'center', color: 'var(--ink-3)' }}>
               <Icons.inbox width={28} height={28} style={{ margin: '0 auto 10px', opacity: 0.4 }}/>
               <div style={{ fontSize: 13 }}>Sin historial todavía</div>
             </div>
           ) : (
-            <table style={{ width: '100%', borderCollapse: 'collapse', marginTop: 20, fontSize: 13 }}>
-              <thead>
+            <table className="comprobantes-historial-table" style={{ width: '100%', borderCollapse: 'collapse', marginTop: 20, fontSize: 13 }}>
+              <thead className="comprobantes-historial-head">
                 <tr style={{ borderBottom: '1px solid var(--line)' }}>
                   {['# Pedido', 'Comprador', 'Total', 'Estado', 'Comprobante', 'Fecha'].map(h => (
                     <th key={h} style={{ textAlign: 'left', padding: '0 12px 10px 0', fontWeight: 600, fontSize: 11, color: 'var(--ink-3)', textTransform: 'uppercase', letterSpacing: 0.05 }}>{h}</th>
@@ -186,34 +182,34 @@ export default function ComprobantesClient({ comprobantes, historial }: { compro
               </thead>
               <tbody>
                 {historial.map(c => (
-                  <tr key={c.id} style={{ borderBottom: '1px solid var(--line)' }}>
-                    <td style={{ padding: '12px 12px 12px 0' }}>
+                  <tr key={c.id} className="comprobantes-historial-row" style={{ borderBottom: '1px solid var(--line)' }}>
+                    <td className="ch-numero" style={{ padding: '12px 12px 12px 0' }}>
                       <span className="mono tnum" style={{ fontWeight: 600 }}>{c.pedido?.numero ?? '—'}</span>
                     </td>
-                    <td style={{ padding: '12px 12px 12px 0', maxWidth: 160, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    <td className="ch-comprador" style={{ padding: '12px 12px 12px 0', maxWidth: 160, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                       {c.pedido?.comprador_nombre ?? '—'}
                     </td>
-                    <td style={{ padding: '12px 12px 12px 0' }}>
+                    <td className="ch-total" style={{ padding: '12px 12px 12px 0' }}>
                       <span className="mono tnum" style={{ fontWeight: 600 }}>L {(c.pedido?.monto_total ?? 0).toLocaleString()}</span>
                     </td>
-                    <td style={{ padding: '12px 12px 12px 0' }}>
+                    <td className="ch-estado" style={{ padding: '12px 12px 12px 0' }}>
                       <span style={{
                         display: 'inline-flex', alignItems: 'center', gap: 4,
                         padding: '3px 8px', borderRadius: 6, fontSize: 11, fontWeight: 700,
                         background: c.estado === 'verificado' ? '#ecfdf5' : '#fef2f2',
                         color: c.estado === 'verificado' ? '#065f46' : '#991b1b',
                       }}>
-                        {c.estado === 'verificado' ? '✓ Aprobado' : '✕ Rechazado'}
+                        {c.estado === 'verificado' ? 'Aprobado' : 'Rechazado'}
                       </span>
                     </td>
-                    <td style={{ padding: '12px 12px 12px 0' }}>
+                    <td className="ch-imagen" style={{ padding: '12px 12px 12px 0' }}>
                       {c.imagen_url ? (
                         <a href={c.imagen_url} target="_blank" rel="noreferrer" style={{ display: 'inline-flex', alignItems: 'center', gap: 5, color: 'var(--accent)', fontWeight: 600, fontSize: 12, textDecoration: 'none' }}>
                           <Icons.eye width={13} height={13}/> Ver
                         </a>
                       ) : <span style={{ color: 'var(--ink-3)' }}>—</span>}
                     </td>
-                    <td style={{ padding: '12px 0', color: 'var(--ink-3)', whiteSpace: 'nowrap' }}>
+                    <td className="ch-fecha" style={{ padding: '12px 0', color: 'var(--ink-3)', whiteSpace: 'nowrap' }}>
                       {fmt(c.created_at)}
                     </td>
                   </tr>
@@ -228,7 +224,7 @@ export default function ComprobantesClient({ comprobantes, historial }: { compro
 
   return (
     <div style={{ height: '100%', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-      <div style={{ padding: '20px 28px 0', flexShrink: 0 }}>
+      <div className="comprobantes-title-bar" style={{ padding: '20px 28px 0', flexShrink: 0 }}>
         <div style={{ fontSize: 20, fontWeight: 600, letterSpacing: '-0.015em' }}>Comprobantes</div>
       </div>
       {tabBar}
@@ -241,23 +237,23 @@ export default function ComprobantesClient({ comprobantes, historial }: { compro
           </div>
         </div>
       ) : (<>
-      <div style={{ padding: '12px 28px 12px', borderBottom: '1px solid var(--line)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 20, flexShrink: 0 }}>
+      <div className="comprobantes-nav-bar" style={{ padding: '12px 28px 12px', borderBottom: '1px solid var(--line)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 20, flexShrink: 0 }}>
         <div className="t-mute" style={{ fontSize: 13 }}>
           {comprobantes.length} pendientes · {pedido?.comprador_nombre} · {pedido?.numero}
         </div>
         <div style={{ display: 'flex', gap: 8 }}>
-          <button className="btn btn-outline btn-sm" onClick={navAnterior} disabled={idx === 0}>
+          <button className="btn btn-outline btn-sm" onClick={navAnterior} disabled={safeIdx === 0}>
             <Icons.arrow width={13} height={13} style={{ transform: 'rotate(180deg)' }} />
             Anterior
           </button>
-          <button className="btn btn-outline btn-sm" onClick={navSiguiente} disabled={idx === comprobantes.length - 1}>
+          <button className="btn btn-outline btn-sm" onClick={navSiguiente} disabled={safeIdx === comprobantes.length - 1}>
             Siguiente
             <Icons.arrow width={13} height={13} />
           </button>
         </div>
       </div>
 
-      <div style={{ flex: 1, display: 'grid', gridTemplateColumns: '1.2fr 1fr', overflow: 'hidden' }}>
+      <div className="comprobantes-detail-grid" style={{ flex: 1, display: 'grid', gridTemplateColumns: '1.2fr 1fr', overflow: 'hidden' }}>
         {/* Imagen del comprobante */}
         <div style={{ background: '#2a2e35', padding: 28, display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'auto' }}>
           {current.imagen_url ? (
@@ -307,7 +303,7 @@ export default function ComprobantesClient({ comprobantes, historial }: { compro
                 <div key={item.id} style={{ display: 'flex', gap: 12, alignItems: 'center', padding: '10px 0', borderBottom: '1px solid var(--line)' }}>
                   <div style={{ width: 48, height: 60, borderRadius: 6, overflow: 'hidden', flexShrink: 0, background: 'var(--surface-2)' }}>
                     {item.prenda?.fotos?.[0]
-                      ? <img src={item.prenda.fotos[0]} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                      ? <img loading="lazy" src={item.prenda.fotos[0]} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                       : <Ph tone="sand" aspect="4/5" radius={0} />}
                   </div>
                   <div style={{ flex: 1, minWidth: 0 }}>
@@ -355,14 +351,14 @@ export default function ComprobantesClient({ comprobantes, historial }: { compro
           </div>
 
           <div style={{ marginTop: 20, display: 'grid', gap: 8 }}>
-            {error && (
+            {currentError && (
               <div style={{ padding: '10px 12px', borderRadius: 8, background: '#fef2f2', border: '1px solid #fecaca', color: '#991b1b', fontSize: 12, lineHeight: 1.45 }}>
-                {error}
+                {currentError}
               </div>
             )}
-            {notice && (
+            {currentNotice && (
               <div style={{ padding: '10px 12px', borderRadius: 8, background: '#ecfdf5', border: '1px solid #a7f3d0', color: '#065f46', fontSize: 12, lineHeight: 1.45 }}>
-                {notice}
+                {currentNotice}
               </div>
             )}
 
@@ -379,17 +375,17 @@ export default function ComprobantesClient({ comprobantes, historial }: { compro
               </a>
             )}
 
-            {decided === 'ok' ? (
+            {currentDecision === 'ok' ? (
               <div style={{ padding: '14px 16px', background: '#ecfdf5', border: '1px solid #a7f3d0', borderRadius: 10, display: 'flex', alignItems: 'center', gap: 10 }}>
                 <Icons.check width={18} height={18} style={{ color: '#065f46', flexShrink: 0 }} />
                 <div>
                   <div style={{ fontSize: 14, fontWeight: 600, color: '#065f46' }}>Pago confirmado</div>
                   <div style={{ fontSize: 12, color: '#047857', marginTop: 2 }}>
-                    {comprobantes.length > idx + 1 ? 'Pasando al siguiente...' : 'Todo al día por ahora.'}
+                    {comprobantes.length > safeIdx + 1 ? 'Actualizando pendientes...' : 'Todo al día por ahora.'}
                   </div>
                 </div>
               </div>
-            ) : decided === 'no' ? (
+            ) : currentDecision === 'no' ? (
               <div style={{ padding: '14px 16px', background: '#fef2f2', border: '1px solid #fecaca', borderRadius: 10, display: 'flex', alignItems: 'center', gap: 10 }}>
                 <div style={{ fontSize: 14, fontWeight: 600, color: '#991b1b' }}>Comprobante rechazado</div>
               </div>

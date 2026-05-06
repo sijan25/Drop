@@ -8,17 +8,18 @@ interface CountdownProps {
   size?: 'hero' | 'md' | 'sm';
   label?: boolean;
   urgent?: boolean;
+  color?: string;
   onExpire?: () => void;
 }
 
-export function CountdownTimer({ target, size = 'md', label = true, urgent = false, onExpire }: CountdownProps) {
+export function CountdownTimer({ target, size = 'md', label = true, urgent = false, color: colorProp, onExpire }: CountdownProps) {
   const { d, h, m, s, diff, ready, done } = useCountdown(target);
 
   useEffect(() => {
     if (done && onExpire) onExpire();
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [done]);
-  const color = urgent || (ready && diff < 600000) ? 'var(--urgent)' : 'var(--ink)';
+  const color = colorProp ?? (urgent || (ready && diff < 600000) ? 'var(--urgent)' : 'var(--ink)');
 
   if (size === 'hero') {
     const parts = [['d', d], ['h', h], ['m', m], ['s', s]] as const;

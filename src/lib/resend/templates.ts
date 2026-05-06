@@ -72,6 +72,12 @@ function infoRow(label: string, value: string) {
   </tr>`
 }
 
+function actionButton(url: string, label: string, color = '#0a0a0a') {
+  return `<a href="${escapeHtml(url)}" style="display:inline-block;background:${color};color:#fff;font-size:14px;font-weight:700;padding:14px 24px;border-radius:10px;text-decoration:none;letter-spacing:-0.01em;">
+    ${escapeHtml(label)}
+  </a>`
+}
+
 // ────────────────────────────────────────────────────────
 // 1. PEDIDO CONFIRMADO (para el comprador)
 // ────────────────────────────────────────────────────────
@@ -121,6 +127,13 @@ export function emailPedidoConfirmado(opts: {
       ${opts.direccion ? infoRow('Dirección', opts.direccion) : ''}
     </table>
 
+    ${opts.trackingUrl
+      ? `<div style="margin-bottom:20px;">
+          ${actionButton(opts.trackingUrl, 'Ver estado de mi pedido')}
+        </div>`
+      : ''
+    }
+
     ${opts.comprobanteSubido
       ? `<div style="background:#eff6ff;border-radius:10px;padding:16px 20px;margin-bottom:20px;border-left:3px solid #3b82f6;">
           <p style="margin:0;font-size:14px;color:#1e40af;line-height:1.6;">
@@ -161,6 +174,7 @@ export function emailNuevoPedidoVendedor(opts: {
   metodoEnvio: string
   direccion?: string | null
   comprobanteUrl?: string | null
+  trackingUrl?: string | null
   dashboardUrl: string
 }) {
   const content = `
@@ -198,9 +212,10 @@ export function emailNuevoPedidoVendedor(opts: {
       : ''
     }
 
-    <a href="${escapeHtml(opts.dashboardUrl)}" style="display:inline-block;background:#0a0a0a;color:#fff;font-size:14px;font-weight:600;padding:14px 28px;border-radius:10px;text-decoration:none;letter-spacing:-0.01em;">
-      Ir al dashboard
-    </a>
+    <div style="display:flex;gap:10px;flex-wrap:wrap;">
+      ${actionButton(opts.dashboardUrl, 'Ir al dashboard')}
+      ${opts.trackingUrl ? actionButton(opts.trackingUrl, 'Ver estado del pedido', '#334155') : ''}
+    </div>
   `
 
   return {
@@ -243,6 +258,13 @@ export function emailPagoConfirmado(opts: {
       ${infoRow('Envío', opts.metodoEnvio)}
       ${opts.direccion ? infoRow('Dirección', opts.direccion) : ''}
     </table>
+
+    ${opts.trackingUrl
+      ? `<div style="margin-bottom:20px;">
+          ${actionButton(opts.trackingUrl, 'Ver estado de mi pedido')}
+        </div>`
+      : ''
+    }
 
     <div style="background:#f9f9f7;border-radius:10px;padding:16px 20px;margin-bottom:20px;">
       <p style="margin:0;font-size:14px;color:#555;line-height:1.6;">
@@ -314,8 +336,14 @@ export function emailActualizacionEstado(opts: {
   trackingNumero?: string | null
   trackingUrlEnvio?: string | null
 }) {
-  const esPickup = opts.metodoEnvio === 'pickup'
-  const diasEstimados = esPickup ? null : '3 a 5 días hábiles'
+  const metodoEnvioLabel = opts.metodoEnvio === 'pickup'
+    ? 'Pickup / Retiro en tienda'
+    : opts.metodoEnvio === 'domicilio'
+      ? 'Envío a domicilio'
+      : opts.metodoEnvio ?? null
+  const esPickup = opts.metodoEnvio === 'pickup' || metodoEnvioLabel === 'Pickup / Retiro en tienda'
+  const esBoxful = Boolean(metodoEnvioLabel?.startsWith('Boxful'))
+  const diasEstimados = esPickup ? null : esBoxful ? '1 a 3 días hábiles' : '3 a 5 días hábiles'
 
   const trackingExtra = opts.nuevoEstado === 'en_camino' && opts.trackingNumero
     ? `<div style="background:#f0fdf4;border-radius:10px;padding:16px 20px;margin-top:12px;border-left:3px solid #22c55e;">
@@ -372,7 +400,7 @@ export function emailActualizacionEstado(opts: {
 
     <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:24px;">
       ${infoRow('Prenda', opts.prendaNombre)}
-      ${opts.metodoEnvio ? infoRow('Método de envío', esPickup ? 'Pickup / Retiro en tienda' : 'Envío a domicilio') : ''}
+      ${metodoEnvioLabel ? infoRow('Método de envío', metodoEnvioLabel) : ''}
       ${diasEstimados ? infoRow('Tiempo estimado', diasEstimados) : ''}
     </table>
 
@@ -383,6 +411,13 @@ export function emailActualizacionEstado(opts: {
     </div>
 
     ${estado.extra ?? ''}
+
+    ${opts.trackingUrl
+      ? `<div style="margin-top:20px;">
+          ${actionButton(opts.trackingUrl, 'Ver estado de mi pedido')}
+        </div>`
+      : ''
+    }
 
   `
 

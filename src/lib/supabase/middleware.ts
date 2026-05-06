@@ -44,18 +44,43 @@ export async function updateSession(request: NextRequest) {
     pathname.startsWith("/configuracion") ||
     pathname.startsWith("/billing");
 
+  // Rutas de dashboard requieren sesión
   if (isDashboard && !user) {
     const url = request.nextUrl.clone();
     url.pathname = "/login";
     return NextResponse.redirect(url);
   }
 
-  // Solo redirige desde /login si ya hay sesión; /onboarding se maneja en el cliente
-  // para evitar loop con usuarios OAuth que aún no tienen tienda.
+  // Si hay sesión activa en /login → redirigir según si tiene tienda o no
   if (pathname === "/login" && user) {
+    const { data: tienda } = await supabase
+      .from("tiendas")
+      .select("id")
+      .eq("user_id", user.id)
+      .maybeSingle();
+
     const url = request.nextUrl.clone();
-    url.pathname = "/dashboard";
+    url.pathname = tienda ? "/dashboard" : "/onboarding";
     return NextResponse.redirect(url);
+  }
+
+  // Si hay sesión en /onboarding y ya tiene tienda → redirigir a dashboard
+  // (evita que alguien con tienda vuelva a ver el onboarding)
+  // Si NO tiene tienda, dejar pasar normalmente (el onboarding es su destino correcto)
+  if (pathname === "/onboarding" && user) {
+    const { data: tienda } = await supabase
+      .from("tiendas")
+      .select("id")
+      .eq("user_id", user.id)
+      .maybeSingle();
+
+    if (tienda) {
+      const url = request.nextUrl.clone();
+      url.pathname = "/dashboard";
+      return NextResponse.redirect(url);
+    }
+    // Sin tienda: dejar pasar al onboarding sin redirigir
+    return supabaseResponse;
   }
 
   return supabaseResponse;

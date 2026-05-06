@@ -166,6 +166,7 @@ const plans: Plan[] = [
       'Drops ilimitados',
       'Analíticas completas',
       'Notificaciones WhatsApp',
+      'Pagos con tarjeta vía PixelPay',
       'Soporte prioritario',
     ],
   },
@@ -319,7 +320,7 @@ export default function Home() {
               <a href="#testimonios">Historias</a>
             </div>
 
-            <NavButton href="/login">Empezar gratis</NavButton>
+            <NavButton href="/onboarding">Empezar gratis</NavButton>
           </nav>
         </div>
       </div>
@@ -348,7 +349,7 @@ export default function Home() {
           </p>
 
           <div className="landing-hero-actions landing-fade-up landing-fade-up-3">
-            <PrimaryButton href="/login">Crear mi tienda gratis</PrimaryButton>
+            <PrimaryButton href="/onboarding">Crear mi tienda gratis</PrimaryButton>
             <SecondaryButton href="#como-funciona">Ver cómo funciona</SecondaryButton>
           </div>
 
@@ -547,7 +548,7 @@ export default function Home() {
                   <strong>{plan.price}</strong>
                   {plan.suffix ? <span>{plan.suffix}</span> : null}
                 </div>
-                <Link className={`landing-plan-cta${plan.highlighted ? ' landing-plan-cta-dark' : ''}`} href="/login">
+                <Link className={`landing-plan-cta${plan.highlighted ? ' landing-plan-cta-dark' : ''}`} href="/onboarding">
                   {plan.cta} <ArrowRight size={14} />
                 </Link>
                 <ul>
@@ -601,7 +602,7 @@ export default function Home() {
             Publica tus prendas, comparte tu link y empieza a vender hoy — sin montar una web, sin comisión por venta.
           </p>
           <div className="landing-final-actions">
-            <PrimaryButton href="/login">Crear mi link de ventas</PrimaryButton>
+            <PrimaryButton href="/onboarding">Crear mi link de ventas</PrimaryButton>
             <a className="landing-btn-secondary landing-btn-secondary-plain" href="mailto:hola@droppi.app">
               Hablar con el equipo
             </a>
@@ -633,7 +634,7 @@ export default function Home() {
             <strong>Soporte</strong>
             <a href="/contacto">Contacto</a>
             <a href="/ayuda">Centro de ayuda</a>
-            <a href="https://wa.me/50498765432">WhatsApp</a>
+            <a href="https://wa.me/50499999999">WhatsApp</a>
           </div>
 
           <div>

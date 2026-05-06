@@ -44,6 +44,7 @@ export function CarritoProvider({ children }: { children: ReactNode }) {
   const [drawerAbierto, setDrawerAbierto] = useState(false);
   const itemsRef = useRef<ItemCarrito[]>([]);
   const mutationVersion = useRef(0);
+  const addQueueRef = useRef<Promise<void>>(Promise.resolve());
 
   const commitItems = useCallback((next: ItemCarrito[]) => {
     itemsRef.current = next;
@@ -85,8 +86,10 @@ export function CarritoProvider({ children }: { children: ReactNode }) {
     commitItems(optimisticItems);
     setDrawerAbierto(true);
 
-    void agregarItemCarrito({ prendaId: item.prendaId, tiendaId: item.tiendaId, talla: item.talla })
-      .then(res => {
+    addQueueRef.current = addQueueRef.current
+      .catch(() => undefined)
+      .then(async () => {
+        const res = await agregarItemCarrito({ prendaId: item.prendaId, tiendaId: item.tiendaId, talla: item.talla });
         if (version !== mutationVersion.current) return;
 
         if (res.error) {

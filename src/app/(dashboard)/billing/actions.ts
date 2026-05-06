@@ -4,8 +4,7 @@ import { createClient, createServiceClient } from '@/lib/supabase/server';
 import { guardServerMutation } from '@/lib/security/request';
 import { createSubscription, cancelSubscription, getSubscription } from '@/lib/paypal/client';
 import { PAYPAL_PLANS, type PlanKey } from '@/lib/paypal/plans';
-
-const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000';
+import { APP_URL } from '@/lib/config/platform';
 
 async function getTienda() {
   const supabase = await createClient();

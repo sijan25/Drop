@@ -1,9 +1,8 @@
 'use server';
 
 import { createClient, createServiceClient, getServiceRoleConfigError } from '@/lib/supabase/server';
-import { PLATFORM } from '@/lib/config/platform';
 import { guardServerMutation } from '@/lib/security/request';
-import { validateStoreUsername } from '@/lib/stores/username';
+import { STORE_USERNAME_TAKEN_ERROR, validateStoreUsername } from '@/lib/stores/username';
 
 export async function createAccount(data: {
   email: string;
@@ -15,7 +14,7 @@ export async function createAccount(data: {
   facebook: string | null;
   ubicacion: string | null;
   tipo_negocio: 'ropa' | 'zapatos' | 'mixto';
-  envios: { domicilio: boolean; nacional: boolean };
+  metodosEnvio: { nombre: string; proveedor: string; precio: number; tiempoEstimado: string | null; cobertura: string | null; trackingUrl: string | null }[];
   cuentaBancaria: { banco: string; cuenta: string; titular: string } | null;
 }): Promise<{ error?: string; needsConfirmation?: boolean }> {
   const serviceRoleError = getServiceRoleConfigError();
@@ -42,7 +41,7 @@ export async function createAccount(data: {
   ]);
 
   if (existingUsername || existingRedirect)
-    return { error: 'Ese link ya está en uso o reservado por una redirección existente.' };
+    return { error: STORE_USERNAME_TAKEN_ERROR };
   if (existingEmail)
     return { error: 'Ese correo ya pertenece a una tienda. Iniciá sesión.' };
 
@@ -66,8 +65,7 @@ export async function createAccount(data: {
   const userId = signUpData.user?.id;
   if (!userId) return { error: 'Error inesperado al crear la cuenta.' };
 
-  // Intentar insert completo primero (con tipo_negocio)
-  const insertPayload: Record<string, unknown> = {
+  const insertPayload = {
     user_id: userId,
     username,
     nombre,
@@ -79,29 +77,14 @@ export async function createAccount(data: {
     plan: 'starter',
     activa: true,
     tipo_negocio: data.tipo_negocio,
+    order_prefix: username.slice(0, 4).toUpperCase(),
   };
 
-  let insertError = (await service.from('tiendas').insert(insertPayload)).error;
-
-  // Si falla por columna tipo_negocio no existente, reintentar sin ella
-  if (insertError) {
-    const msg = insertError.message ?? '';
-    const esMissingColumn =
-      msg.includes('tipo_negocio') ||
-      msg.includes('schema cache') ||
-      msg.includes('column') ||
-      msg.includes('does not exist');
-
-    if (esMissingColumn) {
-      const { tipo_negocio, ...sinTipoNegocio } = insertPayload;
-      void tipo_negocio; // suppress unused warning
-      const retry = await service.from('tiendas').insert(sinTipoNegocio);
-      insertError = retry.error ?? null;
-    }
-  }
+  const { error: insertError } = await service.from('tiendas').insert(insertPayload);
 
   if (insertError) {
     await service.auth.admin.deleteUser(userId);
+    if (insertError.code === '23505') return { error: STORE_USERNAME_TAKEN_ERROR };
     return { error: 'Error al guardar la tienda: ' + insertError.message };
   }
 
@@ -125,14 +108,20 @@ export async function createAccount(data: {
       });
     }
 
-    const metodosBase = [
-      { nombre: 'Retiro en tienda', proveedor: 'Retiro', precio: 0, tiempo_estimado: null, cobertura: 'Local', activo: true },
-      ...(data.envios.domicilio ? [{ nombre: 'Envío en ciudad', proveedor: 'Mensajería local', precio: 60, tiempo_estimado: '1-2 días', cobertura: 'Ciudad', activo: true }] : []),
-      ...(data.envios.nacional ? [{ nombre: 'Envío nacional', proveedor: 'Mensajería nacional', precio: 120, tiempo_estimado: '2-3 días', cobertura: `Todo ${PLATFORM.country}`, activo: true }] : []),
-    ];
-    await service.from('metodos_envio').insert(
-      metodosBase.map(m => ({ ...m, tienda_id: tiendaCreada.id }))
-    );
+    if (data.metodosEnvio.length > 0) {
+      await service.from('metodos_envio').insert(
+        data.metodosEnvio.map(m => ({
+          tienda_id: tiendaCreada.id,
+          nombre: m.nombre,
+          proveedor: m.proveedor,
+          precio: m.precio,
+          tiempo_estimado: m.tiempoEstimado,
+          cobertura: m.cobertura,
+          tracking_url_template: m.trackingUrl,
+          activo: true,
+        }))
+      );
+    }
   }
 
   return { needsConfirmation: !signUpData.session };

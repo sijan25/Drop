@@ -1,7 +1,5 @@
 import { sendWhatsAppText, type WhatsAppSendResult } from './client'
-import { formatCurrency } from '@/lib/config/platform'
-
-const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000'
+import { formatCurrency, APP_URL } from '@/lib/config/platform'
 
 function lps(n: number) {
   return formatCurrency(n)

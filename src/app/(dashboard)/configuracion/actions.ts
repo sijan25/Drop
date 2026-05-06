@@ -1,23 +1,40 @@
 'use server';
 
 import { revalidatePath } from 'next/cache';
+import { parsePhoneNumberWithError } from 'libphonenumber-js';
 import { createClient, createServiceClient } from '@/lib/supabase/server';
 import { getCatalogDefaults, type CatalogOptionTipo, type TipoNegocio } from '@/lib/catalog-options';
 import { guardServerMutation } from '@/lib/security/request';
 import {
+  STORE_USERNAME_TAKEN_ERROR,
   USERNAME_CHANGE_COOLDOWN_DAYS,
   USERNAME_CHANGE_LIMIT,
   normalizeStoreUsername,
   validateStoreUsername,
 } from '@/lib/stores/username';
-import type { Database } from '@/types/database';
-
-type MetodoPago = Database['public']['Tables']['metodos_pago']['Row'];
-type MetodoEnvio = Database['public']['Tables']['metodos_envio']['Row'];
-type OpcionCatalogo = Database['public']['Tables']['opciones_catalogo']['Row'];
-type TiendaUpdate = Database['public']['Tables']['tiendas']['Update'];
+import type { MetodoPago, MetodoEnvio } from '@/types/envio';
+import type { OpcionCatalogo } from '@/types/catalog';
+import type { TiendaUpdate } from '@/types/tienda';
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+function normalizeWhatsapp(value: string): { value: string | null; error?: string } {
+  const raw = value.trim();
+  if (!raw) return { value: null };
+
+  try {
+    const parsed = parsePhoneNumberWithError(raw.startsWith('+') ? raw : `+${raw}`);
+    if (parsed.country === 'HN' && parsed.nationalNumber.length !== 8) {
+      return { value: null, error: 'El WhatsApp de Honduras debe tener exactamente 8 dígitos.' };
+    }
+    if (!parsed.isValid()) {
+      return { value: null, error: 'Ingresá un número de WhatsApp válido.' };
+    }
+    return { value: parsed.number };
+  } catch {
+    return { value: null, error: 'Ingresá un número de WhatsApp válido.' };
+  }
+}
 
 async function getTiendaId() {
   const guardError = await guardServerMutation('dashboard:config', 180, 10 * 60);
@@ -56,8 +73,11 @@ export async function guardarInfoTienda(data: {
   facebook: string;
   tiktok: string;
   ubicacion: string;
+  ciudad: string;
+  departamento: string;
   whatsapp: string;
   logo_url?: string | null;
+  logo_cloudinary_id?: string | null;
   cover_url?: string | null;
 }): Promise<{ error?: string }> {
   const { error: authError, tiendaId, supabase } = await getTiendaId();
@@ -73,6 +93,11 @@ export async function guardarInfoTienda(data: {
 
   if (!contactEmail || !EMAIL_RE.test(contactEmail)) {
     return { error: 'Ingresá un correo público válido.' };
+  }
+
+  const whatsapp = normalizeWhatsapp(data.whatsapp);
+  if (whatsapp.error) {
+    return { error: whatsapp.error };
   }
 
   const service = await createServiceClient();
@@ -105,7 +130,7 @@ export async function guardarInfoTienda(data: {
       .maybeSingle(),
   ]);
 
-  if (existingUsername || existingRedirect) return { error: 'Ese link ya está en uso o reservado por una redirección existente.' };
+  if (existingUsername || existingRedirect) return { error: STORE_USERNAME_TAKEN_ERROR };
   if (existingEmail) return { error: 'Ese correo público ya pertenece a otra tienda.' };
 
   const currentUsername = current.username;
@@ -119,8 +144,11 @@ export async function guardarInfoTienda(data: {
     facebook: data.facebook || null,
     tiktok: data.tiktok || null,
     ubicacion: data.ubicacion || null,
-    whatsapp: data.whatsapp || null,
+    ciudad: data.ciudad || null,
+    departamento: data.departamento || null,
+    whatsapp: whatsapp.value,
     ...(data.logo_url !== undefined ? { logo_url: data.logo_url } : {}),
+    ...(data.logo_cloudinary_id !== undefined ? { logo_cloudinary_id: data.logo_cloudinary_id } : {}),
     ...(data.cover_url !== undefined ? { cover_url: data.cover_url } : {}),
   };
 
@@ -153,7 +181,7 @@ export async function guardarInfoTienda(data: {
     .eq('id', tiendaId!);
 
   if (error) {
-    if (error.code === '23505') return { error: 'Ese username ya está en uso' };
+    if (error.code === '23505') return { error: STORE_USERNAME_TAKEN_ERROR };
     return { error: mensajeGuardarTienda(error.message) };
   }
 

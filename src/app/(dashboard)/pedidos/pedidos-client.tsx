@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useTransition } from 'react'
+import { useEffect, useRef, useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import { Icons } from '@/components/shared/icons'
 import { ConfirmModal } from '@/components/shared/confirm-modal'
@@ -97,6 +97,16 @@ type Pedido = {
   en_camino_at: string | null
   tracking_numero: string | null
   tracking_url: string | null
+  envio_proveedor: string | null
+  envio_modalidad: string | null
+  envio_monto: number | null
+  envio_courier_id: string | null
+  envio_courier_nombre: string | null
+  envio_courier_logo: string | null
+  envio_tracking_url: string | null
+  envio_label_url: string | null
+  envio_estado: string | null
+  envio_metadata: unknown
   drop: Drop | null
   items: Item[]
 }
@@ -143,6 +153,21 @@ function dropLabel(drop: Drop | null) {
   return m ? `#${m[0]}` : drop.nombre
 }
 
+function isBoxfulPedido(pedido: Pick<Pedido, 'metodo_envio' | 'envio_proveedor' | 'envio_modalidad'>) {
+  return pedido.envio_proveedor === 'boxful'
+    || pedido.envio_modalidad === 'boxful_dropoff'
+    || pedido.envio_modalidad === 'boxful_recoleccion'
+    || pedido.metodo_envio === 'boxful_dropoff'
+    || pedido.metodo_envio === 'boxful_recoleccion'
+}
+
+function metodoEnvioLabel(pedido: Pick<Pedido, 'metodo_envio' | 'envio_modalidad'>) {
+  const metodo = pedido.envio_modalidad ?? pedido.metodo_envio
+  if (metodo === 'boxful_dropoff') return 'Boxful · Punto autorizado'
+  if (metodo === 'boxful_recoleccion') return 'Boxful · Recolección'
+  return metodo === 'domicilio' ? 'Envío a domicilio' : 'Pickup en tienda'
+}
+
 export default function PedidosClient({
   pedidos, semanaCount, transitoTotal, metodosEnvio,
 }: {
@@ -152,6 +177,8 @@ export default function PedidosClient({
   metodosEnvio: { id: string; nombre: string; tracking_url: string | null }[]
 }) {
   const router = useRouter()
+  const shellRef = useRef<HTMLDivElement>(null)
+  const [isCompact, setIsCompact] = useState(false)
   const [expanded, setExpanded] = useState<string | null>(pedidos[0]?.numero ?? null)
   const [message, setMessage] = useState<{ pedidoId: string; tone: 'ok' | 'error'; text: string } | null>(null)
   const [pending, startTransition] = useTransition()
@@ -160,6 +187,16 @@ export default function PedidosClient({
   const [showFilters, setShowFilters] = useState(false)
   const [fechaDesde, setFechaDesde] = useState('')
   const [fechaHasta, setFechaHasta] = useState('')
+
+  useEffect(() => {
+    const node = shellRef.current
+    if (!node) return
+    const update = () => setIsCompact(node.clientWidth <= 900)
+    update()
+    const observer = new ResizeObserver(update)
+    observer.observe(node)
+    return () => observer.disconnect()
+  }, [])
 
   const pedidosFiltrados = pedidos.filter(p => {
     const fecha = new Date(p.created_at ?? '')
@@ -193,6 +230,20 @@ export default function PedidosClient({
   function handleAvanzar(pedidoId: string, estado: string) {
     if (estado === 'empacado') {
       const pedido = pedidos.find(p => p.id === pedidoId)
+      if (pedido && isBoxfulPedido(pedido)) {
+        startTransition(async () => {
+          setMessage(null)
+          const result = await avanzarEstado(pedidoId, estado)
+          if (result && 'error' in result) {
+            setMessage({ pedidoId, tone: 'error', text: result.error ?? 'No se pudo crear la guía de Boxful.' })
+            return
+          }
+          window.dispatchEvent(new Event('fd-dashboard-counts-refresh'))
+          router.refresh()
+        })
+        return
+      }
+
       const metodo = metodosEnvio.find(m =>
         m.nombre.toLowerCase() === (pedido?.metodo_envio ?? '').toLowerCase()
       )
@@ -261,16 +312,18 @@ export default function PedidosClient({
     empacado: 'Marcar enviado',
   }
 
+  const desktopColumns = '90px 1.2fr 1.4fr 70px 90px 80px 110px 110px 28px'
+
   return (
-    <div style={{ height: '100%', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-      <div style={{ padding: '20px 28px 16px', borderBottom: '1px solid var(--line)', display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: 20, flexShrink: 0 }}>
+    <div ref={shellRef} className="orders-shell" style={{ height: '100%', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+      <div className="orders-header" style={{ padding: '20px 28px 16px', borderBottom: '1px solid var(--line)', display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: 20, flexShrink: 0 }}>
         <div>
           <div style={{ fontSize: 20, fontWeight: 600, letterSpacing: '-0.015em' }}>Pedidos</div>
           <div className="t-mute" style={{ fontSize: 13, marginTop: 3 }}>
             {semanaCount} pedidos esta semana · L {transitoTotal.toLocaleString()} en tránsito
           </div>
         </div>
-        <div style={{ display: 'flex', gap: 8 }}>
+        <div className="orders-header-actions" style={{ display: 'flex', gap: 8 }}>
           <button className={`btn btn-sm ${showFilters ? 'btn-primary' : 'btn-outline'}`} onClick={() => setShowFilters(v => !v)}>
             <Icons.filter width={13} height={13}/> Filtros{(fechaDesde || fechaHasta) ? ' ·' : ''}
           </button>
@@ -279,9 +332,9 @@ export default function PedidosClient({
       </div>
 
       {showFilters && (
-        <div style={{ padding: '12px 28px', borderBottom: '1px solid var(--line)', background: 'var(--surface-2)', display: 'flex', gap: 16, alignItems: 'center', flexShrink: 0 }}>
+        <div className="orders-filters-panel" style={{ padding: '12px 28px', borderBottom: '1px solid var(--line)', background: 'var(--surface-2)', display: 'flex', gap: 16, alignItems: 'center', flexShrink: 0 }}>
           <span style={{ fontSize: 12, color: 'var(--ink-3)', fontWeight: 500 }}>Fecha</span>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <div className="orders-date-filter" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
             <input type="date" className="input" value={fechaDesde} onChange={e => setFechaDesde(e.target.value)} style={{ height: 32, fontSize: 12, padding: '0 10px', width: 148 }} />
             <span style={{ fontSize: 12, color: 'var(--ink-3)' }}>→</span>
             <input type="date" className="input" value={fechaHasta} onChange={e => setFechaHasta(e.target.value)} style={{ height: 32, fontSize: 12, padding: '0 10px', width: 148 }} />
@@ -314,41 +367,78 @@ export default function PedidosClient({
         />
       )}
 
-      <div style={{ flex: 1, overflowY: 'auto', padding: '20px 28px' }}>
+      <div className="orders-content" style={{ flex: 1, overflowY: 'auto', padding: '20px 28px' }}>
         {pedidos.length === 0 ? (
           <div className="card" style={{ padding: 40, textAlign: 'center', color: 'var(--ink-3)' }}>
             Sin pedidos todavía
           </div>
         ) : (
-          <div className="card" style={{ overflow: 'hidden' }}>
-            <div style={{ display: 'grid', gridTemplateColumns: '90px 1.2fr 1.4fr 70px 90px 80px 110px 110px 28px', padding: '10px 16px', borderBottom: '1px solid var(--line)', fontSize: 11, color: 'var(--ink-3)', textTransform: 'uppercase', letterSpacing: 0.04 }} className="mono">
+          <div className="card orders-table-card" style={{
+            overflow: isCompact ? 'visible' : 'hidden',
+            display: isCompact ? 'grid' : undefined,
+            gap: isCompact ? 10 : undefined,
+            border: isCompact ? 'none' : undefined,
+            background: isCompact ? 'transparent' : undefined,
+            boxShadow: isCompact ? 'none' : undefined,
+          }}>
+            <div style={{ display: isCompact ? 'none' : 'grid', gridTemplateColumns: desktopColumns, padding: '10px 16px', borderBottom: '1px solid var(--line)', fontSize: 11, color: 'var(--ink-3)', textTransform: 'uppercase', letterSpacing: 0.04 }} className="mono orders-table-head">
               <div>Pedido</div><div>Cliente</div><div>Prenda</div><div>Talla</div><div>Drop</div><div>Monto</div><div>Fecha</div><div>Estado</div><div/>
             </div>
 
             {pedidosFiltrados.length === 0 ? (
               <div style={{ padding: 32, textAlign: 'center', color: 'var(--ink-3)', fontSize: 13 }}>Sin resultados para ese rango de fechas</div>
             ) : pedidosFiltrados.map((r, i) => (
-              <div key={r.id}>
+              <div className="orders-card-wrap" key={r.id} style={isCompact ? {
+                overflow: 'hidden',
+                border: '1px solid var(--line)',
+                borderRadius: 12,
+                background: 'var(--surface)',
+                boxShadow: 'var(--shadow-sm)',
+              } : undefined}>
                 <div
+                  className="orders-row"
                   onClick={() => setExpanded(e => e === r.numero ? null : r.numero)}
-                  style={{ display: 'grid', gridTemplateColumns: '90px 1.2fr 1.4fr 70px 90px 80px 110px 110px 28px', padding: '12px 16px', borderBottom: i < pedidosFiltrados.length - 1 ? '1px solid var(--line-2)' : 'none', alignItems: 'center', fontSize: 12, cursor: 'pointer' }}
+                  style={{
+                    display: 'grid',
+                    gridTemplateColumns: isCompact ? 'minmax(0, 1fr) auto 28px' : desktopColumns,
+                    gap: isCompact ? '5px 12px' : undefined,
+                    padding: isCompact ? 14 : '12px 16px',
+                    borderBottom: !isCompact && i < pedidosFiltrados.length - 1 ? '1px solid var(--line-2)' : 'none',
+                    alignItems: 'center',
+                    fontSize: 12,
+                    cursor: 'pointer',
+                  }}
                 >
-                  <div className="mono tnum" style={{ fontWeight: 500 }}>{r.numero}</div>
-                  <div>{r.comprador_nombre}</div>
-                  <div className="t-mute">{prendaLabel(r.items)}</div>
-                  <div className="t-mute">{tallaLabel(r.items)}</div>
-                  <div className="mono t-mute">{dropLabel(r.drop)}</div>
-                  <div className="mono tnum" style={{ fontWeight: 500 }}>L {r.monto_total.toLocaleString()}</div>
-                  <div className="t-mute">{fmt(r.created_at)}</div>
-                  <div><span className={badgeClass(r.estado)}>{estadoLabel(r.estado)}</span></div>
-                  <div style={{ transform: expanded === r.numero ? 'rotate(90deg)' : 'none', transition: 'transform .15s', color: 'var(--ink-3)' }}>
+                  <div className="mono tnum orders-number" style={{ fontWeight: 500, gridColumn: isCompact ? 1 : undefined, gridRow: isCompact ? 1 : undefined }}>{r.numero}</div>
+                  <div className="orders-client" style={{
+                    gridColumn: isCompact ? 1 : undefined,
+                    gridRow: isCompact ? 2 : undefined,
+                    minWidth: isCompact ? 0 : undefined,
+                    overflow: isCompact ? 'hidden' : undefined,
+                    textOverflow: isCompact ? 'ellipsis' : undefined,
+                    whiteSpace: isCompact ? 'nowrap' : undefined,
+                    fontWeight: isCompact ? 600 : undefined,
+                  }}>{r.comprador_nombre}</div>
+                  <div className="t-mute orders-product" style={{ gridColumn: isCompact ? 1 : undefined, gridRow: isCompact ? 3 : undefined, minWidth: isCompact ? 0 : undefined, overflowWrap: isCompact ? 'anywhere' : undefined }}>{prendaLabel(r.items)}</div>
+                  <div className="t-mute orders-size" style={{ gridColumn: isCompact ? 1 : undefined, gridRow: isCompact ? 4 : undefined, fontSize: isCompact ? 11 : undefined }}>
+                    {isCompact ? `Talla: ${tallaLabel(r.items)}` : tallaLabel(r.items)}
+                  </div>
+                  <div className="mono t-mute orders-drop" style={{ gridColumn: isCompact ? 1 : undefined, gridRow: isCompact ? 5 : undefined, fontSize: isCompact ? 11 : undefined }}>
+                    {isCompact ? `Drop: ${dropLabel(r.drop)}` : dropLabel(r.drop)}
+                  </div>
+                  <div className="mono tnum orders-amount" style={{ fontWeight: 500, gridColumn: isCompact ? 2 : undefined, gridRow: isCompact ? 1 : undefined, alignSelf: isCompact ? 'start' : undefined, whiteSpace: 'nowrap' }}>L {r.monto_total.toLocaleString()}</div>
+                  <div className="t-mute orders-date" style={{ gridColumn: isCompact ? 1 : undefined, gridRow: isCompact ? 6 : undefined, fontSize: isCompact ? 11 : undefined }}>
+                    {isCompact ? `Fecha: ${fmt(r.created_at)}` : fmt(r.created_at)}
+                  </div>
+                  <div className="orders-status" style={{ gridColumn: isCompact ? '1 / 3' : undefined, gridRow: isCompact ? 7 : undefined, justifySelf: isCompact ? 'start' : undefined, paddingTop: isCompact ? 4 : undefined }}><span className={badgeClass(r.estado)}>{estadoLabel(r.estado)}</span></div>
+                  <div className="orders-expand-icon" style={{ gridColumn: isCompact ? 3 : undefined, gridRow: isCompact ? 1 : undefined, justifySelf: isCompact ? 'end' : undefined, alignSelf: isCompact ? 'start' : undefined, transform: expanded === r.numero ? 'rotate(90deg)' : 'none', transition: 'transform .15s', color: 'var(--ink-3)' }}>
                     <Icons.arrow width={13} height={13}/>
                   </div>
                 </div>
 
                 {expanded === r.numero && (
-                  <div style={{ padding: '18px 24px 22px', background: 'var(--surface-2)', borderBottom: '1px solid var(--line)' }}>
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24 }}>
+                  <div className="orders-expanded" style={{ padding: isCompact ? 14 : '18px 24px 22px', background: 'var(--surface-2)', borderTop: isCompact ? '1px solid var(--line)' : undefined, borderBottom: isCompact ? 'none' : '1px solid var(--line)' }}>
+                    <div className="orders-expanded-grid" style={{ display: 'grid', gridTemplateColumns: isCompact ? '1fr' : '1fr 1fr', gap: isCompact ? 18 : 24 }}>
                       {/* Timeline */}
                       <div>
                         <div className="mono t-mute" style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: 0.06, marginBottom: 10 }}>Timeline</div>
@@ -375,18 +465,30 @@ export default function PedidosClient({
                         <div style={{ fontSize: 12, lineHeight: 1.6 }}>
                           <div><span className="t-mute">WhatsApp:</span> <span className="mono">{r.comprador_telefono}</span></div>
                           {r.direccion && <div><span className="t-mute">Dirección:</span> {r.direccion}</div>}
-                          <div><span className="t-mute">Método:</span> {r.metodo_envio === 'domicilio' ? 'Envío a domicilio' : 'Pickup en tienda'}</div>
-                          {r.tracking_numero && (
+                          <div><span className="t-mute">Método:</span> {metodoEnvioLabel(r)}</div>
+                          {isBoxfulPedido(r) && r.envio_courier_nombre && (
+                            <div><span className="t-mute">Courier:</span> {r.envio_courier_nombre}</div>
+                          )}
+                          {isBoxfulPedido(r) && r.envio_estado && (
+                            <div><span className="t-mute">Estado Boxful:</span> {r.envio_estado}</div>
+                          )}
+                          {(r.tracking_numero || r.envio_tracking_url) && (
                             <div style={{ marginTop: 6 }}>
                               <span className="t-mute">Guía:</span>{' '}
-                              {r.tracking_url
-                                ? <a href={r.tracking_url} target="_blank" rel="noreferrer" className="mono" style={{ color: '#16a34a', fontWeight: 600 }}>{r.tracking_numero}</a>
+                              {(r.envio_tracking_url ?? r.tracking_url)
+                                ? <a href={(r.envio_tracking_url ?? r.tracking_url)!} target="_blank" rel="noreferrer" className="mono" style={{ color: '#16a34a', fontWeight: 600 }}>{r.tracking_numero ?? 'Rastrear envío'}</a>
                                 : <span className="mono" style={{ fontWeight: 600 }}>{r.tracking_numero}</span>
                               }
                             </div>
                           )}
+                          {r.envio_label_url && (
+                            <div>
+                              <span className="t-mute">Etiqueta:</span>{' '}
+                              <a href={r.envio_label_url} target="_blank" rel="noreferrer" style={{ color: 'var(--accent)', fontWeight: 600 }}>Abrir etiqueta</a>
+                            </div>
+                          )}
                         </div>
-                        <div style={{ display: 'flex', gap: 8, marginTop: 14 }}>
+                        <div className="orders-expanded-actions" style={{ display: 'flex', gap: 8, marginTop: 14, flexWrap: isCompact ? 'wrap' : undefined, alignItems: isCompact ? 'stretch' : undefined }}>
                           {r.estado === 'por_verificar' ? (
                             <button
                               onClick={() => router.push('/comprobantes')}
@@ -400,7 +502,7 @@ export default function PedidosClient({
                               disabled={pending}
                               className="btn btn-primary btn-sm"
                             >
-                              <Icons.upload width={13} height={13}/> {actionLabel[r.estado ?? '']}
+                              <Icons.upload width={13} height={13}/> {r.estado === 'empacado' && isBoxfulPedido(r) ? 'Crear guía Boxful' : actionLabel[r.estado ?? '']}
                             </button>
                           ) : null}
                           <a

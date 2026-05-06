@@ -40,29 +40,38 @@ export async function uploadToCloudinary(
 ): Promise<CloudinaryUploadResponse> {
   const timestamp = Math.round(Date.now() / 1000).toString();
 
+  // Transformaciones por carpeta: prendas/portadas → 1200px, logos → 400px, comprobantes sin resize
+  const isComprobante = folder.includes("comprobantes");
+  const isLogo = folder.includes("logos");
+  const transformation = isComprobante
+    ? "q_auto:good,f_auto"
+    : isLogo
+    ? "w_400,h_400,c_limit,q_auto:good,f_auto"
+    : "w_1200,c_limit,q_auto:good,f_auto";
+
   const params: Record<string, string> = {
     folder,
     timestamp,
+    transformation,
   };
 
   const signature = generateSignature(params);
 
   const formData = new FormData();
 
-  // Si es Buffer, convertir a Blob
   if (Buffer.isBuffer(file)) {
     const arrayBuffer = new ArrayBuffer(file.byteLength);
     new Uint8Array(arrayBuffer).set(file);
     const blob = new Blob([arrayBuffer]);
     formData.append("file", blob);
   } else {
-    // Si es base64 o URL
     formData.append("file", file);
   }
 
   formData.append("api_key", API_KEY);
   formData.append("timestamp", timestamp);
   formData.append("folder", folder);
+  formData.append("transformation", transformation);
   formData.append("signature", signature);
 
   const response = await fetch(

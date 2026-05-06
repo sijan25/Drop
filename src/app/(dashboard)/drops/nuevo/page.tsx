@@ -10,6 +10,7 @@ import { formatCurrency } from '@/lib/config/platform';
 import { uploadImage } from '@/lib/cloudinary/client';
 import { formatProductSizes, normalizeProductSizes } from '@/lib/product-sizes';
 import { useCatalogOptions } from '@/hooks/use-catalog-options';
+import { TONES } from '@/lib/ui/tones';
 
 // ── tipos ──────────────────────────────────────────────────────────────────
 interface PrendaForm {
@@ -24,6 +25,7 @@ interface PrendaForm {
   descripcion: string;
   tone: 'rose' | 'sand' | 'sage' | 'blue' | 'dark' | 'warm' | 'neutral';
   fotos: string[];
+  cloudinaryIds: string[];
 }
 
 function totalCantidad(cantidades: Record<string, number>, tallas: string[]) {
@@ -32,20 +34,19 @@ function totalCantidad(cantidades: Record<string, number>, tallas: string[]) {
 
 const DURATION_MIN: Record<string, number> = { '1h': 60, '6h': 360, '24h': 1440, '48h': 2880 };
 
-const TONES: PrendaForm['tone'][] = ['rose', 'sand', 'sage', 'blue', 'dark', 'warm', 'neutral'];
 
-const PRENDA_VACIA: Omit<PrendaForm, 'id' | 'tone'> = {
+const PRENDA_VACIA: Omit<PrendaForm, 'id' | 'tone' | 'fotos' | 'cloudinaryIds'> = {
   nombre: '', marca: '', talla: '', tallas: [], cantidades_por_talla: {}, precio: '', categoria: '', descripcion: '',
 };
 
 // ── stepper ────────────────────────────────────────────────────────────────
 function Stepper({ steps, active }: { steps: string[]; active: number }) {
   return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+    <div className="new-drop-stepper" style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
       {steps.map((s, i) => (
-        <div key={i} style={{ display: 'flex', alignItems: 'center', gap: i < steps.length - 1 ? 6 : 0 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <div style={{
+        <div key={i} className="new-drop-stepper-item" style={{ display: 'flex', alignItems: 'center', gap: i < steps.length - 1 ? 6 : 0 }}>
+          <div className="new-drop-stepper-step" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <div className="new-drop-stepper-bubble" style={{
               width: 22, height: 22, borderRadius: 11,
               background: i < active ? 'var(--ink)' : i === active ? '#fff' : 'var(--surface-2)',
               border: i === active ? '1.5px solid var(--ink)' : '1.5px solid transparent',
@@ -54,9 +55,9 @@ function Stepper({ steps, active }: { steps: string[]; active: number }) {
             }}>
               {i < active ? <Icons.check width={11} height={11}/> : i + 1}
             </div>
-            <span style={{ fontSize: 12, fontWeight: i === active ? 600 : 400, color: i <= active ? 'var(--ink)' : 'var(--ink-3)' }}>{s}</span>
+            <span className="new-drop-stepper-label" style={{ fontSize: 12, fontWeight: i === active ? 600 : 400, color: i <= active ? 'var(--ink)' : 'var(--ink-3)' }}>{s}</span>
           </div>
-          {i < steps.length - 1 && <div style={{ width: 24, height: 1, background: 'var(--line)', marginLeft: 6 }}/>}
+          {i < steps.length - 1 && <div className="new-drop-stepper-line" style={{ width: 24, height: 1, background: 'var(--line)', marginLeft: 6 }}/>}
         </div>
       ))}
     </div>
@@ -73,7 +74,7 @@ function ModalPrenda({
   onGuardar: (p: PrendaForm) => void;
   onCerrar: () => void;
 }) {
-  const [form, setForm] = useState<Omit<PrendaForm, 'id' | 'tone'>>(() => {
+  const [form, setForm] = useState<Omit<PrendaForm, 'id' | 'tone' | 'fotos' | 'cloudinaryIds'>>(() => {
     if (!inicial) return { ...PRENDA_VACIA };
     const tallas = normalizeProductSizes([...(inicial.tallas ?? []), inicial.talla].filter(Boolean));
     const cantidades = inicial.cantidades_por_talla ?? {};
@@ -82,6 +83,7 @@ function ModalPrenda({
   });
   const [error, setError] = useState('');
   const [fotos, setFotos] = useState<string[]>(inicial?.fotos ?? []);
+  const [cloudinaryIds, setCloudinaryIds] = useState<string[]>(inicial?.cloudinaryIds ?? []);
   const [subiendo, setSubiendo] = useState(false);
   const fotoRef = useRef<HTMLInputElement>(null);
   const { categorias, tallas, tipoNegocio } = useCatalogOptions();
@@ -111,6 +113,7 @@ function ModalPrenda({
     try {
       const result = await uploadImage(f, { folder: 'fardodrops/prendas' });
       setFotos(prev => [...prev, result.url]);
+      setCloudinaryIds(prev => [...prev, result.publicId]);
     } catch {
       setError('No se pudo subir la foto. Intentá de nuevo.');
     } finally {
@@ -130,8 +133,9 @@ function ModalPrenda({
     onGuardar({
       id: inicial?.id ?? `p-${Date.now()}`,
       tone: inicial?.tone ?? TONES[idx],
-      fotos,
       ...form,
+      fotos,
+      cloudinaryIds,
       talla: form.tallas[0] ?? '',
       precio: String(Number(form.precio)),
     });
@@ -165,7 +169,7 @@ function ModalPrenda({
               {fotos.map((url, i) => (
                 <div key={i} style={{ width: 72, height: 72, borderRadius: 8, overflow: 'hidden', border: '1px solid var(--line)', position: 'relative' }}>
                   {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }}/>
+                  <img loading="lazy" src={url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }}/>
                   <button onClick={() => setFotos(f => f.filter((_, j) => j !== i))}
                     style={{ position: 'absolute', top: 2, right: 2, background: 'rgba(0,0,0,0.55)', borderRadius: 4, color: '#fff', width: 18, height: 18, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, border: 'none', cursor: 'pointer' }}>
                     ×
@@ -187,7 +191,7 @@ function ModalPrenda({
           <hr className="hr"/>
 
           {/* Nombre + Marca */}
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+          <div className="new-drop-form-grid-2" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
             <div>
               <label className="label">Nombre <span style={{ color: 'var(--urgent)' }}>*</span></label>
               <input
@@ -277,7 +281,7 @@ function ModalPrenda({
         </div>
 
         {/* Footer */}
-        <div style={{ padding: '14px 22px', borderTop: '1px solid var(--line)', display: 'flex', justifyContent: 'flex-end', gap: 8, flexShrink: 0 }}>
+        <div className="new-drop-modal-footer" style={{ padding: '14px 22px', borderTop: '1px solid var(--line)', display: 'flex', justifyContent: 'flex-end', gap: 8, flexShrink: 0 }}>
           <button onClick={onCerrar} className="btn btn-outline">Cancelar</button>
           <button onClick={guardar} disabled={subiendo} className="btn btn-primary">
             {inicial ? 'Guardar cambios' : 'Agregar prenda'}
@@ -292,7 +296,7 @@ function ModalPrenda({
 export default function NuevoDropPage() {
   const [step, setStep] = useState(0);
   const [form, setForm] = useState({
-    name: '', desc: '', duration: '6h',
+    name: '', desc: '', duration: '',
     date: new Date().toISOString().slice(0, 10),
     time: '19:00',
   });
@@ -300,9 +304,13 @@ export default function NuevoDropPage() {
   const [modalAbierto, setModalAbierto] = useState(false);
   const [editando, setEditando] = useState<PrendaForm | undefined>(undefined);
   const [portadaUrl, setPortadaUrl] = useState<string>('');
+  const [portadaCloudinaryId, setPortadaCloudinaryId] = useState<string>('');
   const [subiendoPortada, setSubiendoPortada] = useState(false);
   const [publicando, setPublicando] = useState(false);
   const [errPub, setErrPub] = useState('');
+  const [infoErrors, setInfoErrors] = useState<{ name?: string; portada?: string }>({});
+  const [scheduleErrors, setScheduleErrors] = useState<{ duration?: string }>({});
+  const [productsError, setProductsError] = useState('');
   const portadaRef = useRef<HTMLInputElement>(null);
   const router = useRouter();
   const steps = ['Info', 'Programación', 'Prendas', 'Revisar'];
@@ -313,12 +321,15 @@ export default function NuevoDropPage() {
   async function handlePortada(e: React.ChangeEvent<HTMLInputElement>) {
     const f = e.target.files?.[0];
     if (!f) return;
+    setErrPub('');
+    setInfoErrors(prev => ({ ...prev, portada: undefined }));
     // Preview inmediato
     setPortadaUrl(URL.createObjectURL(f));
     setSubiendoPortada(true);
     try {
       const result = await uploadImage(f, { folder: 'fardodrops/portadas' });
       setPortadaUrl(result.url);
+      setPortadaCloudinaryId(result.publicId);
     } catch {
       setErrPub('No se pudo subir la portada. Intentá de nuevo.');
       setPortadaUrl('');
@@ -332,6 +343,7 @@ export default function NuevoDropPage() {
       const existe = prev.find(x => x.id === p.id);
       return existe ? prev.map(x => x.id === p.id ? p : x) : [...prev, p];
     });
+    setProductsError('');
     setModalAbierto(false);
     setEditando(undefined);
   }
@@ -345,8 +357,55 @@ export default function NuevoDropPage() {
     setModalAbierto(true);
   }
 
+  function validateInfoStep() {
+    const errors: { name?: string; portada?: string } = {};
+    if (!form.name.trim()) errors.name = 'Ingresá el nombre del drop.';
+    if (subiendoPortada) errors.portada = 'Esperá a que termine de subir la portada.';
+    else if (!portadaUrl) errors.portada = 'Subí una foto de portada para continuar.';
+    setInfoErrors(errors);
+    if (Object.keys(errors).length > 0) {
+      return false;
+    }
+    setErrPub('');
+    return true;
+  }
+
+  function validateScheduleStep() {
+    const errors: { duration?: string } = {};
+    if (!form.duration) errors.duration = 'Seleccioná cuánto durará el drop.';
+    setScheduleErrors(errors);
+    return Object.keys(errors).length === 0;
+  }
+
+  function validateProductsStep() {
+    if (prendas.length === 0) {
+      setProductsError('Agregá al menos una prenda para continuar.');
+      return false;
+    }
+    setProductsError('');
+    return true;
+  }
+
+  function handleNextStep() {
+    if (step === 0 && !validateInfoStep()) return;
+    if (step === 1 && !validateScheduleStep()) return;
+    if (step === 2 && !validateProductsStep()) return;
+    setStep(s => s + 1);
+  }
+
   async function publicar() {
-    if (!form.name.trim()) { setErrPub('El nombre del drop es requerido.'); return; }
+    if (!validateInfoStep()) {
+      setStep(0);
+      return;
+    }
+    if (!validateScheduleStep()) {
+      setStep(1);
+      return;
+    }
+    if (!validateProductsStep()) {
+      setStep(2);
+      return;
+    }
     setPublicando(true);
     setErrPub('');
     try {
@@ -354,7 +413,7 @@ export default function NuevoDropPage() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('No autenticado');
 
-      const { data: t } = await supabase.from('tiendas').select('id').eq('user_id', user.id).single();
+      const { data: t } = await supabase.from('tiendas').select('id').eq('user_id', user.id as never).single();
       if (!t) throw new Error('Tienda no encontrada');
 
       const iniDate = new Date(`${form.date}T${form.time}`);
@@ -371,6 +430,7 @@ export default function NuevoDropPage() {
         nombre: form.name.trim(),
         descripcion: form.desc.trim() || null,
         foto_portada_url: fotoPortadaUrl,
+        portada_cloudinary_id: portadaCloudinaryId || null,
         estado,
         inicia_at: iniDate.toISOString(),
         cierra_at: cierraDate.toISOString(),
@@ -378,16 +438,18 @@ export default function NuevoDropPage() {
         vendidas_count: 0,
         viewers_count: 0,
         recaudado_total: 0,
-      }).select('id').single();
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      } as any).select('id').single();
 
       if (dropErr || !drop) throw new Error(dropErr?.message ?? 'Error al crear el drop');
+      const dropData = drop as { id: string };
 
       for (const p of prendas) {
         const fotos: string[] = p.fotos ?? [];
         const cantTotal = totalCantidad(p.cantidades_por_talla, p.tallas);
         const { error: prendaErr } = await supabase.from('prendas').insert({
           tienda_id: t.id,
-          drop_id: drop.id,
+          drop_id: dropData.id,
           nombre: p.nombre.trim(),
           marca: p.marca.trim() || null,
           talla: p.tallas[0] ?? null,
@@ -399,7 +461,9 @@ export default function NuevoDropPage() {
           cantidad: cantTotal || 1,
           estado: 'disponible',
           fotos,
-        });
+          cloudinary_ids: p.cloudinaryIds ?? [],
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        } as any);
         if (prendaErr) throw new Error(`Error al guardar prenda "${p.nombre}": ${prendaErr.message}`);
       }
 
@@ -416,9 +480,9 @@ export default function NuevoDropPage() {
 
   return (
     <>
-      <div style={{ height: '100%', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+      <div className="new-drop-shell" style={{ height: '100%', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
         {/* Header */}
-        <div style={{ padding: '20px 28px 16px', borderBottom: '1px solid var(--line)', display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: 20, flexShrink: 0 }}>
+        <div className="new-drop-header" style={{ padding: '20px 28px 16px', borderBottom: '1px solid var(--line)', display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: 20, flexShrink: 0 }}>
           <div>
             <div style={{ fontSize: 20, fontWeight: 600, letterSpacing: '-0.015em' }}>Nuevo drop</div>
             <div className="t-mute" style={{ fontSize: 13, marginTop: 3 }}>Configurá tu próximo lanzamiento en 4 pasos</div>
@@ -429,23 +493,34 @@ export default function NuevoDropPage() {
         </div>
 
         {/* Stepper */}
-        <div style={{ padding: '18px 28px', borderBottom: '1px solid var(--line)', background: '#fff', flexShrink: 0 }}>
+        <div className="new-drop-stepper-wrap" style={{ padding: '18px 28px', borderBottom: '1px solid var(--line)', background: '#fff', flexShrink: 0 }}>
           <Stepper steps={steps} active={step}/>
         </div>
 
         {/* Contenido */}
-        <div style={{ flex: 1, overflowY: 'auto', padding: '28px', background: 'var(--bg)' }}>
-          <div style={{ maxWidth: 720, margin: '0 auto' }}>
+        <div className="new-drop-content" style={{ flex: 1, overflowY: 'auto', padding: '28px', background: 'var(--bg)' }}>
+          <div className="new-drop-content-inner" style={{ maxWidth: 720, margin: '0 auto' }}>
 
             {/* ── Step 0: Info ── */}
             {step === 0 && (
-              <div className="card" style={{ padding: 24 }}>
+              <div className="new-drop-card card" style={{ padding: 24 }}>
                 <div style={{ fontSize: 16, fontWeight: 600, marginBottom: 4 }}>Información del drop</div>
                 <div className="t-mute" style={{ fontSize: 13, marginBottom: 20 }}>Esto es lo que verán tus compradoras en el enlace de IG.</div>
                 <div style={{ display: 'grid', gap: 14 }}>
                   <div>
                     <label className="label">Nombre <span style={{ color: 'var(--urgent)' }}>*</span></label>
-                    <input className="input" placeholder="Fardo de primavera" value={form.name} onChange={e => setForm({ ...form, name: e.target.value })}/>
+                    <input
+                      className="input"
+                      placeholder="Fardo de primavera"
+                      value={form.name}
+                      onChange={e => {
+                        setForm({ ...form, name: e.target.value });
+                        setErrPub('');
+                        setInfoErrors(prev => ({ ...prev, name: undefined }));
+                      }}
+                      style={infoErrors.name ? { borderColor: 'var(--urgent)' } : undefined}
+                    />
+                    {infoErrors.name && <div style={{ marginTop: 5, fontSize: 12, color: 'var(--urgent)' }}>{infoErrors.name}</div>}
                   </div>
                   <div>
                     <label className="label">Descripción</label>
@@ -462,11 +537,11 @@ export default function NuevoDropPage() {
                     />
                     <div
                       onClick={() => !subiendoPortada && portadaRef.current?.click()}
-                      style={{ border: '1.5px dashed var(--line)', borderRadius: 12, overflow: 'hidden', cursor: subiendoPortada ? 'default' : 'pointer', background: '#fff', opacity: subiendoPortada ? 0.7 : 1 }}
+                      style={{ border: `1.5px dashed ${infoErrors.portada ? 'var(--urgent)' : 'var(--line)'}`, borderRadius: 12, overflow: 'hidden', cursor: subiendoPortada ? 'default' : 'pointer', background: '#fff', opacity: subiendoPortada ? 0.7 : 1 }}
                     >
                       {portadaUrl ? (
                         // eslint-disable-next-line @next/next/no-img-element
-                        <img src={portadaUrl} alt="portada" style={{ width: '100%', height: 180, objectFit: 'cover', display: 'block' }}/>
+                        <img loading="lazy" src={portadaUrl} alt="portada" style={{ width: '100%', height: 180, objectFit: 'cover', display: 'block' }}/>
                       ) : (
                         <div style={{ padding: 24, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8 }}>
                           <Icons.upload width={20} height={20} style={{ color: 'var(--ink-3)' }}/>
@@ -478,9 +553,10 @@ export default function NuevoDropPage() {
                     {subiendoPortada && (
                       <div className="t-mute" style={{ fontSize: 11, marginTop: 6 }}>Subiendo a Cloudinary…</div>
                     )}
+                    {infoErrors.portada && <div style={{ marginTop: 6, fontSize: 12, color: 'var(--urgent)' }}>{infoErrors.portada}</div>}
                     {portadaUrl && !subiendoPortada && (
                       <button
-                        onClick={() => { setPortadaUrl(''); if (portadaRef.current) portadaRef.current.value = ''; }}
+                        onClick={() => { setPortadaUrl(''); setInfoErrors(prev => ({ ...prev, portada: 'Subí una foto de portada para continuar.' })); if (portadaRef.current) portadaRef.current.value = ''; }}
                         className="t-mute"
                         style={{ fontSize: 11, marginTop: 6, textDecoration: 'underline', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
                       >
@@ -494,10 +570,10 @@ export default function NuevoDropPage() {
 
             {/* ── Step 1: Programación ── */}
             {step === 1 && (
-              <div className="card" style={{ padding: 24 }}>
+              <div className="new-drop-card card" style={{ padding: 24 }}>
                 <div style={{ fontSize: 16, fontWeight: 600, marginBottom: 4 }}>Cuándo abre y por cuánto</div>
                 <div className="t-mute" style={{ fontSize: 13, marginBottom: 20 }}>Las compradoras recibirán notificación 15min antes.</div>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14, marginBottom: 20 }}>
+                <div className="new-drop-form-grid-2" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14, marginBottom: 20 }}>
                   <div>
                     <label className="label">Fecha de apertura</label>
                     <input className="input" type="date" value={form.date} onChange={e => setForm({ ...form, date: e.target.value })}/>
@@ -508,24 +584,25 @@ export default function NuevoDropPage() {
                   </div>
                 </div>
                 <label className="label">Duración del drop</label>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8 }}>
+                <div className="new-drop-duration-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8 }}>
                   {['1h', '6h', '24h', '48h'].map(d => (
-                    <button key={d} onClick={() => setForm({ ...form, duration: d })} style={{
+                    <button key={d} onClick={() => { setForm({ ...form, duration: d }); setScheduleErrors({}); }} style={{
                       padding: '12px 10px', borderRadius: 10,
                       background: form.duration === d ? 'var(--ink)' : '#fff',
                       color: form.duration === d ? '#fff' : 'var(--ink)',
-                      border: `1px solid ${form.duration === d ? 'var(--ink)' : 'var(--line)'}`,
+                      border: `1px solid ${scheduleErrors.duration ? 'var(--urgent)' : form.duration === d ? 'var(--ink)' : 'var(--line)'}`,
                       fontSize: 14, fontWeight: 500,
                     }}>{d}</button>
                   ))}
                 </div>
+                {scheduleErrors.duration && <div style={{ marginTop: 6, fontSize: 12, color: 'var(--urgent)' }}>{scheduleErrors.duration}</div>}
               </div>
             )}
 
             {/* ── Step 2: Prendas ── */}
             {step === 2 && (
               <div>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
+                <div className="new-drop-products-header" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
                   <div>
                     <div style={{ fontSize: 15, fontWeight: 600 }}>
                       Prendas del drop
@@ -542,12 +619,13 @@ export default function NuevoDropPage() {
                 </div>
 
                 {prendas.length === 0 && (
-                  <div className="card" style={{ padding: 40, textAlign: 'center' }}>
+                  <div className="new-drop-empty-card card" style={{ padding: 40, textAlign: 'center', borderColor: productsError ? 'var(--urgent)' : undefined }}>
                     <div style={{ width: 48, height: 48, borderRadius: 24, background: 'var(--surface-2)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 14px' }}>
                       <Icons.grid width={20} height={20} style={{ color: 'var(--ink-3)' }}/>
                     </div>
                     <div style={{ fontSize: 14, fontWeight: 500, marginBottom: 6 }}>Sin prendas todavía</div>
                     <div className="t-mute" style={{ fontSize: 13, marginBottom: 20 }}>Agregá las prendas que van a estar en este drop.</div>
+                    {productsError && <div style={{ fontSize: 12, color: 'var(--urgent)', marginBottom: 14 }}>{productsError}</div>}
                     <button onClick={() => { setEditando(undefined); setModalAbierto(true); }} className="btn btn-primary btn-sm">
                       <Icons.plus width={13} height={13}/> Agregar primera prenda
                     </button>
@@ -556,29 +634,29 @@ export default function NuevoDropPage() {
 
                 {prendas.length > 0 && (
                   <>
-                    <div className="card" style={{ overflow: 'hidden', marginBottom: 12 }}>
-                      <div style={{ display: 'grid', gridTemplateColumns: COL, padding: '10px 16px', borderBottom: '1px solid var(--line)', fontSize: 11, color: 'var(--ink-3)', textTransform: 'uppercase', letterSpacing: '0.04em' }} className="mono">
+                    <div className="new-drop-products-card card" style={{ overflow: 'hidden', marginBottom: 12 }}>
+                      <div className="new-drop-products-head mono" style={{ display: 'grid', gridTemplateColumns: COL, padding: '10px 16px', borderBottom: '1px solid var(--line)', fontSize: 11, color: 'var(--ink-3)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
                         <div/><div>Prenda</div><div style={{ textAlign: 'right' }}>Cant.</div><div style={{ textAlign: 'right' }}>Precio</div><div/>
                       </div>
                       {prendas.map((p, i) => (
-                        <div key={p.id} style={{ display: 'grid', gridTemplateColumns: COL, padding: '10px 16px', borderBottom: i < prendas.length - 1 ? '1px solid var(--line-2)' : 'none', alignItems: 'center', fontSize: 13 }}>
-                          <div style={{ width: 36, height: 36, borderRadius: 6, overflow: 'hidden', flexShrink: 0 }}>
+                        <div key={p.id} className="new-drop-product-row" style={{ display: 'grid', gridTemplateColumns: COL, padding: '10px 16px', borderBottom: i < prendas.length - 1 ? '1px solid var(--line-2)' : 'none', alignItems: 'center', fontSize: 13 }}>
+                          <div className="new-drop-product-thumb" style={{ width: 36, height: 36, borderRadius: 6, overflow: 'hidden', flexShrink: 0 }}>
                             {p.fotos?.[0] ? (
                               // eslint-disable-next-line @next/next/no-img-element
-                              <img src={p.fotos?.[0]} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}/>
+                              <img loading="lazy" src={p.fotos?.[0]} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}/>
                             ) : (
                               <Ph tone={p.tone} radius={6}/>
                             )}
                           </div>
-                          <div style={{ minWidth: 0 }}>
+                          <div className="new-drop-product-main" style={{ minWidth: 0 }}>
                             <div style={{ fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{p.nombre}</div>
                             <div className="t-mute" style={{ fontSize: 11, marginTop: 2 }}>
                               {[p.marca, formatProductSizes(p), p.categoria].filter(Boolean).join(' · ')}
                             </div>
                           </div>
-                          <div className="mono tnum" style={{ fontWeight: 700, textAlign: 'right', fontSize: 13 }}>{totalCantidad(p.cantidades_por_talla, p.tallas)}</div>
-                          <div className="mono tnum" style={{ fontWeight: 700, textAlign: 'right', fontSize: 13 }}>L {(Number(p.precio) * totalCantidad(p.cantidades_por_talla, p.tallas)).toLocaleString()}</div>
-                          <div style={{ display: 'flex', gap: 2, justifyContent: 'flex-end' }}>
+                          <div className="new-drop-product-qty mono tnum" style={{ fontWeight: 700, textAlign: 'right', fontSize: 13 }}>{totalCantidad(p.cantidades_por_talla, p.tallas)}</div>
+                          <div className="new-drop-product-price mono tnum" style={{ fontWeight: 700, textAlign: 'right', fontSize: 13 }}>L {(Number(p.precio) * totalCantidad(p.cantidades_por_talla, p.tallas)).toLocaleString()}</div>
+                          <div className="new-drop-product-actions" style={{ display: 'flex', gap: 2, justifyContent: 'flex-end' }}>
                             <button onClick={() => abrirEditar(p)} className="btn-ghost" style={{ padding: 5 }}>
                               <Icons.edit width={13} height={13} style={{ color: 'var(--ink-3)' }}/>
                             </button>
@@ -589,7 +667,7 @@ export default function NuevoDropPage() {
                         </div>
                       ))}
                     </div>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 16px', background: '#fff', borderRadius: 10, border: '1px solid var(--line)' }}>
+                    <div className="new-drop-products-total" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 16px', background: '#fff', borderRadius: 10, border: '1px solid var(--line)' }}>
                       <span className="t-mute" style={{ fontSize: 13 }}>{prendas.length} línea{prendas.length !== 1 ? 's' : ''} · {totalUnidades} unidad{totalUnidades !== 1 ? 'es' : ''} · valor total</span>
                       <span className="mono tnum" style={{ fontSize: 16, fontWeight: 700 }}>L {totalValor.toLocaleString()}</span>
                     </div>
@@ -600,7 +678,7 @@ export default function NuevoDropPage() {
 
             {/* ── Step 3: Revisar ── */}
             {step === 3 && (
-              <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
+              <div className="new-drop-card card" style={{ padding: 0, overflow: 'hidden' }}>
                 <div style={{ padding: 20, borderBottom: '1px solid var(--line)' }}>
                   <div style={{ fontSize: 16, fontWeight: 600 }}>Revisar y publicar</div>
                   <div className="t-mute" style={{ fontSize: 12 }}>Confirmá los datos antes de publicar el drop.</div>
@@ -613,7 +691,7 @@ export default function NuevoDropPage() {
                     ['Prendas', `${prendas.length} líneas · ${totalUnidades} unidades`],
                     ['Valor total', formatCurrency(totalValor)],
                   ].map(([k, v]) => (
-                    <div key={k} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, padding: '8px 0', borderBottom: '1px solid var(--line-2)' }}>
+                    <div key={k} className="new-drop-review-row" style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, padding: '8px 0', borderBottom: '1px solid var(--line-2)' }}>
                       <span className="t-mute">{k}</span>
                       <span style={{ fontWeight: 500 }}>{v}</span>
                     </div>
@@ -624,11 +702,11 @@ export default function NuevoDropPage() {
                     <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 10 }}>Prendas ({prendas.length})</div>
                     <div style={{ display: 'grid', gap: 8 }}>
                       {prendas.map(p => (
-                        <div key={p.id} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '8px 12px', background: 'var(--surface-2)', borderRadius: 8 }}>
+                        <div key={p.id} className="new-drop-review-product" style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '8px 12px', background: 'var(--surface-2)', borderRadius: 8 }}>
                           <div style={{ width: 32, height: 32, borderRadius: 6, overflow: 'hidden', flexShrink: 0 }}>
                             {p.fotos?.[0] ? (
                               // eslint-disable-next-line @next/next/no-img-element
-                              <img src={p.fotos?.[0]} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}/>
+                              <img loading="lazy" src={p.fotos?.[0]} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}/>
                             ) : (
                               <Ph tone={p.tone} radius={6}/>
                             )}
@@ -652,19 +730,19 @@ export default function NuevoDropPage() {
         </div>
 
         {/* Footer nav */}
-        <div style={{ padding: '12px 28px', borderTop: '1px solid var(--line)', background: '#fff', display: 'flex', flexDirection: 'column', gap: 8, flexShrink: 0 }}>
+        <div className="new-drop-footer" style={{ padding: '12px 28px', borderTop: '1px solid var(--line)', background: '#fff', display: 'flex', flexDirection: 'column', gap: 8, flexShrink: 0 }}>
           {errPub && (
             <div style={{ padding: '8px 12px', background: '#fef2f2', border: '1px solid #fecaca', borderRadius: 8, fontSize: 13, color: 'var(--urgent)' }}>
               {errPub}
             </div>
           )}
-          <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+          <div className="new-drop-footer-actions" style={{ display: 'flex', justifyContent: 'space-between' }}>
             <button onClick={() => setStep(s => Math.max(0, s - 1))} className="btn btn-outline" disabled={step === 0 || publicando}>
               <Icons.arrow width={14} height={14} style={{ transform: 'rotate(180deg)' }} />
               Atrás
             </button>
             {step < 3 ? (
-              <button onClick={() => setStep(s => s + 1)} className="btn btn-primary">
+              <button onClick={handleNextStep} className="btn btn-primary" disabled={subiendoPortada}>
                 Siguiente <Icons.arrow width={14} height={14}/>
               </button>
             ) : (

@@ -14,6 +14,16 @@ const ALL_COUNTRIES: { iso: CountryCode; code: string }[] = getCountries()
     return a.code.localeCompare(b.code);
   });
 
+const NATIONAL_DIGIT_LIMITS: Partial<Record<CountryCode, number>> = {
+  HN: 8,
+};
+
+function normalizeLocal(value: string, iso: CountryCode) {
+  const digits = value.replace(/\D/g, '');
+  const limit = NATIONAL_DIGIT_LIMITS[iso];
+  return limit ? digits.slice(0, limit) : digits;
+}
+
 function parsePhone(full: string): { prefix: string; iso: CountryCode; local: string } {
   if (full) {
     try {
@@ -55,28 +65,31 @@ export function PhoneInput({
 
   function handleIso(newIso: CountryCode) {
     setIso(newIso);
+    const nextLocal = normalizeLocal(local, newIso);
+    setLocal(nextLocal);
     const code = `+${getCountryCallingCode(newIso)}`;
-    onChange(code + local);
+    onChange(code + nextLocal);
   }
 
   function handleLocal(l: string) {
-    setLocal(l);
+    const nextLocal = normalizeLocal(l, iso);
+    setLocal(nextLocal);
     const code = `+${getCountryCallingCode(iso)}`;
-    onChange(code + l);
+    onChange(code + nextLocal);
   }
 
   const prefix = `+${getCountryCallingCode(iso)}`;
+  const maxLength = NATIONAL_DIGIT_LIMITS[iso];
 
   return (
-    <div style={{ display: 'flex' }}>
+    <div style={{ display: 'flex', border: '1px solid var(--line)', borderRadius: 8, overflow: 'hidden', background: '#fff', height }}>
       <select
         value={iso}
         onChange={e => handleIso(e.target.value as CountryCode)}
         style={{
-          height,
-          borderRadius: '8px 0 0 8px',
-          border: '1px solid var(--line)',
-          borderRight: 'none',
+          height: '100%',
+          border: 'none',
+          borderRight: '1px solid var(--line)',
           background: 'var(--surface-2)',
           padding: '0 8px',
           fontSize,
@@ -84,6 +97,7 @@ export function PhoneInput({
           cursor: 'pointer',
           flexShrink: 0,
           color: 'var(--ink)',
+          outline: 'none',
           ...selectStyle,
         }}
       >
@@ -92,14 +106,14 @@ export function PhoneInput({
         ))}
       </select>
       <input
-        className={className}
         type="tel"
         inputMode="tel"
         autoComplete="tel"
         value={local}
+        maxLength={maxLength}
         onChange={e => handleLocal(e.target.value)}
         placeholder={placeholder}
-        style={{ borderRadius: '0 8px 8px 0', flex: 1, ...inputStyle }}
+        style={{ border: 'none', outline: 'none', flex: 1, padding: '0 12px', fontSize, background: 'transparent', color: 'var(--ink)', ...inputStyle }}
       />
       <input type="hidden" value={prefix + local} />
     </div>

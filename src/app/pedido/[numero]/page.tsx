@@ -1,12 +1,14 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
+import type { ReactNode } from 'react';
 import { Icons } from '@/components/shared/icons';
 import { verifyOrderAccessToken } from '@/lib/security/order-access';
 import { createBuyerClient, createClient, createServiceClient } from '@/lib/supabase/server';
-import type { Database } from '@/types/database';
+import type { Pedido as PedidoRow } from '@/types/pedido';
+import { ORDER_STATUS } from '@/lib/ui/order-status';
 
 type Pedido = Pick<
-  Database['public']['Tables']['pedidos']['Row'],
+  PedidoRow,
   | 'id'
   | 'numero'
   | 'comprador_nombre'
@@ -26,6 +28,13 @@ type Pedido = Pick<
   | 'entregado_at'
   | 'cancelado_at'
   | 'foto_paquete_url'
+  | 'tracking_numero'
+  | 'tracking_url'
+  | 'envio_modalidad'
+  | 'envio_courier_nombre'
+  | 'envio_estado'
+  | 'envio_tracking_url'
+  | 'envio_label_url'
 > & {
   tienda: { nombre: string; username: string; logo_url: string | null; user_id: string } | null;
   drop: { nombre: string | null } | null;
@@ -37,16 +46,7 @@ type Pedido = Pick<
   }[];
 };
 
-const STATUS_META: Record<string, { label: string; tone: string; bg: string }> = {
-  apartado: { label: 'Apartado', tone: '#92400e', bg: '#fffbeb' },
-  por_verificar: { label: 'Pago en revisión', tone: '#7c2d12', bg: '#fff7ed' },
-  pagado: { label: 'Pago confirmado', tone: '#065f46', bg: '#ecfdf5' },
-  empacado: { label: 'Empacado', tone: '#1d4ed8', bg: '#eff6ff' },
-  en_camino: { label: 'En camino', tone: '#3730a3', bg: '#eef2ff' },
-  enviado: { label: 'Enviado', tone: '#3730a3', bg: '#eef2ff' },
-  entregado: { label: 'Entregado', tone: '#166534', bg: '#f0fdf4' },
-  cancelado: { label: 'Cancelado', tone: '#991b1b', bg: '#fef2f2' },
-};
+const STATUS_META = ORDER_STATUS;
 
 function formatDate(value: string | null) {
   if (!value) return 'Pendiente';
@@ -64,6 +64,7 @@ function buildTimeline(pedido: Pedido) {
   const empacadoDone = ['empacado', 'en_camino', 'enviado', 'entregado'].includes(estado);
   const caminoDone = ['en_camino', 'enviado', 'entregado'].includes(estado);
   const entregadoDone = estado === 'entregado';
+  const trackingUrl = pedido.envio_tracking_url ?? pedido.tracking_url;
 
   if (estado === 'cancelado') {
     return [
@@ -73,15 +74,13 @@ function buildTimeline(pedido: Pedido) {
   }
 
   return [
-    { label: 'Pedido creado', date: formatDate(pedido.created_at), done: true },
     {
-      label: estado === 'por_verificar' ? 'Pago en revisión' : 'Pago confirmado',
+      label: estado === 'por_verificar' ? 'Pago en revisión' : 'Pagado',
       date: estado === 'por_verificar' ? 'Comprobante recibido' : formatDate(pedido.pagado_at),
       done: pagoDone,
     },
     { label: 'Empacado', date: formatDate(pedido.empacado_at), done: empacadoDone },
-    { label: 'En camino', date: formatDate(pedido.en_camino_at), done: caminoDone },
-    { label: 'Entregado', date: formatDate(pedido.entregado_at), done: entregadoDone },
+    { label: 'Enviado', date: formatDate(pedido.en_camino_at), done: caminoDone, trackingUrl: caminoDone ? trackingUrl : null },
   ];
 }
 
@@ -117,8 +116,20 @@ function maskPhone(value: string) {
   return `••• ••• ${digits.slice(-4)}`;
 }
 
-function maskAddress(value: string | null, metodoEnvio: Pedido['metodo_envio']) {
-  if (metodoEnvio !== 'domicilio') return 'Se confirma al coordinar el retiro';
+function isDeliveryMethod(metodoEnvio: string | null, envioModalidad?: string | null) {
+  const metodo = envioModalidad ?? metodoEnvio;
+  return metodo === 'domicilio' || metodo === 'boxful_dropoff' || metodo === 'boxful_recoleccion';
+}
+
+function metodoEnvioLabel(metodoEnvio: string | null, envioModalidad?: string | null) {
+  const metodo = envioModalidad ?? metodoEnvio;
+  if (metodo === 'boxful_dropoff') return 'Boxful · Punto autorizado';
+  if (metodo === 'boxful_recoleccion') return 'Boxful · Recolección';
+  return metodo === 'domicilio' ? 'Envío a domicilio' : 'Pickup / retiro';
+}
+
+function maskAddress(value: string | null, metodoEnvio: Pedido['metodo_envio'], envioModalidad?: Pedido['envio_modalidad']) {
+  if (!isDeliveryMethod(metodoEnvio, envioModalidad)) return 'Se confirma al coordinar el retiro';
   if (!value?.trim()) return 'Protegida en este enlace';
   return 'Protegida en este enlace';
 }
@@ -128,7 +139,7 @@ function redactOrderForTokenViewer(pedido: Pedido): Pedido {
     ...pedido,
     comprador_email: maskEmail(pedido.comprador_email),
     comprador_telefono: maskPhone(pedido.comprador_telefono),
-    direccion: maskAddress(pedido.direccion, pedido.metodo_envio),
+    direccion: maskAddress(pedido.direccion, pedido.metodo_envio, pedido.envio_modalidad),
   };
 }
 
@@ -187,7 +198,8 @@ export default async function PedidoPublicoPage({
       id, numero, comprador_nombre, comprador_email, comprador_telefono, direccion,
       metodo_envio, metodo_pago, monto_total, estado, created_at, apartado_expira_at,
       comprobante_estado, pagado_at, empacado_at, en_camino_at, entregado_at, cancelado_at,
-      foto_paquete_url,
+      foto_paquete_url, tracking_numero, tracking_url,
+      envio_modalidad, envio_courier_nombre, envio_estado, envio_tracking_url, envio_label_url,
       tienda:tiendas(nombre, username, logo_url, user_id),
       drop:drops(nombre),
       items:pedido_items(
@@ -208,6 +220,7 @@ export default async function PedidoPublicoPage({
   const timeline = buildTimeline(visiblePedido);
   const firstItem = visiblePedido.items?.[0];
   const tiendaHref = visiblePedido.tienda?.username ? `/${visiblePedido.tienda.username}` : '/';
+  const trackingUrl = visiblePedido.envio_tracking_url ?? visiblePedido.tracking_url;
 
   return (
     <main style={{ minHeight: '100vh', background: '#f7f7f6', padding: '28px 16px 40px' }}>
@@ -232,8 +245,8 @@ export default async function PedidoPublicoPage({
             </div>
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1.1fr) minmax(260px, 0.9fr)', gap: 0 }}>
-            <div style={{ padding: 24, borderRight: '1px solid rgba(0,0,0,0.07)' }}>
+          <div className="pedido-content-grid" style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1.1fr) minmax(260px, 0.9fr)', gap: 0 }}>
+            <div className="pedido-prendas-col" style={{ padding: 24, borderRight: '1px solid rgba(0,0,0,0.07)' }}>
               <div style={{ fontSize: 14, fontWeight: 800, marginBottom: 16 }}>Prendas</div>
               <div style={{ display: 'grid', gap: 12 }}>
                 {(visiblePedido.items?.length ? visiblePedido.items : [{ id: visiblePedido.id, precio: visiblePedido.monto_total, talla_seleccionada: null, prenda: null }]).map(item => (
@@ -273,7 +286,7 @@ export default async function PedidoPublicoPage({
                 {timeline.map((step, index) => (
                   <div key={step.label} style={{ display: 'grid', gridTemplateColumns: '22px 1fr', gap: 12 }}>
                     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                      <div style={{ width: 22, height: 22, borderRadius: 11, background: step.done ? (step.danger ? '#991b1b' : '#111') : '#fff', border: step.done ? 'none' : '1.5px solid #ddd', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      <div style={{ width: 22, height: 22, borderRadius: 11, background: step.done ? ('danger' in step && step.danger ? '#991b1b' : '#111') : '#fff', border: step.done ? 'none' : '1.5px solid #ddd', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                         {step.done && <Icons.check width={13} height={13} style={{ color: '#fff' }} />}
                       </div>
                       {index < timeline.length - 1 && (
@@ -283,6 +296,11 @@ export default async function PedidoPublicoPage({
                     <div>
                       <div style={{ fontSize: 13, fontWeight: step.done ? 800 : 600, color: step.done ? '#111' : '#999' }}>{step.label}</div>
                       <div className="mono" style={{ fontSize: 11, color: '#999', marginTop: 2 }}>{step.date}</div>
+                      {'trackingUrl' in step && step.trackingUrl && (
+                        <a href={step.trackingUrl} target="_blank" rel="noreferrer" style={{ display: 'inline-block', marginTop: 6, fontSize: 12, fontWeight: 700, color: '#fff', background: '#3730a3', borderRadius: 6, padding: '4px 10px', textDecoration: 'none' }}>
+                          Ver tracking →
+                        </a>
+                      )}
                     </div>
                   </div>
                 ))}
@@ -296,8 +314,20 @@ export default async function PedidoPublicoPage({
           <div style={{ display: 'grid', gap: 9, fontSize: 13 }}>
             <InfoRow label="Compradora" value={visiblePedido.comprador_nombre} />
             <InfoRow label="WhatsApp" value={visiblePedido.comprador_telefono} />
-            <InfoRow label="Entrega" value={visiblePedido.metodo_envio === 'domicilio' ? 'Envío a domicilio' : 'Pickup / retiro'} />
+            <InfoRow label="Entrega" value={metodoEnvioLabel(visiblePedido.metodo_envio, visiblePedido.envio_modalidad)} />
             <InfoRow label="Dirección" value={visiblePedido.direccion ?? 'Pendiente'} />
+            {visiblePedido.envio_courier_nombre && <InfoRow label="Courier" value={visiblePedido.envio_courier_nombre} />}
+            {visiblePedido.envio_estado && <InfoRow label="Estado envío" value={visiblePedido.envio_estado} />}
+            {(visiblePedido.tracking_numero || trackingUrl) && (
+              <InfoRow
+                label="Tracking"
+                value={trackingUrl ? (
+                  <a href={trackingUrl} target="_blank" rel="noreferrer" style={{ color: '#16a34a', fontWeight: 800 }}>
+                    {visiblePedido.tracking_numero ?? 'Rastrear envío'}
+                  </a>
+                ) : visiblePedido.tracking_numero ?? 'Pendiente'}
+              />
+            )}
             <InfoRow label="Pago" value={visiblePedido.metodo_pago === 'transferencia' ? `Transferencia · ${visiblePedido.comprobante_estado ?? 'pendiente'}` : 'Tarjeta'} />
           </div>
           {hasMaskedPersonalData && (
@@ -311,7 +341,7 @@ export default async function PedidoPublicoPage({
   );
 }
 
-function InfoRow({ label, value }: { label: string; value: string }) {
+function InfoRow({ label, value }: { label: string; value: ReactNode }) {
   return (
     <div style={{ display: 'grid', gridTemplateColumns: '120px 1fr', gap: 12 }}>
       <span style={{ color: '#888' }}>{label}</span>

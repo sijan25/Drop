@@ -41,7 +41,7 @@ export default async function DropPage({ params }: { params: Promise<{ tienda: s
     .select('*')
     .eq('drop_id', dropId)
     .order('created_at', { ascending: false })
-    .limit(20);
+    .limit(60);
 
   let anotadasCount = 0;
 

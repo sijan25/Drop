@@ -3,42 +3,28 @@
 import Image from 'next/image';
 
 import { cld } from '@/lib/cloudinary/client';
-import { useEffect, useMemo, useRef, useState, type MouseEvent as ReactMouseEvent } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { toast } from 'sonner';
 import { Icons } from '@/components/shared/icons';
 import { CountdownTimer } from '@/components/drops/countdown-timer';
 import { Ph } from '@/components/shared/image-placeholder';
+import { PublicProductCard } from '@/components/shared/public-product-card';
 import { BuyerCheckoutAccess } from '@/components/buyer/buyer-checkout-access';
-import type { BuyerProfile } from '@/components/buyer/buyer-auth-modal';
-import { EnvioPanel, PagoPanel, ConfirmadoPanel, ResumenLineas } from '@/components/checkout/checkout-panels';
-import type { Database } from '@/types/database';
-import { obtenerPerfilComprador } from '@/lib/buyer/actions';
-import { crearCheckoutPublico } from '@/lib/checkout/actions';
-import { uploadImage } from '@/lib/cloudinary/client';
+import { EnvioPanel, PagoPanel, ConfirmadoPanel } from '@/components/checkout/checkout-panels';
+import type { Tienda } from '@/types/tienda';
+import type { Prenda } from '@/types/prenda';
+import type { Drop } from '@/types/drop';
+import type { MetodoPago, MetodoEnvio } from '@/types/envio';
+import { useCarrito } from '@/hooks/use-carrito';
+import { usePrendaCheckout } from '@/hooks/use-prenda-checkout';
 import {
-  formatProductSizes,
   getAvailableProductSizes,
   getPrimaryProductSize,
-  getProductSizeQuantities,
   getProductSizeQuantity,
-  getProductSizes,
-  getProductTotalQuantity,
 } from '@/lib/product-sizes';
-import { createClient } from '@/lib/supabase/client';
+import { TONES } from '@/lib/ui/tones';
 
-type Tienda = Database['public']['Tables']['tiendas']['Row'];
-type Drop = Database['public']['Tables']['drops']['Row'];
-type Prenda = Database['public']['Tables']['prendas']['Row'];
-type MetodoPago = Database['public']['Tables']['metodos_pago']['Row'];
-type MetodoEnvio = Database['public']['Tables']['metodos_envio']['Row'];
 type PrendaMin = Pick<Prenda, 'id' | 'nombre' | 'marca' | 'talla' | 'tallas' | 'cantidad' | 'cantidades_por_talla' | 'precio' | 'fotos' | 'estado'>;
-
-type Tone = 'rose' | 'sand' | 'sage' | 'blue' | 'dark' | 'neutral';
-const TONES: Tone[] = ['rose', 'sand', 'sage', 'blue', 'dark', 'neutral'];
-
-type CheckoutStep = 'none' | 'envio' | 'pago' | 'confirmado';
 
 export function PrendaPageClient({
   tienda,
@@ -58,207 +44,51 @@ export function PrendaPageClient({
   tiendaEmail: string;
 }) {
   const router = useRouter();
-  const fileRef = useRef<HTMLInputElement>(null);
-  const [fotoIdx, setFotoIdx] = useState(0);
-  const [checkoutStep, setCheckoutStep] = useState<CheckoutStep>('none');
-  const [nombre, setNombre] = useState('');
-  const [email, setEmail] = useState('');
-  const [whatsapp, setWhatsapp] = useState('');
-  const [direccion, setDireccion] = useState('');
-  const [ciudad, setCiudad] = useState('');
-  const [buyer, setBuyer] = useState<BuyerProfile | null>(null);
-  const [metodoEnvioId, setMetodoEnvioId] = useState(metodosEnvio[0]?.id ?? '');
-  const [metodoPagoId, setMetodoPagoId] = useState(metodosPago[0]?.id ?? '');
-  const [uploading, setUploading] = useState(false);
-  const [comprobanteUrl, setComprobanteUrl] = useState<string | null>(null);
-  const [errorMsg, setErrorMsg] = useState('');
-  const [loadingPedido, setLoadingPedido] = useState(false);
-  const [pedidoNumero, setPedidoNumero] = useState('');
-  const [pedidoTrackingUrl, setPedidoTrackingUrl] = useState('');
-  const [tallaSeleccionada, setTallaSeleccionada] = useState(getAvailableProductSizes(prenda)[0] ?? getPrimaryProductSize(prenda) ?? '');
-  const [zoomActivo, setZoomActivo] = useState(false);
-  const [zoomPos, setZoomPos] = useState({ x: 50, y: 50 });
+  const { agregarItem, tieneItem, abrirDrawer, count: carritoCount } = useCarrito();
 
-  const [prendaEstado, setPrendaEstado] = useState(prenda.estado);
-  const [prendaCantidad, setPrendaCantidad] = useState(getProductTotalQuantity(prenda));
-  const [cantidadesPorTalla, setCantidadesPorTalla] = useState<Record<string, number>>(getProductSizeQuantities(prenda));
+  const {
+    fileRef, fotoIdx, setFotoIdx, checkoutStep, setCheckoutStep,
+    nombre, setNombre, email, setEmail, whatsapp, setWhatsapp,
+    direccion, setDireccion, ciudad, setCiudad, buyer,
+    metodoEnvioId, setMetodoEnvioId, boxfulData, setBoxfulData,
+    metodoPagoId, setMetodoPagoId, uploading, comprobanteUrl,
+    errorMsg, setErrorMsg, loadingPedido, pedidoNumero, pedidoTrackingUrl,
+    tallaSeleccionada, setTallaSeleccionada, zoomActivo, setZoomActivo, zoomPos,
+    isCompact, prendaEstado, prendaCantidad, cantidadesPorTalla,
+    fotos, costoEnvio, total, prendaRuntime, tallasProducto, tallasDisponibles,
+    tallaActiva, cantidadTallaSeleccionada, tieneStock, initials, checkoutOpen,
+    aplicarBuyer, abrirCheckout, compartirPrenda, actualizarZoom,
+    subirComprobante, confirmarApartado,
+  } = usePrendaCheckout({ prenda, tienda, metodosPago, metodosEnvio, dropId: drop.id, channelName: `prenda-${prenda.id}` });
 
-  useEffect(() => {
-    const supabase = createClient();
-    const channel = supabase
-      .channel(`prenda-${prenda.id}`)
-      .on('postgres_changes', {
-        event: 'UPDATE',
-        schema: 'public',
-        table: 'prendas',
-        filter: `id=eq.${prenda.id}`,
-      }, payload => {
-        const nuevo = payload.new as { estado: Prenda['estado']; cantidad?: number | null; cantidades_por_talla?: Record<string, number> | null };
-        if (nuevo.estado) setPrendaEstado(nuevo.estado);
-        if (typeof nuevo.cantidad === 'number') setPrendaCantidad(nuevo.cantidad);
-        if (nuevo.cantidades_por_talla && typeof nuevo.cantidades_por_talla === 'object') {
-          setCantidadesPorTalla(nuevo.cantidades_por_talla);
-        }
-      })
-      .subscribe();
-    return () => { supabase.removeChannel(channel); };
-  }, [prenda.id]);
-
-  useEffect(() => {
-    (async () => {
-      const res = await obtenerPerfilComprador();
-      if (!res.comprador) return;
-      aplicarBuyer(res.comprador);
-    })();
-  }, []);
-
-  function aplicarBuyer(profile: BuyerProfile) {
-    setBuyer(profile);
-    setNombre(profile.nombre);
-    setEmail(profile.email);
-    setWhatsapp(profile.telefono ?? '');
-    setDireccion(profile.direccion ?? '');
-    setCiudad(profile.ciudad ?? '');
-    setErrorMsg('');
-  }
-
-  const fotos = prenda.fotos ?? [];
   const dropTarget = drop.cierra_at
     ? new Date(drop.cierra_at).getTime()
     : new Date(drop.inicia_at).getTime() + drop.duracion_minutos * 60000;
-
-  const metodoEnvioSel = metodosEnvio.find(m => m.id === metodoEnvioId);
-  const metodoPagoSel = metodosPago.find(m => m.id === metodoPagoId);
-  const costoEnvio = metodoEnvioSel?.precio ?? 0;
-  const total = prenda.precio + costoEnvio;
   const dropAbierto = drop.estado === 'activo';
   const dropProgramado = drop.estado === 'programado';
-  const prendaRuntime = useMemo(() => ({
-    ...prenda,
-    estado: prendaEstado,
-    cantidad: prendaCantidad,
-    cantidades_por_talla: cantidadesPorTalla,
-  }), [prenda, prendaEstado, prendaCantidad, cantidadesPorTalla]);
-  const tallasProducto = getProductSizes(prendaRuntime);
-  const tallasDisponibles = getAvailableProductSizes(prendaRuntime);
-  const tallaActiva = useMemo(() => {
-    if (tallasProducto.length === 0) return '';
-    if (tallaSeleccionada && getProductSizeQuantity(prendaRuntime, tallaSeleccionada) > 0) return tallaSeleccionada;
-    return tallasDisponibles[0] ?? getPrimaryProductSize(prendaRuntime) ?? '';
-  }, [prendaRuntime, tallaSeleccionada, tallasDisponibles, tallasProducto.length]);
-  const cantidadTallaSeleccionada = tallasProducto.length > 0
-    ? getProductSizeQuantity(prendaRuntime, tallaActiva)
-    : prendaCantidad;
-  const tieneStock = prendaEstado === 'disponible' && (tallasProducto.length > 0 ? cantidadTallaSeleccionada > 0 : prendaCantidad > 0);
   const puedeComprar = dropAbierto && tieneStock;
-  const initials = tienda.nombre.split(' ').map(w => w[0]).slice(0, 2).join('').toUpperCase();
+  const tallaCarrito = tallasProducto.length > 0 ? (tallaActiva || null) : null;
+  const enCarrito = tieneItem(prenda.id, tallaCarrito);
 
-  function abrirCheckout() {
+  function agregarAlCarrito() {
+    if (!puedeComprar) return;
     if (tallasProducto.length > 0 && !tallaActiva) {
       setErrorMsg('Seleccioná una talla disponible.');
       return;
     }
-    setCheckoutStep('envio');
-    setErrorMsg('');
-  }
-
-  async function compartirPrenda() {
-    const url = window.location.href;
-
-    if (navigator.share) {
-      try {
-        await navigator.share({ title: prenda.nombre, url });
-        return;
-      } catch {
-        // Si el usuario cancela o el navegador falla, intentamos copiar el link.
-      }
-    }
-
-    try {
-      await navigator.clipboard.writeText(url);
-      toast.success('Link copiado al portapapeles');
-    } catch {
-      toast.error('No se pudo compartir la prenda');
-    }
-  }
-
-  function actualizarZoom(event: ReactMouseEvent<HTMLDivElement>) {
-    const rect = event.currentTarget.getBoundingClientRect();
-    const x = ((event.clientX - rect.left) / rect.width) * 100;
-    const y = ((event.clientY - rect.top) / rect.height) * 100;
-    setZoomPos({
-      x: Math.min(100, Math.max(0, x)),
-      y: Math.min(100, Math.max(0, y)),
-    });
-  }
-
-  async function subirComprobante(file: File) {
-    setUploading(true);
-    try {
-      const result = await uploadImage(file, { folder: 'fardodrops/comprobantes' });
-      setComprobanteUrl(result.url);
-    } catch {
-      setErrorMsg('No se pudo subir el comprobante.');
-    } finally {
-      setUploading(false);
-    }
-  }
-
-  async function confirmarApartado() {
-    if (!dropAbierto) { setErrorMsg('Este drop todavía no está abierto.'); return; }
-    if (!tieneStock) { setErrorMsg('Esta prenda ya no tiene unidades disponibles.'); return; }
-    if (tallasProducto.length > 0 && !tallaActiva) { setErrorMsg('Seleccioná una talla disponible.'); return; }
-    if (!nombre.trim()) { setErrorMsg('Ingresá tu nombre completo.'); return; }
-    if (!whatsapp.trim()) { setErrorMsg('Ingresá tu número de WhatsApp.'); return; }
-    if (!direccion.trim()) { setErrorMsg('Ingresá tu dirección.'); return; }
-    if (!ciudad.trim()) { setErrorMsg('Ingresá tu ciudad.'); return; }
-    if (!metodoEnvioId) { setErrorMsg('Seleccioná un método de envío.'); return; }
-    if (!metodoPagoId) { setErrorMsg('Seleccioná un método de pago.'); return; }
-    if (metodoPagoSel?.tipo === 'transferencia' && !comprobanteUrl) {
-      setErrorMsg('Debés subir el comprobante de transferencia para completar la compra.');
-      return;
-    }
-    setLoadingPedido(true);
-    setErrorMsg('');
-    const res = await crearCheckoutPublico({
+    if (enCarrito) { abrirDrawer(); return; }
+    agregarItem({
+      prendaId: prenda.id,
+      nombre: prenda.nombre,
+      marca: prenda.marca ?? null,
+      talla: tallaCarrito,
+      precio: prenda.precio,
+      foto: prenda.fotos?.[0] ?? null,
+      tiendaUsername: tienda.username,
       tiendaId: tienda.id,
-      dropId: drop.id,
-      items: [{ prendaId: prenda.id, talla: tallaActiva || null }],
-      nombre: nombre.trim(),
-      email: email.trim() || null,
-      whatsapp: whatsapp.trim(),
-      direccion: direccion.trim(),
-      ciudad: ciudad.trim(),
-      metodoEnvioId,
-      metodoPagoId,
-      comprobanteUrl,
     });
-
-    if (res.error || !res.pedido) {
-      setErrorMsg(res.error ?? 'Error al crear el pedido. Intentá de nuevo.');
-      setLoadingPedido(false);
-      return;
-    }
-
-    const siguienteCantidad = Math.max(prendaCantidad - 1, 0);
-    if (tallasProducto.length > 0 && tallaActiva) {
-      const siguienteTalla = Math.max((cantidadesPorTalla[tallaActiva] ?? 0) - 1, 0);
-      const nextMap = { ...cantidadesPorTalla, [tallaActiva]: siguienteTalla };
-      setCantidadesPorTalla(nextMap);
-      if (siguienteTalla === 0) {
-        setTallaSeleccionada(tallasProducto.find(size => size !== tallaActiva && (nextMap[size] ?? 0) > 0) ?? '');
-      }
-    }
-    setPrendaCantidad(siguienteCantidad);
-    setPrendaEstado(siguienteCantidad > 0 ? 'disponible' : 'vendida');
-
-    setPedidoNumero(res.pedido.numero);
-    setPedidoTrackingUrl(res.pedido.trackingUrl);
-    setCheckoutStep('confirmado');
-    setLoadingPedido(false);
+    setErrorMsg('');
   }
-
-  const checkoutOpen = checkoutStep !== 'none';
 
   return (
     <div className="buyer-product-page" style={{ minHeight: '100vh', background: '#fff' }}>
@@ -267,19 +97,44 @@ export function PrendaPageClient({
       <nav className="buyer-product-nav" style={{
         position: 'sticky', top: 0, zIndex: 40, background: '#fff',
         borderBottom: '1px solid var(--line)',
-        padding: '0 40px', height: 56,
+        padding: isCompact ? '8px 12px' : '0 40px',
+        height: isCompact ? 'auto' : 56,
+        minHeight: isCompact ? 58 : undefined,
         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+        gap: isCompact ? 8 : undefined,
       }}>
-        <div className="buyer-product-nav-left" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+        <div className="buyer-product-nav-left" style={{ display: 'flex', alignItems: 'center', gap: isCompact ? 6 : 8, minWidth: 0, flex: '1 1 auto' }}>
           <button
             onClick={() => router.back()}
-            style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'none', border: 'none', cursor: 'pointer', color: 'var(--ink-3)', fontSize: 13, padding: 0 }}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: 6,
+              background: isCompact ? 'var(--surface-2)' : 'none',
+              border: 'none',
+              borderRadius: isCompact ? 17 : 0,
+              cursor: 'pointer',
+              color: 'var(--ink-3)',
+              fontSize: isCompact ? 0 : 13,
+              padding: 0,
+              width: isCompact ? 34 : undefined,
+              height: isCompact ? 34 : undefined,
+              flex: '0 0 auto',
+            }}
           >
             <Icons.back width={16} height={16} />
             Volver al drop
           </button>
-          <span style={{ color: 'var(--line)', margin: '0 8px' }}>·</span>
-          <span className="buyer-product-breadcrumb" style={{ fontSize: 13, color: 'var(--ink-3)' }}>
+          {!isCompact && <span style={{ color: 'var(--line)', margin: '0 8px' }}>·</span>}
+          <span className="buyer-product-breadcrumb" style={{
+            fontSize: isCompact ? 12 : 13,
+            color: 'var(--ink-3)',
+            minWidth: 0,
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+            whiteSpace: 'nowrap',
+          }}>
             <Link href={`/${tienda.username}`} style={{ color: 'inherit', textDecoration: 'none' }}>{tienda.nombre}</Link>
             {' / '}
             <Link href={`/${tienda.username}/drop/${drop.id}`} style={{ color: 'inherit', textDecoration: 'none' }}>{drop.nombre}</Link>
@@ -287,30 +142,97 @@ export function PrendaPageClient({
             <span style={{ color: 'var(--ink)' }}>{prenda.nombre}</span>
           </span>
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+        <div className="buyer-product-nav-actions" style={{ display: 'flex', alignItems: 'center', gap: isCompact ? 8 : 16, flex: '0 0 auto' }}>
           {drop.estado === 'activo' && (
-            <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, color: 'var(--urgent)' }}>
+            <div className="buyer-product-nav-countdown" style={{
+              display: 'flex',
+              alignItems: isCompact ? 'flex-end' : 'center',
+              flexDirection: isCompact ? 'column' : 'row',
+              gap: isCompact ? 0 : 6,
+              fontSize: isCompact ? 11 : 13,
+              lineHeight: isCompact ? 1.1 : undefined,
+              color: 'var(--urgent)',
+              maxWidth: isCompact ? 74 : undefined,
+            }}>
               <span style={{ width: 6, height: 6, borderRadius: 3, background: 'var(--urgent)', display: 'inline-block', animation: 'pulse 1.4s ease-in-out infinite' }} />
               <span className="mono" style={{ fontWeight: 600 }}>
                 CIERRA EN <CountdownTimer target={dropTarget} size="sm" urgent />
               </span>
             </div>
           )}
-          {tienda.logo_url ? (
+          {!isCompact && (tienda.logo_url ? (
             <Image src={cld(tienda.logo_url, 'logo')} alt={tienda.nombre} width={28} height={28} style={{ borderRadius: 14, objectFit: 'cover' }} />
           ) : (
             <div style={{ width: 28, height: 28, borderRadius: 14, background: '#e4d4d0', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 700 }}>{initials}</div>
-          )}
+          ))}
+          <button
+            onClick={abrirDrawer}
+            style={{
+              position: 'relative',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              width: 36,
+              height: 36,
+              borderRadius: 18,
+              background: carritoCount > 0 ? 'var(--accent-3)' : '#fff',
+              color: carritoCount > 0 ? '#fff' : 'var(--accent-3)',
+              border: '1px solid var(--line)',
+              cursor: 'pointer',
+            }}
+            title="Ver carrito"
+          >
+            <Icons.bag width={15} height={15} />
+            {carritoCount > 0 && (
+              <span style={{
+                position: 'absolute',
+                top: -4,
+                right: -4,
+                width: 18,
+                height: 18,
+                borderRadius: 9,
+                background: '#C96442',
+                color: '#fff',
+                fontSize: 10,
+                fontWeight: 800,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                border: '2px solid #fff',
+              }}>
+                {carritoCount}
+              </span>
+            )}
+          </button>
         </div>
       </nav>
 
       {/* ── MAIN LAYOUT ── */}
-      <div className="buyer-product-main" style={{ maxWidth: 1200, margin: '0 auto', padding: '48px 40px', display: 'grid', gridTemplateColumns: '1fr 480px', gap: 64 }}>
+      <div className="buyer-product-main" style={{
+        maxWidth: isCompact ? 560 : 1200,
+        margin: '0 auto',
+        padding: isCompact ? '18px 14px 48px' : '48px 40px',
+        display: 'grid',
+        gridTemplateColumns: isCompact ? 'minmax(0, 1fr)' : '1fr 480px',
+        gap: isCompact ? 24 : 64,
+      }}>
 
         {/* ── GALERÍA IZQUIERDA ── */}
-        <div className="buyer-product-gallery" style={{ display: 'grid', gridTemplateColumns: '72px 1fr', gap: 12 }}>
+        <div className="buyer-product-gallery" style={{
+          display: 'grid',
+          gridTemplateColumns: isCompact ? 'minmax(0, 1fr)' : '72px 1fr',
+          gap: isCompact ? 10 : 12,
+          minWidth: 0,
+        }}>
           {/* Thumbnails */}
-          <div className="buyer-product-thumbs" style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+          <div className="buyer-product-thumbs" style={{
+            display: 'flex',
+            flexDirection: isCompact ? 'row' : 'column',
+            gap: 8,
+            order: isCompact ? 2 : undefined,
+            overflowX: isCompact ? 'auto' : undefined,
+            padding: isCompact ? '2px 2px 6px' : undefined,
+          }}>
             {fotos.length > 0 ? fotos.map((f, i) => (
               <button
                 key={i}
@@ -333,7 +255,15 @@ export function PrendaPageClient({
           {/* Foto principal */}
           <div
             className="buyer-product-media"
-            style={{ position: 'relative', borderRadius: 16, overflow: 'hidden', background: '#f5f5f5', cursor: zoomActivo ? 'zoom-out' : 'zoom-in' }}
+            style={{
+              position: 'relative',
+              borderRadius: isCompact ? 14 : 16,
+              overflow: 'hidden',
+              background: '#f5f5f5',
+              cursor: isCompact ? 'default' : zoomActivo ? 'zoom-out' : 'zoom-in',
+              aspectRatio: isCompact ? '4 / 5' : undefined,
+              minHeight: isCompact ? undefined : 560,
+            }}
             onMouseEnter={() => setZoomActivo(true)}
             onMouseLeave={() => setZoomActivo(false)}
             onMouseMove={actualizarZoom}
@@ -347,7 +277,7 @@ export function PrendaPageClient({
                 style={{
                   objectFit: 'cover',
                   display: 'block',
-                  transform: zoomActivo ? 'scale(2.1)' : 'scale(1)',
+                  transform: !isCompact && zoomActivo ? 'scale(2.1)' : 'scale(1)',
                   transformOrigin: `${zoomPos.x}% ${zoomPos.y}%`,
                   transition: zoomActivo ? 'transform .08s ease-out' : 'transform .22s ease-out',
                 }}
@@ -442,7 +372,7 @@ export function PrendaPageClient({
         </div>
 
         {/* ── INFO DERECHA ── */}
-        <div className="buyer-product-info" style={{ paddingTop: 8 }}>
+        <div className="buyer-product-info" style={{ paddingTop: isCompact ? 0 : 8, minWidth: 0 }}>
           {/* Marca */}
           {prenda.marca && (
             <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--ink-3)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 8 }}>
@@ -451,7 +381,7 @@ export function PrendaPageClient({
           )}
 
           {/* Nombre */}
-          <h1 className="buyer-product-title" style={{ fontSize: 32, fontWeight: 700, letterSpacing: '-0.02em', margin: '0 0 4px', lineHeight: 1.15 }}>
+          <h1 className="buyer-product-title" style={{ fontSize: isCompact ? 28 : 32, fontWeight: 700, letterSpacing: '-0.02em', margin: '0 0 4px', lineHeight: 1.15, overflowWrap: 'anywhere' }}>
             {prenda.nombre}
           </h1>
 
@@ -461,8 +391,8 @@ export function PrendaPageClient({
           )}
 
           {/* Precio */}
-          <div className="buyer-product-price-row" style={{ display: 'flex', alignItems: 'baseline', gap: 10, margin: '20px 0' }}>
-            <span className="mono tnum" style={{ fontSize: 28, fontWeight: 600, letterSpacing: '-0.03em' }}>
+          <div className="buyer-product-price-row" style={{ display: 'flex', alignItems: isCompact ? 'flex-start' : 'baseline', flexWrap: 'wrap', gap: isCompact ? '6px 12px' : 10, margin: '20px 0' }}>
+            <span className="mono tnum" style={{ fontSize: isCompact ? 25 : 28, fontWeight: 600, letterSpacing: '-0.03em' }}>
               L {prenda.precio.toLocaleString()}
             </span>
             {tieneStock && (
@@ -477,7 +407,7 @@ export function PrendaPageClient({
           <hr style={{ border: 'none', borderTop: '1px solid var(--line)', margin: '20px 0' }} />
 
           {/* Atributos */}
-          <div className="buyer-product-meta-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 20 }}>
+          <div className="buyer-product-meta-grid" style={{ display: 'grid', gridTemplateColumns: isCompact ? '1fr' : '1fr 1fr', gap: isCompact ? 18 : 16, marginBottom: 20 }}>
             {tallasProducto.length > 0 && (
               <div>
                 <div style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--ink-3)', marginBottom: 6 }}>Talla</div>
@@ -534,10 +464,12 @@ export function PrendaPageClient({
           )}
 
           {/* Drop timer pill */}
-          <div style={{
+          <div className="buyer-product-drop-timer" style={{
             display: 'flex', alignItems: 'center', justifyContent: 'space-between',
             background: drop.estado === 'activo' ? '#fef2f2' : 'var(--surface-2)',
             borderRadius: 10, padding: '12px 16px', marginBottom: 24,
+            gap: isCompact ? 6 : undefined,
+            flexWrap: isCompact ? 'wrap' : undefined,
           }}>
             <div style={{ fontSize: 13, color: drop.estado === 'activo' ? 'var(--urgent)' : 'var(--ink-3)' }}>
               Drop {drop.estado === 'activo' ? 'cierra' : 'abre'} en
@@ -558,10 +490,10 @@ export function PrendaPageClient({
               <button
                 className="btn btn-outline"
                 style={{ height: 52, fontSize: 15, borderRadius: 12, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}
-                onClick={abrirCheckout}
+                onClick={agregarAlCarrito}
               >
                 <Icons.bag width={18} height={18} />
-                Añadir al carrito
+                {enCarrito ? 'Ver carrito' : 'Añadir al carrito'}
               </button>
               <div style={{ border: '1px solid var(--line)', borderRadius: 12, padding: '14px 16px', background: '#fff', marginTop: 4 }}>
                 <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 6 }}>Devoluciones y Cancelaciones</div>
@@ -629,32 +561,52 @@ export function PrendaPageClient({
 
       {/* ── OTRAS PRENDAS ── */}
       {otrasPrendas.length > 0 && (
-        <div className="buyer-related-section" style={{ maxWidth: 1200, margin: '0 auto', padding: '0 40px 64px' }}>
+        <div className="buyer-related-section" style={{ maxWidth: isCompact ? 560 : 1200, margin: '0 auto', padding: isCompact ? '0 14px 48px' : '0 40px 64px' }}>
           <hr style={{ border: 'none', borderTop: '1px solid var(--line)', marginBottom: 40 }} />
           <div style={{ fontSize: 18, fontWeight: 600, letterSpacing: '-0.015em', marginBottom: 20 }}>
             Más prendas en este drop
           </div>
-          <div className="buyer-related-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16 }}>
-            {otrasPrendas.map((p, i) => (
-              <Link
-                key={p.id}
-                href={`/${tienda.username}/drop/${drop.id}/prenda/${p.id}`}
-                style={{ textDecoration: 'none', color: 'inherit' }}
-              >
-                <div style={{ cursor: 'pointer' }}>
-                  <div style={{ borderRadius: 12, overflow: 'hidden', marginBottom: 10, position: 'relative', aspectRatio: '3/4' }}>
-                    {p.fotos?.[0] ? (
-                      <Image src={cld(p.fotos[0], 'card')} alt={p.nombre} fill sizes="(max-width: 1024px) 25vw, 200px" style={{ objectFit: 'cover', display: 'block' }} />
-                    ) : (
-                      <Ph tone={TONES[i % TONES.length]} aspect="3/4" radius={0} />
-                    )}
-                  </div>
-                  <div style={{ fontSize: 13, fontWeight: 600 }}>{p.nombre}</div>
-                  <div style={{ fontSize: 12, color: 'var(--ink-3)', marginTop: 2 }}>{[p.marca, formatProductSizes(p), `${getProductTotalQuantity(p)} disp.`].filter(Boolean).join(' · ')}</div>
-                  <div className="mono tnum" style={{ fontSize: 14, fontWeight: 600, marginTop: 6 }}>L {p.precio}</div>
-                </div>
-              </Link>
-            ))}
+          <div className="buyer-related-grid" style={{ display: 'grid', gridTemplateColumns: isCompact ? 'repeat(2, minmax(0, 1fr))' : 'repeat(4, 1fr)', gap: isCompact ? 12 : 16 }}>
+            {otrasPrendas.map((p, i) => {
+              const href = `/${tienda.username}/drop/${drop.id}/prenda/${p.id}`;
+              const relatedSizes = getAvailableProductSizes(p);
+              const tallaRelacionada = relatedSizes[0] ?? getPrimaryProductSize(p);
+              const tieneVariantes = relatedSizes.length > 1;
+              const enCarritoRelacionado = tieneItem(p.id, tallaRelacionada);
+
+              return (
+                <PublicProductCard
+                  key={p.id}
+                  product={p}
+                  tone={TONES[i % TONES.length]}
+                  density="compact"
+                  isPreview={!dropAbierto}
+                  showActions={dropAbierto}
+                  cartActive={!tieneVariantes && enCarritoRelacionado}
+                  cartTitle={tieneVariantes ? 'Elegir talla' : enCarritoRelacionado ? 'Ver carrito' : 'Añadir al carrito'}
+                  onOpen={() => router.push(href)}
+                  onBuy={() => router.push(href)}
+                  onCart={() => {
+                    if (tieneVariantes) {
+                      router.push(href);
+                    } else if (enCarritoRelacionado) {
+                      abrirDrawer();
+                    } else {
+                      agregarItem({
+                        prendaId: p.id,
+                        nombre: p.nombre,
+                        marca: p.marca ?? null,
+                        talla: tallaRelacionada,
+                        precio: p.precio,
+                        foto: p.fotos?.[0] ?? null,
+                        tiendaUsername: tienda.username,
+                        tiendaId: tienda.id,
+                      });
+                    }
+                  }}
+                />
+              );
+            })}
           </div>
         </div>
       )}
@@ -698,12 +650,19 @@ export function PrendaPageClient({
                   setErrorMsg('');
                 }}
                 onBuyer={aplicarBuyer}
+                boxfulOriginCity={tienda.ciudad}
+                boxfulData={boxfulData}
+                onBoxfulChange={setBoxfulData}
                 onContinuar={() => {
                   if (!nombre.trim()) { setErrorMsg('Ingresá tu nombre completo.'); return; }
                   if (!whatsapp.trim()) { setErrorMsg('Ingresá tu número de WhatsApp.'); return; }
                   if (!direccion.trim()) { setErrorMsg('Ingresá tu dirección.'); return; }
                   if (!ciudad.trim()) { setErrorMsg('Ingresá tu ciudad.'); return; }
                   if (!metodoEnvioId) { setErrorMsg('Seleccioná un método de envío.'); return; }
+                  if (boxfulData.isBoxful && (!boxfulData.destination || !boxfulData.quote)) {
+                    setErrorMsg('Seleccioná departamento y ciudad para calcular el envío con Boxful.');
+                    return;
+                  }
                   setCheckoutStep('pago');
                   setErrorMsg('');
                 }}

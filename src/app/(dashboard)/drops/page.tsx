@@ -9,6 +9,7 @@ import { Icons } from '@/components/shared/icons';
 import { Ph } from '@/components/shared/image-placeholder';
 import { createClient } from '@/lib/supabase/client';
 import { formatCurrency } from '@/lib/config/platform';
+import { TONES } from '@/lib/ui/tones';
 import { getProductTotalQuantity } from '@/lib/product-sizes';
 import {
   DropdownMenu, DropdownMenuTrigger, DropdownMenuContent,
@@ -58,8 +59,6 @@ interface ResumenDrop {
   valorApartado: number;
 }
 
-const TONES = ['rose', 'sand', 'sage', 'blue', 'dark', 'warm', 'neutral'] as const;
-
 function fmtFecha(iso: string | null | undefined): string {
   if (!iso) return 'Sin fecha';
   const d = new Date(iso);
@@ -87,7 +86,7 @@ function DropThumb({ drop, tone }: { drop: Drop; tone: typeof TONES[number] }) {
     <div style={{ width: 44, height: 44, borderRadius: 8, overflow: 'hidden', background: 'var(--surface-2)', flexShrink: 0 }}>
       {drop.foto_portada_url ? (
         // eslint-disable-next-line @next/next/no-img-element
-        <img src={drop.foto_portada_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}/>
+        <img loading="lazy" src={drop.foto_portada_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}/>
       ) : (
         <Ph tone={tone} radius={8}/>
       )}
@@ -138,7 +137,6 @@ export default function DropsPage() {
   const [filtro, setFiltro] = useState<FiltroDrop>('todos');
   const [busqueda, setBusqueda] = useState('');
   const [dropCerradoId, setDropCerradoId] = useState<string>('');
-  const [migrando, setMigrando] = useState(false);
   const [nowMs, setNowMs] = useState(() => Date.now());
   const [confirmDeleteDrop, setConfirmDeleteDrop] = useState<string | null>(null);
   const [deletePending, startDeleteTransition] = useTransition();
@@ -157,16 +155,17 @@ export default function DropsPage() {
       const { data: t } = await supabase
         .from('tiendas')
         .select('id, nombre, username')
-        .eq('user_id', user.id)
+        .eq('user_id', user.id as never)
         .single();
 
       if (!t) { router.push('/onboarding'); return; }
-      setTienda(t);
+      const tiendaData = t as { id: string; nombre: string; username: string };
+      setTienda(tiendaData);
 
       const { data: dropsData } = await supabase
         .from('drops')
         .select('id, nombre, descripcion, estado, inicia_at, cierra_at, created_at, vendidas_count, viewers_count, recaudado_total, foto_portada_url')
-        .eq('tienda_id', t.id)
+        .eq('tienda_id', tiendaData.id as never)
         .order('inicia_at', { ascending: false })
         .limit(80);
 
@@ -178,7 +177,7 @@ export default function DropsPage() {
         d.estado === 'programado' && new Date(d.inicia_at).getTime() < now
       );
       if (expired.length > 0) {
-        await supabase.from('drops').update({ estado: 'activo' }).in('id', expired.map(d => d.id));
+        await supabase.from('drops').update({ estado: 'activo' } as any).in('id', expired.map(d => d.id));
         const expiredIds = new Set(expired.map(d => d.id));
         loadedDrops = loadedDrops.map(d => expiredIds.has(d.id) ? { ...d, estado: 'activo' } : d);
       }
@@ -198,8 +197,8 @@ export default function DropsPage() {
       const { count } = await supabase
         .from('comprobantes')
         .select('id', { count: 'exact', head: true })
-        .eq('tienda_id', t.id)
-        .eq('estado', 'pendiente');
+        .eq('tienda_id', tiendaData.id as never)
+        .eq('estado', 'pendiente' as never);
 
       setComprobantesPendientes(count ?? 0);
       setLoading(false);
@@ -271,7 +270,7 @@ export default function DropsPage() {
   async function activarDrop(dropId: string) {
     const supabase = createClient();
     const now = new Date().toISOString();
-    const { error } = await supabase.from('drops').update({ estado: 'activo', inicia_at: now }).eq('id', dropId);
+    const { error } = await supabase.from('drops').update({ estado: 'activo', inicia_at: now } as any).eq('id', dropId as never);
     if (error) { toast.error(error.message); return; }
     setDrops(prev => prev.map(d => d.id === dropId ? { ...d, estado: 'activo', inicia_at: now } : d));
     toast.success('Drop activado');
@@ -279,38 +278,27 @@ export default function DropsPage() {
 
   async function cerrarDrop(dropId: string) {
     const supabase = createClient();
-    const { error } = await supabase.from('drops').update({ estado: 'cerrado' }).eq('id', dropId);
+    const { error } = await supabase.from('drops').update({ estado: 'cerrado' } as any).eq('id', dropId as never);
     if (error) { toast.error(error.message); return; }
     setDrops(prev => prev.map(d => d.id === dropId ? { ...d, estado: 'cerrado' } : d));
-    toast.success('Drop cerrado');
+
+    await supabase
+      .from('prendas')
+      .update({ estado: 'disponible', remanente_hasta: null, drop_id: null } as any)
+      .eq('drop_id', dropId as never)
+      .eq('estado', 'disponible' as never);
+    setPrendas(prev => prev.filter(p => !(p.drop_id === dropId && p.estado === 'disponible')));
+
+    toast.success('Drop cerrado — prendas sin vender pasadas a inventario');
   }
 
   async function eliminarDrop(dropId: string) {
     const supabase = createClient();
-    const { error } = await supabase.from('drops').delete().eq('id', dropId);
+    const { error } = await supabase.from('drops').delete().eq('id', dropId as never);
     if (error) { toast.error(error.message); return; }
     setDrops(prev => prev.filter(d => d.id !== dropId));
     setPrendas(prev => prev.filter(p => p.drop_id !== dropId));
     toast.success('Drop eliminado');
-  }
-
-  async function migrarRemanentes(dropId: string) {
-    setMigrando(true);
-    const supabase = createClient();
-    const hasta = new Date(Date.now() + 48 * 60 * 60 * 1000).toISOString();
-    const { error } = await supabase
-      .from('prendas')
-      .update({ estado: 'remanente', remanente_hasta: hasta })
-      .eq('drop_id', dropId)
-      .eq('estado', 'disponible');
-
-    if (error) {
-      toast.error(error.message);
-    } else {
-      setPrendas(prev => prev.map(p => p.drop_id === dropId && p.estado === 'disponible' ? { ...p, estado: 'remanente' } : p));
-      toast.success('Prendas sin vender migradas a remanentes');
-    }
-    setMigrando(false);
   }
 
   function copiarLink(dropId: string) {
@@ -318,30 +306,6 @@ export default function DropsPage() {
     const url = `${window.location.origin}/${tienda.username}/drop/${dropId}`;
     navigator.clipboard.writeText(url);
     toast.success('Link copiado al portapapeles');
-  }
-
-  function exportarResumen(drop: Drop) {
-    const r = resumenes.get(drop.id) ?? resumenVacio();
-    const rows = [
-      ['Drop', drop.nombre],
-      ['Estado', statusInfo(drop.estado).label],
-      ['Inicio', fmtFecha(drop.inicia_at)],
-      ['Cierre', fmtFecha(drop.cierra_at)],
-      ['Total recaudado', String(drop.recaudado_total ?? 0)],
-      ['Unidades totales', String(r.total)],
-      ['Vendidas', String(r.vendidas || drop.vendidas_count || 0)],
-      ['Apartadas', String(r.apartadas)],
-      ['Sin vender', String(r.sinVender)],
-      ['Viewers unicas', String(drop.viewers_count ?? 0)],
-    ];
-    const csv = rows.map(row => row.map(v => `"${String(v).replaceAll('"', '""')}"`).join(',')).join('\n');
-    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `resumen-${drop.nombre.toLowerCase().replace(/[^a-z0-9]+/g, '-')}.csv`;
-    a.click();
-    URL.revokeObjectURL(url);
   }
 
   const filtros: { id: FiltroDrop; label: string; count: number }[] = [
@@ -352,15 +316,15 @@ export default function DropsPage() {
   ];
 
   return (
-    <div style={{ height: '100%', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-      <div style={{ padding: '20px 28px 16px', borderBottom: '1px solid var(--line)', display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: 20, flexShrink: 0 }}>
+    <div className="drops-page-shell" style={{ height: '100%', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+      <div className="drops-page-header" style={{ padding: '20px 28px 16px', borderBottom: '1px solid var(--line)', display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: 20, flexShrink: 0 }}>
         <div>
           <div style={{ fontSize: 22, fontWeight: 700 }}>Drops</div>
           <div className="t-mute" style={{ fontSize: 13, marginTop: 3 }}>
             {loading ? 'Cargando drops...' : `${stats.activos} en vivo · ${stats.programados} programados · ${stats.cerrados} cerrados`}
           </div>
         </div>
-        <div style={{ display: 'flex', gap: 8 }}>
+        <div className="drops-header-actions" style={{ display: 'flex', gap: 8 }}>
           {tienda && (
             <button onClick={() => router.push(`/${tienda.username}`)} className="btn btn-outline btn-sm">
               <Icons.eye width={13} height={13}/> Vista compradora
@@ -372,17 +336,17 @@ export default function DropsPage() {
         </div>
       </div>
 
-      <div style={{ flex: 1, overflowY: 'auto', padding: '20px 28px 28px' }}>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(190px, 1fr))', gap: 12, marginBottom: 20 }}>
+      <div className="drops-page-content" style={{ flex: 1, overflowY: 'auto', padding: '20px 28px 28px' }}>
+        <div className="drops-metrics-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(190px, 1fr))', gap: 12, marginBottom: 20 }}>
           <MetricCard label="Drops activos" value={String(stats.activos)} help={`${stats.programados} programados en cola`} icon={Icons.sparkle}/>
           <MetricCard label="Cerrados" value={String(stats.cerrados)} help={`${dinero(stats.totalCerrado)} recaudados`} icon={Icons.check}/>
           <MetricCard label="Unidades vendidas" value={String(stats.vendidas)} help={`${stats.apartadas} apartadas pendientes`} icon={Icons.bag}/>
           <MetricCard label="Comprobantes" value={String(comprobantesPendientes)} help="Pagos por verificar" icon={Icons.inbox}/>
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: 'minmax(360px, 1.05fr) minmax(420px, 1.35fr)', gap: 20, alignItems: 'start', marginBottom: 24 }}>
+        <div className="drops-overview-grid" style={{ display: 'grid', gridTemplateColumns: 'minmax(360px, 1.05fr) minmax(420px, 1.35fr)', gap: 20, alignItems: 'start', marginBottom: 24 }}>
           <section>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
+            <div className="drops-section-heading" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
               <div style={{ fontSize: 15, fontWeight: 700 }}>En curso y próximos</div>
               <button onClick={() => router.push('/drops/nuevo')} className="btn btn-outline btn-sm">
                 <Icons.plus width={12} height={12}/> Crear
@@ -411,11 +375,12 @@ export default function DropsPage() {
                     <div
                       key={d.id}
                       onClick={() => router.push(`/drops/${d.id}`)}
+                      className="drops-active-row"
                       style={{ padding: '14px 16px', borderBottom: i < activos.length - 1 ? '1px solid var(--line)' : 'none', display: 'flex', alignItems: 'center', gap: 12, cursor: 'pointer' }}
                     >
                       <DropThumb drop={d} tone={TONES[i % TONES.length]}/>
-                      <div style={{ flex: 1, minWidth: 0 }}>
-                        <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                      <div className="drops-active-copy" style={{ flex: 1, minWidth: 0 }}>
+                        <div className="drops-active-title-row" style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
                           <div style={{ fontSize: 13, fontWeight: 700, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{d.nombre}</div>
                           <span className={s.badge}>{d.estado === 'activo' && <span className="dot"/>}{s.label}</span>
                         </div>
@@ -423,7 +388,7 @@ export default function DropsPage() {
                           {resumen.total} unidades · {resumen.vendidas || d.vendidas_count || 0} vendidas · {dinero(d.recaudado_total)}
                         </div>
                       </div>
-                      <div className="mono tnum" style={{ fontSize: 12, color: s.tone, minWidth: 78, textAlign: 'right' }}>
+                      <div className="drops-active-countdown mono tnum" style={{ fontSize: 12, color: s.tone, minWidth: 78, textAlign: 'right' }}>
                         {showCountdown && targetMs !== null && (
                           <CountdownTimer
                             target={targetMs}
@@ -432,7 +397,7 @@ export default function DropsPage() {
                           />
                         )}
                       </div>
-                      <div onClick={e => e.stopPropagation()}>
+                      <div className="drops-active-menu" onClick={e => e.stopPropagation()}>
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
                             <button className="btn btn-ghost btn-sm">
@@ -471,10 +436,10 @@ export default function DropsPage() {
           </section>
 
           <section>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
+            <div className="drops-section-heading" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
               <div style={{ fontSize: 15, fontWeight: 700 }}>Resumen de drop cerrado</div>
               {cerrados.length > 0 && (
-                <select className="input" style={{ width: 220, height: 32, fontSize: 12 }} value={cerradoSeleccionado?.id ?? ''} onChange={e => setDropCerradoId(e.target.value)}>
+                <select className="drops-closed-select input" style={{ width: 220, height: 32, fontSize: 12 }} value={cerradoSeleccionado?.id ?? ''} onChange={e => setDropCerradoId(e.target.value)}>
                   {cerrados.map(d => <option key={d.id} value={d.id}>{d.nombre}</option>)}
                 </select>
               )}
@@ -486,11 +451,11 @@ export default function DropsPage() {
                 <EmptyState title="Todavía no hay drops cerrados" body="Cuando cierres un drop, su recaudación, remanentes y apartados aparecerán aquí."/>
               ) : (
                 <>
-                  <div style={{ padding: 22, display: 'grid', gridTemplateColumns: '72px 1fr auto', gap: 16, alignItems: 'center' }}>
+                  <div className="drops-closed-summary" style={{ padding: 22, display: 'grid', gridTemplateColumns: '72px 1fr auto', gap: 16, alignItems: 'center' }}>
                     <div style={{ width: 72, height: 90, borderRadius: 10, overflow: 'hidden', background: 'var(--surface-2)' }}>
                       {cerradoSeleccionado.foto_portada_url ? (
                         // eslint-disable-next-line @next/next/no-img-element
-                        <img src={cerradoSeleccionado.foto_portada_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}/>
+                        <img loading="lazy" src={cerradoSeleccionado.foto_portada_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}/>
                       ) : <Ph tone="sand" aspect="4/5" radius={10}/>}
                     </div>
                     <div style={{ minWidth: 0 }}>
@@ -501,7 +466,7 @@ export default function DropsPage() {
                       <div style={{ fontSize: 18, fontWeight: 700, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{cerradoSeleccionado.nombre}</div>
                       <div className="t-mute" style={{ fontSize: 12, marginTop: 2 }}>{resumenSeleccionado.total} unidades publicadas</div>
                     </div>
-                    <div style={{ textAlign: 'right' }}>
+                    <div className="drops-closed-total" style={{ textAlign: 'right' }}>
                       <div className="mono t-mute" style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: 0 }}>Total recaudado</div>
                       <div className="tnum" style={{ fontSize: 34, lineHeight: 1.05, fontWeight: 800 }}>{dinero(cerradoSeleccionado.recaudado_total)}</div>
                       {resumenSeleccionado.valorApartado > 0 && (
@@ -510,7 +475,7 @@ export default function DropsPage() {
                     </div>
                   </div>
 
-                  <div style={{ borderTop: '1px solid var(--line)', borderBottom: '1px solid var(--line)', padding: '14px 18px', display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 10 }}>
+                  <div className="drops-closed-stats" style={{ borderTop: '1px solid var(--line)', borderBottom: '1px solid var(--line)', padding: '14px 18px', display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 10 }}>
                     {[
                       ['Vendidas', resumenSeleccionado.vendidas || cerradoSeleccionado.vendidas_count || 0],
                       ['Apartadas', resumenSeleccionado.apartadas],
@@ -524,26 +489,15 @@ export default function DropsPage() {
                     ))}
                   </div>
 
-                  <div style={{ padding: 16, display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10 }}>
+                  <div className="drops-closed-actions" style={{ padding: 16, display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10 }}>
                     <button onClick={() => router.push('/pedidos')} className="btn btn-outline" style={{ height: 46 }}>
                       <Icons.bag width={14} height={14}/> Ver pedidos
                     </button>
                     <button onClick={() => router.push('/comprobantes')} className="btn btn-outline" style={{ height: 46 }}>
                       <Icons.inbox width={14} height={14}/> Verificar
                     </button>
-                    <button
-                      onClick={() => migrarRemanentes(cerradoSeleccionado.id)}
-                      className="btn btn-primary"
-                      style={{ height: 46 }}
-                      disabled={migrando || resumenSeleccionado.sinVender === 0}
-                    >
-                      <Icons.box width={14} height={14}/> {migrando ? 'Migrando...' : 'Migrar remanentes'}
-                    </button>
-                  </div>
-                  <div style={{ padding: '0 16px 16px', display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
-                    <button onClick={() => exportarResumen(cerradoSeleccionado)} className="btn btn-outline btn-sm">Exportar resumen</button>
-                    <button onClick={() => router.push(`/drops/${cerradoSeleccionado.id}`)} className="btn btn-ghost btn-sm">
-                      Ver detalle <Icons.arrow width={13} height={13}/>
+                    <button onClick={() => router.push(`/drops/${cerradoSeleccionado.id}`)} className="btn btn-primary" style={{ height: 46 }}>
+                      Ver detalle <Icons.arrow width={14} height={14}/>
                     </button>
                   </div>
                 </>
@@ -553,13 +507,13 @@ export default function DropsPage() {
         </div>
 
         <section>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16, marginBottom: 10 }}>
+          <div className="drops-history-toolbar" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16, marginBottom: 10 }}>
             <div>
               <div style={{ fontSize: 15, fontWeight: 700 }}>Historial de drops</div>
               <div className="t-mute" style={{ fontSize: 12, marginTop: 2 }}>Todos tus lanzamientos con estado, resultados y acciones.</div>
             </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <div style={{ position: 'relative', width: 260 }}>
+            <div className="drops-history-controls" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <div className="drops-history-search" style={{ position: 'relative', width: 260 }}>
                 <Icons.search width={14} height={14} style={{ position: 'absolute', left: 11, top: 9, color: 'var(--ink-3)' }}/>
                 <input
                   className="input"
@@ -569,7 +523,7 @@ export default function DropsPage() {
                   onChange={e => setBusqueda(e.target.value)}
                 />
               </div>
-              <div style={{ display: 'flex', gap: 4 }}>
+              <div className="drops-filter-row" style={{ display: 'flex', gap: 4 }}>
                 {filtros.map(f => (
                   <button
                     key={f.id}
@@ -596,8 +550,8 @@ export default function DropsPage() {
             </div>
           </div>
 
-          <div className="card" style={{ overflow: 'hidden' }}>
-            <div style={{ display: 'grid', gridTemplateColumns: '2fr 120px 130px 90px 90px 90px 110px 130px 34px', padding: '10px 16px', borderBottom: '1px solid var(--line)', fontSize: 11, color: 'var(--ink-3)', textTransform: 'uppercase', letterSpacing: 0 }} className="mono">
+          <div className="drops-history-card card" style={{ overflow: 'hidden' }}>
+            <div className="drops-history-head mono" style={{ display: 'grid', gridTemplateColumns: '2fr 120px 130px 90px 90px 90px 110px 130px 34px', padding: '10px 16px', borderBottom: '1px solid var(--line)', fontSize: 11, color: 'var(--ink-3)', textTransform: 'uppercase', letterSpacing: 0 }}>
               <div>Drop</div><div>Estado</div><div>Fecha</div><div>Unidades</div><div>Vendidas</div><div>Sin vender</div><div>Viewers</div><div>Recaudado</div><div/>
             </div>
             {loading ? (
@@ -612,23 +566,24 @@ export default function DropsPage() {
                   <div
                     key={d.id}
                     onClick={() => router.push(`/drops/${d.id}`)}
+                    className="drops-history-row"
                     style={{ display: 'grid', gridTemplateColumns: '2fr 120px 130px 90px 90px 90px 110px 130px 34px', padding: '12px 16px', borderBottom: i < historial.length - 1 ? '1px solid var(--line-2)' : 'none', alignItems: 'center', fontSize: 12, cursor: 'pointer' }}
                   >
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 12, minWidth: 0 }}>
+                    <div className="drops-history-main" style={{ display: 'flex', alignItems: 'center', gap: 12, minWidth: 0 }}>
                       <DropThumb drop={d} tone={TONES[i % TONES.length]}/>
                       <div style={{ minWidth: 0 }}>
                         <div style={{ fontWeight: 700, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{d.nombre}</div>
                         <div className="t-mute" style={{ fontSize: 11, marginTop: 2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{d.descripcion || 'Sin descripción'}</div>
                       </div>
                     </div>
-                    <div><span className={s.badge}>{d.estado === 'activo' && <span className="dot"/>}{s.label}</span></div>
-                    <div className="t-mute">{fmtFecha(d.estado === 'cerrado' ? d.cierra_at ?? d.inicia_at : d.inicia_at)}</div>
-                    <div className="mono tnum">{r.total}</div>
-                    <div className="mono tnum">{r.vendidas || d.vendidas_count || 0}</div>
-                    <div className="mono tnum">{r.sinVender}</div>
-                    <div className="mono tnum">{(d.viewers_count ?? 0).toLocaleString()}</div>
-                    <div className="mono tnum" style={{ fontWeight: 700 }}>{dinero(d.recaudado_total)}</div>
-                    <div onClick={e => e.stopPropagation()}>
+                    <div className="drops-history-status"><span className={s.badge}>{d.estado === 'activo' && <span className="dot"/>}{s.label}</span></div>
+                    <div className="drops-history-date t-mute">{fmtFecha(d.estado === 'cerrado' ? d.cierra_at ?? d.inicia_at : d.inicia_at)}</div>
+                    <div className="drops-history-stat mono tnum" data-label="Unidades">{r.total}</div>
+                    <div className="drops-history-stat mono tnum" data-label="Vendidas">{r.vendidas || d.vendidas_count || 0}</div>
+                    <div className="drops-history-stat mono tnum" data-label="Sin vender">{r.sinVender}</div>
+                    <div className="drops-history-stat mono tnum" data-label="Viewers">{(d.viewers_count ?? 0).toLocaleString()}</div>
+                    <div className="drops-history-revenue mono tnum" style={{ fontWeight: 700 }}>{dinero(d.recaudado_total)}</div>
+                    <div className="drops-history-menu" onClick={e => e.stopPropagation()}>
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                           <button className="btn-ghost" style={{ height: 28, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -642,11 +597,6 @@ export default function DropsPage() {
                           <DropdownMenuItem onSelect={() => copiarLink(d.id)}>
                             <Icons.share width={14} height={14}/> Copiar link
                           </DropdownMenuItem>
-                          {d.estado === 'cerrado' && (
-                            <DropdownMenuItem onSelect={() => exportarResumen(d)}>
-                              <Icons.upload width={14} height={14}/> Exportar resumen
-                            </DropdownMenuItem>
-                          )}
                           {d.estado === 'programado' && (
                             <DropdownMenuItem onSelect={() => activarDrop(d.id)}>
                               <Icons.sparkle width={14} height={14}/> Activar ahora

@@ -5,25 +5,19 @@ import Image from 'next/image';
 import { cld } from '@/lib/cloudinary/client';
 import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
-import Link from 'next/link';
 import { createClient } from '@/lib/supabase/client';
 import { Icons } from '@/components/shared/icons';
+import { PublicProductCard } from '@/components/shared/public-product-card';
 import { PhoneInput } from '@/components/shared/phone-input';
 import { useCountdown, pad } from '@/hooks/use-countdown';
 import { useDropViewerCount } from '@/hooks/use-drop-viewer-count';
-import { Ph } from '@/components/shared/image-placeholder';
-import { getProductSizes, getProductSizeQuantities, getProductTotalQuantity } from '@/lib/product-sizes';
-import type { Database } from '@/types/database';
-
-type Tienda = Database['public']['Tables']['tiendas']['Row'];
-type Drop = Database['public']['Tables']['drops']['Row'];
-type Prenda = Database['public']['Tables']['prendas']['Row'];
-type MetodoPago = Database['public']['Tables']['metodos_pago']['Row'];
-type MetodoEnvio = Database['public']['Tables']['metodos_envio']['Row'];
-type Actividad = Database['public']['Tables']['actividad']['Row'];
-
-type Tone = 'rose' | 'sand' | 'sage' | 'blue' | 'dark' | 'neutral' | 'warm';
-const TONES: Tone[] = ['rose', 'sand', 'sage', 'blue', 'dark', 'warm', 'neutral'];
+import { useCarrito } from '@/hooks/use-carrito';
+import { getAvailableProductSizes, getProductTotalQuantity } from '@/lib/product-sizes';
+import type { Tienda } from '@/types/tienda';
+import type { Prenda } from '@/types/prenda';
+import type { Drop } from '@/types/drop';
+import type { Actividad } from '@/types/drop';
+import type { MetodoPago, MetodoEnvio } from '@/types/envio';
 
 function formatRelativo(iso: string | null) {
   if (!iso) return '';
@@ -77,6 +71,7 @@ export function DropPageClient({
     initialCount: drop.viewers_count,
     trackSelf: esActivo,
   });
+  const { agregarItem, tieneItem, abrirDrawer, count: carritoCount } = useCarrito();
 
   useEffect(() => {
     const t = setInterval(() => setTick(n => n + 1), 10000);
@@ -140,7 +135,9 @@ export function DropPageClient({
 
   const irAviso = () => {
     setPreviewNoticeOpen(false);
-    document.getElementById('drop-aviso')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    window.setTimeout(() => {
+      document.getElementById('drop-aviso')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 0);
   };
 
   return (
@@ -191,8 +188,50 @@ export function DropPageClient({
         <button
           onClick={handleShare}
           style={{ width: 32, height: 32, borderRadius: 16, background: '#f0efed', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}
+          title="Compartir drop"
         >
           <Icons.share width={15} height={15} />
+        </button>
+
+        <button
+          onClick={abrirDrawer}
+          style={{
+            position: 'relative',
+            width: 32,
+            height: 32,
+            borderRadius: 16,
+            background: carritoCount > 0 ? 'var(--accent-3)' : '#f0efed',
+            color: carritoCount > 0 ? '#fff' : 'var(--accent-3)',
+            border: 'none',
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            flexShrink: 0,
+          }}
+          title="Ver carrito"
+        >
+          <Icons.bag width={15} height={15} />
+          {carritoCount > 0 && (
+            <span style={{
+              position: 'absolute',
+              top: -4,
+              right: -4,
+              width: 18,
+              height: 18,
+              borderRadius: 9,
+              background: '#111',
+              color: '#fff',
+              fontSize: 10,
+              fontWeight: 800,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              border: '2px solid #fff',
+            }}>
+              {carritoCount}
+            </span>
+          )}
         </button>
       </nav>
 
@@ -310,12 +349,7 @@ export function DropPageClient({
         </div>
 
         {/* ── LAYOUT: grid + actividad side-by-side when active ── */}
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: esActivo ? 'minmax(0,1fr) 280px' : '1fr',
-          gap: 16,
-          alignItems: 'start',
-        }}>
+        <div className={`drop-layout-grid${esActivo ? ' drop-layout-active' : ''}`}>
           {/* ── GRID PRENDAS ── */}
           <div>
             {prendas.length === 0 ? (
@@ -326,119 +360,50 @@ export function DropPageClient({
             ) : (
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))', gap: 12 }}>
                 {prendas.map((p, i) => {
-                  const tone = TONES[i % TONES.length];
-                  const foto = p.fotos?.[0];
                   const disponible = p.estado === 'disponible';
-                  const vendida = p.estado === 'vendida';
-                  const apartada = p.estado === 'apartada';
-                  const card = (
-                    <div style={{
-                      borderRadius: 14, overflow: 'hidden', background: '#fff',
-                      border: '1px solid rgba(0,0,0,0.07)',
-                      transition: 'transform .18s',
-                      position: 'relative',
-                    }}
-                      onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-2px)'; }}
-                      onMouseLeave={e => { e.currentTarget.style.transform = 'none'; }}
-                    >
-                      <div style={{ position: 'relative', aspectRatio: '3/4', overflow: 'hidden' }}>
-                        {foto ? (
-                          <Image
-                            src={cld(foto, 'card')}
-                            alt={p.nombre}
-                            fill
-                            sizes="(max-width: 640px) 50vw, 200px"
-                            style={{
-                              objectFit: 'cover', display: 'block',
-                              filter: !disponible ? 'grayscale(0.5) brightness(0.82)' : isPreview ? 'brightness(0.9)' : 'none',
-                            }}
-                          />
-                        ) : (
-                          <div style={{
-                            width: '100%', height: '100%',
-                            background: !disponible ? '#ece9e4' : undefined,
-                            backgroundImage: !disponible ? 'repeating-linear-gradient(45deg, transparent, transparent 10px, rgba(0,0,0,0.04) 10px, rgba(0,0,0,0.04) 11px)' : undefined,
-                          }}>
-                            {disponible && <Ph tone={tone} aspect="3/4" radius={0} />}
-                          </div>
-                        )}
-                        {isPreview && disponible && (
-                          <div style={{ position: 'absolute', left: 10, top: 10 }}>
-                            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, background: 'rgba(10,10,10,0.78)', color: '#fff', borderRadius: 20, padding: '5px 9px', fontSize: 10, fontWeight: 800, letterSpacing: '0.06em', textTransform: 'uppercase' }}>
-                              Preview
-                            </span>
-                          </div>
-                        )}
-                        {!disponible && (
-                          <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                            <div style={{
-                              background: vendida ? 'rgba(10,10,10,0.85)' : 'rgba(120,60,0,0.85)',
-                              backdropFilter: 'blur(4px)', WebkitBackdropFilter: 'blur(4px)',
-                              color: '#fff', borderRadius: 8, padding: '7px 14px',
-                              fontSize: 11, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase',
-                            }}>
-                              {vendida ? 'Vendida' : 'Apartada'}
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                      <div style={{ padding: '10px 12px 12px' }}>
-                        <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', color: disponible ? '#0a0a0a' : '#aaa' }}>
-                          {p.nombre}
-                        </div>
-                        {p.marca && <div style={{ fontSize: 11, color: '#bbb', marginBottom: 6, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{p.marca}</div>}
-                        {(() => {
-                          const sizes = getProductSizes(p);
-                          const qtys = sizes.length > 0 ? getProductSizeQuantities(p) : {};
-                          if (sizes.length === 0) return <div style={{ marginBottom: 8 }} />;
-                          return (
-                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, marginBottom: 8 }}>
-                              {sizes.map(size => {
-                                const qty = qtys[size] ?? 0;
-                                const avail = disponible && qty > 0;
-                                return (
-                                  <span key={size} style={{
-                                    fontSize: 10, fontWeight: 700, padding: '2px 7px', borderRadius: 6,
-                                    background: avail ? '#f0fdf4' : '#f5f5f5',
-                                    color: avail ? '#16a34a' : '#bbb',
-                                    border: `1px solid ${avail ? '#bbf7d0' : '#e5e5e5'}`,
-                                  }}>{size}</span>
-                                );
-                              })}
-                            </div>
-                          );
-                        })()}
-                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                          <span className="mono tnum" style={{ fontSize: 16, fontWeight: 700, letterSpacing: 0, color: !disponible ? '#bbb' : '#0a0a0a', textDecoration: !disponible ? 'line-through' : 'none' }}>
-                            L {p.precio.toLocaleString()}
-                          </span>
-                          <span style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 11, fontWeight: 500 }}>
-                            <span style={{ width: 6, height: 6, borderRadius: 3, flexShrink: 0, display: 'inline-block', background: vendida ? '#ef4444' : apartada ? '#f59e0b' : isPreview ? '#888' : '#22c55e' }} />
-                            <span style={{ color: vendida ? '#ef4444' : apartada ? '#f59e0b' : isPreview ? '#777' : '#16a34a' }}>
-                              {vendida ? 'Vendida' : apartada ? 'Apartada' : isPreview ? 'Preview' : 'Disponible'}
-                            </span>
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-                  );
+                  const availableSizes = getAvailableProductSizes(p);
+                  const tieneVariantes = availableSizes.length > 1;
+                  const tallaCarrito = availableSizes[0] ?? null;
+                  const enCarrito = tieneItem(p.id, tallaCarrito);
+                  const href = `/${tienda.username}/drop/${drop.id}/prenda/${p.id}`;
+                  const openCard = () => {
+                    if (esActivo) {
+                      router.push(href);
+                    } else {
+                      setPreviewNoticeOpen(true);
+                    }
+                  };
 
-                  return esActivo ? (
-                    <Link
+                  return (
+                    <PublicProductCard
                       key={p.id}
-                      href={`/${tienda.username}/drop/${drop.id}/prenda/${p.id}`}
-                      style={{ textDecoration: 'none', color: 'inherit', display: 'block' }}
-                    >
-                      {card}
-                    </Link>
-                  ) : (
-                    <button
-                      key={p.id}
-                      onClick={() => setPreviewNoticeOpen(true)}
-                      style={{ width: '100%', appearance: 'none', border: 'none', padding: 0, margin: 0, background: 'transparent', color: 'inherit', textAlign: 'left', cursor: 'pointer', display: 'block', font: 'inherit' }}
-                    >
-                      {card}
-                    </button>
+                      product={p}
+                      tone={(['rose', 'sand', 'sage', 'blue', 'dark', 'warm', 'neutral'] as const)[i % 7]}
+                      isPreview={isPreview}
+                      showActions={esActivo}
+                      cartActive={!tieneVariantes && enCarrito}
+                      cartTitle={tieneVariantes ? 'Elegir talla' : enCarrito ? 'Ver carrito' : 'Añadir al carrito'}
+                      onOpen={openCard}
+                      onBuy={() => router.push(href)}
+                      onCart={() => {
+                        if (tieneVariantes) {
+                          router.push(href);
+                        } else if (enCarrito) {
+                          abrirDrawer();
+                        } else {
+                          agregarItem({
+                            prendaId: p.id,
+                            nombre: p.nombre,
+                            marca: p.marca ?? null,
+                            talla: tallaCarrito,
+                            precio: p.precio,
+                            foto: p.fotos?.[0] ?? null,
+                            tiendaUsername: tienda.username,
+                            tiendaId: tienda.id,
+                          });
+                        }
+                      }}
+                    />
                   );
                 })}
               </div>
@@ -449,11 +414,12 @@ export function DropPageClient({
 
           {/* ── ACTIVIDAD EN VIVO ── */}
           {esActivo && (
-            <div style={{ position: 'sticky', top: 68 }}>
-              <div style={{ background: '#fff', borderRadius: 14, border: '1px solid rgba(0,0,0,0.07)', overflow: 'hidden' }}>
+            <div className="drop-activity-sidebar" style={{ position: 'sticky', top: 68, maxHeight: 'calc(100vh - 84px)', minHeight: 0 }}>
+              <div style={{ background: '#fff', borderRadius: 14, border: '1px solid rgba(0,0,0,0.07)', overflow: 'hidden', maxHeight: 'calc(100vh - 84px)', display: 'flex', flexDirection: 'column' }}>
                 <div style={{
                   padding: '12px 14px', borderBottom: '1px solid rgba(0,0,0,0.07)',
                   display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                  flexShrink: 0,
                 }}>
                   <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#999', display: 'flex', alignItems: 'center', gap: 6 }}>
                     <span style={{ width: 6, height: 6, borderRadius: 3, background: '#ef4444', display: 'inline-block', animation: 'pulse 1.4s ease-in-out infinite' }} />
@@ -474,7 +440,7 @@ export function DropPageClient({
                     <div style={{ fontSize: 11, color: '#bbb', lineHeight: 1.5 }}>Las compras y apartados aparecerán aquí en tiempo real.</div>
                   </div>
                 ) : (
-                  <div style={{ padding: '10px 14px 14px', display: 'grid', gap: 14, maxHeight: 520, overflowY: 'auto' }}>
+                  <div style={{ padding: '10px 14px 14px', display: 'grid', gap: 14, overflowY: 'auto', minHeight: 0 }}>
                     {actividadLive.map(a => {
                       const partes = a.texto.split('·').map(s => s.trim());
                       const nombre = partes[0] ?? '';
@@ -588,7 +554,7 @@ function AnotarseSection({ dropId }: { dropId: string }) {
       drop_id: dropId,
       telefono: telefono.trim(),
       email: email.trim() || null,
-    });
+    } as any);
     if (err) { setError('No pudimos registrarte. Intentá de nuevo.'); setLoading(false); return; }
     setDone(true);
     setLoading(false);

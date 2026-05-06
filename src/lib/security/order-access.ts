@@ -2,7 +2,17 @@ import { createHmac, timingSafeEqual } from 'crypto';
 
 const TOKEN_VERSION = 'v2';
 const TOKEN_TTL_SECONDS = 60 * 60 * 24 * 30; // 30 días
-const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000';
+const DEFAULT_PUBLIC_APP_URL = 'https://fardodrops.vercel.app';
+
+export function getPublicAppUrl() {
+  const configuredUrl = process.env.NEXT_PUBLIC_APP_URL?.trim();
+  const vercelProductionUrl = process.env.VERCEL_PROJECT_PRODUCTION_URL?.trim();
+  const vercelUrl = process.env.VERCEL_URL?.trim();
+  const fallbackUrl = process.env.NODE_ENV === 'production' ? DEFAULT_PUBLIC_APP_URL : 'http://localhost:3000';
+  const appUrl = configuredUrl || vercelProductionUrl || vercelUrl || fallbackUrl;
+
+  return appUrl.startsWith('http') ? appUrl : `https://${appUrl}`;
+}
 
 function getOrderTokenSecret() {
   const secret = process.env.ORDER_ACCESS_TOKEN_SECRET?.trim();
@@ -57,7 +67,7 @@ export function verifyOrderAccessToken(token: string | null | undefined, order: 
 }
 
 export function buildOrderTrackingUrl(order: { id: string; numero: string }) {
-  const url = new URL(`/pedido/${encodeURIComponent(order.numero)}`, APP_URL);
+  const url = new URL(`/pedido/${encodeURIComponent(order.numero)}`, getPublicAppUrl());
   url.searchParams.set('t', createOrderAccessToken(order));
   return url.toString();
 }

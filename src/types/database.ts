@@ -79,6 +79,47 @@ export type Database = {
           },
         ]
       }
+      asientos_diario: {
+        Row: {
+          created_at: string
+          descripcion: string
+          empresa_id: string
+          fecha: string
+          id: string
+          moneda: string
+          numero_folio: string | null
+          tipo_cambio: number
+        }
+        Insert: {
+          created_at?: string
+          descripcion: string
+          empresa_id: string
+          fecha: string
+          id?: string
+          moneda?: string
+          numero_folio?: string | null
+          tipo_cambio?: number
+        }
+        Update: {
+          created_at?: string
+          descripcion?: string
+          empresa_id?: string
+          fecha?: string
+          id?: string
+          moneda?: string
+          numero_folio?: string | null
+          tipo_cambio?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "asientos_diario_empresa_id_fkey"
+            columns: ["empresa_id"]
+            isOneToOne: false
+            referencedRelation: "empresas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       carrito_items: {
         Row: {
           cantidad: number
@@ -162,6 +203,60 @@ export type Database = {
           },
         ]
       }
+      catalogo_cuentas: {
+        Row: {
+          activa: boolean
+          codigo: string
+          created_at: string
+          empresa_id: string
+          id: string
+          naturaleza: string
+          nivel: number
+          nombre: string
+          padre_id: string | null
+          tipo: string
+        }
+        Insert: {
+          activa?: boolean
+          codigo: string
+          created_at?: string
+          empresa_id: string
+          id?: string
+          naturaleza: string
+          nivel?: number
+          nombre: string
+          padre_id?: string | null
+          tipo: string
+        }
+        Update: {
+          activa?: boolean
+          codigo?: string
+          created_at?: string
+          empresa_id?: string
+          id?: string
+          naturaleza?: string
+          nivel?: number
+          nombre?: string
+          padre_id?: string | null
+          tipo?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "catalogo_cuentas_empresa_id_fkey"
+            columns: ["empresa_id"]
+            isOneToOne: false
+            referencedRelation: "empresas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "catalogo_cuentas_padre_id_fkey"
+            columns: ["padre_id"]
+            isOneToOne: false
+            referencedRelation: "catalogo_cuentas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       compradores: {
         Row: {
           ciudad: string | null
@@ -198,6 +293,56 @@ export type Database = {
         }
         Relationships: []
       }
+      compras: {
+        Row: {
+          created_at: string
+          descripcion: string
+          empresa_id: string
+          estado: string
+          fecha: string
+          id: string
+          monto_hnl: number
+          monto_usd: number | null
+          numero_factura: string
+          proveedor: string
+          tipo_cambio: number
+        }
+        Insert: {
+          created_at?: string
+          descripcion?: string
+          empresa_id: string
+          estado?: string
+          fecha: string
+          id?: string
+          monto_hnl?: number
+          monto_usd?: number | null
+          numero_factura: string
+          proveedor: string
+          tipo_cambio?: number
+        }
+        Update: {
+          created_at?: string
+          descripcion?: string
+          empresa_id?: string
+          estado?: string
+          fecha?: string
+          id?: string
+          monto_hnl?: number
+          monto_usd?: number | null
+          numero_factura?: string
+          proveedor?: string
+          tipo_cambio?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "compras_empresa_id_fkey"
+            columns: ["empresa_id"]
+            isOneToOne: false
+            referencedRelation: "empresas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       comprobantes: {
         Row: {
           banco: string | null
@@ -226,6 +371,8 @@ export type Database = {
           created_at?: string | null
           cuenta_destino?: string | null
           estado?: string
+          verificacion_automatica?: boolean | null
+          verificado_at?: string | null
           fecha_transferencia?: string | null
           id?: string
           imagen_url: string
@@ -234,8 +381,6 @@ export type Database = {
           pedido_id: string
           referencia?: string | null
           tienda_id: string
-          verificacion_automatica?: boolean | null
-          verificado_at?: string | null
         }
         Update: {
           banco?: string | null
@@ -284,6 +429,7 @@ export type Database = {
           id: string
           inicia_at: string
           nombre: string
+          portada_cloudinary_id: string | null
           recaudado_total: number | null
           tienda_id: string
           vendidas_count: number | null
@@ -299,6 +445,7 @@ export type Database = {
           id?: string
           inicia_at: string
           nombre: string
+          portada_cloudinary_id?: string | null
           recaudado_total?: number | null
           tienda_id: string
           vendidas_count?: number | null
@@ -314,6 +461,7 @@ export type Database = {
           id?: string
           inicia_at?: string
           nombre?: string
+          portada_cloudinary_id?: string | null
           recaudado_total?: number | null
           tienda_id?: string
           vendidas_count?: number | null
@@ -325,6 +473,140 @@ export type Database = {
             columns: ["tienda_id"]
             isOneToOne: false
             referencedRelation: "tiendas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      empresas: {
+        Row: {
+          created_at: string
+          direccion: string | null
+          id: string
+          logo_url: string | null
+          moneda_base: string
+          nombre: string
+          pais: string
+          rtn: string | null
+          telefono: string | null
+          usa_dual_moneda: boolean
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          direccion?: string | null
+          id?: string
+          logo_url?: string | null
+          moneda_base?: string
+          nombre: string
+          pais?: string
+          rtn?: string | null
+          telefono?: string | null
+          usa_dual_moneda?: boolean
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          direccion?: string | null
+          id?: string
+          logo_url?: string | null
+          moneda_base?: string
+          nombre?: string
+          pais?: string
+          rtn?: string | null
+          telefono?: string | null
+          usa_dual_moneda?: boolean
+          user_id?: string
+        }
+        Relationships: []
+      }
+      inventario_items: {
+        Row: {
+          cantidad: number
+          categoria: string
+          codigo: string | null
+          created_at: string
+          empresa_id: string
+          estado: string
+          id: string
+          nombre: string
+          precio_hnl: number
+          precio_usd: number | null
+          unidad_medida: string
+        }
+        Insert: {
+          cantidad?: number
+          categoria: string
+          codigo?: string | null
+          created_at?: string
+          empresa_id: string
+          estado?: string
+          id?: string
+          nombre: string
+          precio_hnl?: number
+          precio_usd?: number | null
+          unidad_medida?: string
+        }
+        Update: {
+          cantidad?: number
+          categoria?: string
+          codigo?: string | null
+          created_at?: string
+          empresa_id?: string
+          estado?: string
+          id?: string
+          nombre?: string
+          precio_hnl?: number
+          precio_usd?: number | null
+          unidad_medida?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "inventario_items_empresa_id_fkey"
+            columns: ["empresa_id"]
+            isOneToOne: false
+            referencedRelation: "empresas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      lineas_asiento: {
+        Row: {
+          asiento_id: string
+          cuenta_id: string
+          debe: number
+          descripcion: string | null
+          haber: number
+          id: string
+        }
+        Insert: {
+          asiento_id: string
+          cuenta_id: string
+          debe?: number
+          descripcion?: string | null
+          haber?: number
+          id?: string
+        }
+        Update: {
+          asiento_id?: string
+          cuenta_id?: string
+          debe?: number
+          descripcion?: string | null
+          haber?: number
+          id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lineas_asiento_asiento_id_fkey"
+            columns: ["asiento_id"]
+            isOneToOne: false
+            referencedRelation: "asientos_diario"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lineas_asiento_cuenta_id_fkey"
+            columns: ["cuenta_id"]
+            isOneToOne: false
+            referencedRelation: "catalogo_cuentas"
             referencedColumns: ["id"]
           },
         ]
@@ -512,6 +794,16 @@ export type Database = {
           empacado_at: string | null
           en_camino_at: string | null
           entregado_at: string | null
+          envio_courier_id: string | null
+          envio_courier_logo: string | null
+          envio_courier_nombre: string | null
+          envio_estado: string | null
+          envio_label_url: string | null
+          envio_metadata: Json
+          envio_modalidad: string | null
+          envio_monto: number
+          envio_proveedor: string | null
+          envio_tracking_url: string | null
           estado: string | null
           foto_paquete_url: string | null
           id: string
@@ -538,6 +830,16 @@ export type Database = {
           empacado_at?: string | null
           en_camino_at?: string | null
           entregado_at?: string | null
+          envio_courier_id?: string | null
+          envio_courier_logo?: string | null
+          envio_courier_nombre?: string | null
+          envio_estado?: string | null
+          envio_label_url?: string | null
+          envio_metadata?: Json
+          envio_modalidad?: string | null
+          envio_monto?: number
+          envio_proveedor?: string | null
+          envio_tracking_url?: string | null
           estado?: string | null
           foto_paquete_url?: string | null
           id?: string
@@ -564,6 +866,16 @@ export type Database = {
           empacado_at?: string | null
           en_camino_at?: string | null
           entregado_at?: string | null
+          envio_courier_id?: string | null
+          envio_courier_logo?: string | null
+          envio_courier_nombre?: string | null
+          envio_estado?: string | null
+          envio_label_url?: string | null
+          envio_metadata?: Json
+          envio_modalidad?: string | null
+          envio_monto?: number
+          envio_proveedor?: string | null
+          envio_tracking_url?: string | null
           estado?: string | null
           foto_paquete_url?: string | null
           id?: string
@@ -593,11 +905,74 @@ export type Database = {
           },
         ]
       }
+      ppe_activos: {
+        Row: {
+          clase: string
+          costo: number
+          created_at: string
+          descripcion: string | null
+          empresa_id: string
+          estado: string
+          fecha_compra: string
+          id: string
+          moneda: string
+          nombre: string
+          numero_activo: string | null
+          numero_serie: string | null
+          ubicacion: string | null
+          valor_residual_pct: number
+          vida_util_años: number
+        }
+        Insert: {
+          clase: string
+          costo: number
+          created_at?: string
+          descripcion?: string | null
+          empresa_id: string
+          estado?: string
+          fecha_compra: string
+          id?: string
+          moneda?: string
+          nombre: string
+          numero_activo?: string | null
+          numero_serie?: string | null
+          ubicacion?: string | null
+          valor_residual_pct?: number
+          vida_util_años: number
+        }
+        Update: {
+          clase?: string
+          costo?: number
+          created_at?: string
+          descripcion?: string | null
+          empresa_id?: string
+          estado?: string
+          fecha_compra?: string
+          id?: string
+          moneda?: string
+          nombre?: string
+          numero_activo?: string | null
+          numero_serie?: string | null
+          ubicacion?: string | null
+          valor_residual_pct?: number
+          vida_util_años?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ppe_activos_empresa_id_fkey"
+            columns: ["empresa_id"]
+            isOneToOne: false
+            referencedRelation: "empresas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       prendas: {
         Row: {
           cantidad: number
           cantidades_por_talla: Json
           categoria: string | null
+          cloudinary_ids: string[] | null
           created_at: string | null
           descripcion: string | null
           drop_id: string | null
@@ -616,6 +991,7 @@ export type Database = {
           cantidad?: number
           cantidades_por_talla?: Json
           categoria?: string | null
+          cloudinary_ids?: string[] | null
           created_at?: string | null
           descripcion?: string | null
           drop_id?: string | null
@@ -634,6 +1010,7 @@ export type Database = {
           cantidad?: number
           cantidades_por_talla?: Json
           categoria?: string | null
+          cloudinary_ids?: string[] | null
           created_at?: string | null
           descripcion?: string | null
           drop_id?: string | null
@@ -664,6 +1041,24 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      rate_limits: {
+        Row: {
+          count: number
+          key: string
+          window_start: string
+        }
+        Insert: {
+          count?: number
+          key: string
+          window_start?: string
+        }
+        Update: {
+          count?: number
+          key?: string
+          window_start?: string
+        }
+        Relationships: []
       }
       security_rate_limits: {
         Row: {
@@ -722,12 +1117,16 @@ export type Database = {
         Row: {
           activa: boolean | null
           bio: string | null
+          ciudad: string | null
           contact_email: string | null
+          cover_cloudinary_id: string | null
           cover_url: string | null
           created_at: string | null
+          departamento: string | null
           facebook: string | null
           id: string
           instagram: string | null
+          logo_cloudinary_id: string | null
           logo_url: string | null
           next_order_number: number
           nombre: string
@@ -749,16 +1148,20 @@ export type Database = {
         Insert: {
           activa?: boolean | null
           bio?: string | null
+          ciudad?: string | null
           contact_email?: string | null
+          cover_cloudinary_id?: string | null
           cover_url?: string | null
           created_at?: string | null
+          departamento?: string | null
           facebook?: string | null
           id?: string
           instagram?: string | null
+          logo_cloudinary_id?: string | null
           logo_url?: string | null
           next_order_number?: number
           nombre: string
-          order_prefix?: string
+          order_prefix: string
           paypal_plan_id?: string | null
           paypal_sub_id?: string | null
           plan?: string | null
@@ -776,12 +1179,16 @@ export type Database = {
         Update: {
           activa?: boolean | null
           bio?: string | null
+          ciudad?: string | null
           contact_email?: string | null
+          cover_cloudinary_id?: string | null
           cover_url?: string | null
           created_at?: string | null
+          departamento?: string | null
           facebook?: string | null
           id?: string
           instagram?: string | null
+          logo_cloudinary_id?: string | null
           logo_url?: string | null
           next_order_number?: number
           nombre?: string
@@ -802,15 +1209,106 @@ export type Database = {
         }
         Relationships: []
       }
+      tipos_cambio: {
+        Row: {
+          empresa_id: string
+          fecha: string
+          id: string
+          moneda: string
+          valor: number
+        }
+        Insert: {
+          empresa_id: string
+          fecha: string
+          id?: string
+          moneda: string
+          valor: number
+        }
+        Update: {
+          empresa_id?: string
+          fecha?: string
+          id?: string
+          moneda?: string
+          valor?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tipos_cambio_empresa_id_fkey"
+            columns: ["empresa_id"]
+            isOneToOne: false
+            referencedRelation: "empresas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ventas: {
+        Row: {
+          cliente: string
+          created_at: string
+          descripcion: string
+          empresa_id: string
+          estado: string
+          fecha: string
+          id: string
+          monto_hnl: number
+          monto_usd: number | null
+          numero_factura: string
+          tipo_cambio: number
+        }
+        Insert: {
+          cliente: string
+          created_at?: string
+          descripcion?: string
+          empresa_id: string
+          estado?: string
+          fecha: string
+          id?: string
+          monto_hnl?: number
+          monto_usd?: number | null
+          numero_factura: string
+          tipo_cambio?: number
+        }
+        Update: {
+          cliente?: string
+          created_at?: string
+          descripcion?: string
+          empresa_id?: string
+          estado?: string
+          fecha?: string
+          id?: string
+          monto_hnl?: number
+          monto_usd?: number | null
+          numero_factura?: string
+          tipo_cambio?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ventas_empresa_id_fkey"
+            columns: ["empresa_id"]
+            isOneToOne: false
+            referencedRelation: "empresas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
+      calcular_depreciacion_mensual: {
+        Args: {
+          p_costo: number
+          p_valor_residual_pct: number
+          p_vida_util_años: number
+        }
+        Returns: number
+      }
       check_rate_limit: {
         Args: { p_key: string; p_limit: number; p_window_seconds: number }
         Returns: boolean
       }
+      close_expired_drops: { Args: never; Returns: undefined }
       crear_checkout_publico_seguro: {
         Args: {
           p_ciudad: string
@@ -820,9 +1318,16 @@ export type Database = {
           p_comprobante_url?: string
           p_direccion: string
           p_drop_id: string
+          p_envio_courier_id?: string
+          p_envio_courier_logo?: string
+          p_envio_courier_nombre?: string
+          p_envio_metadata?: Json
+          p_envio_modalidad?: string
+          p_envio_monto?: number
+          p_envio_proveedor?: string
+          p_items: Json
           p_metodo_envio_id: string
           p_metodo_pago_id: string
-          p_prenda_ids: string[]
           p_tienda_id: string
         }
         Returns: {
@@ -843,6 +1348,11 @@ export type Database = {
           tienda_username: string
         }[]
       }
+      ensure_unique_order_prefix: {
+        Args: { base_prefix: string; store_id?: string }
+        Returns: string
+      }
+      normalize_order_prefix: { Args: { raw_value: string }; Returns: string }
     }
     Enums: {
       [_ in never]: never
@@ -853,25 +1363,23 @@ export type Database = {
   }
 }
 
-type DatabaseWithoutInternals = Omit<Database, "__InternalSupabase">
-
-type DefaultSchema = DatabaseWithoutInternals[Extract<keyof Database, "public">]
+type DefaultSchema = Database[Extract<keyof Database, "public">]
 
 export type Tables<
   DefaultSchemaTableNameOrOptions extends
     | keyof (DefaultSchema["Tables"] & DefaultSchema["Views"])
-    | { schema: keyof DatabaseWithoutInternals },
+    | { schema: keyof Database },
   TableName extends DefaultSchemaTableNameOrOptions extends {
-    schema: keyof DatabaseWithoutInternals
+    schema: keyof Database
   }
-    ? keyof (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
-        DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
+    ? keyof (Database[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
+        Database[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
     : never = never,
 > = DefaultSchemaTableNameOrOptions extends {
-  schema: keyof DatabaseWithoutInternals
+  schema: keyof Database
 }
-  ? (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
-      DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])[TableName] extends {
+  ? (Database[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
+      Database[DefaultSchemaTableNameOrOptions["schema"]]["Views"])[TableName] extends {
       Row: infer R
     }
     ? R
@@ -889,16 +1397,16 @@ export type Tables<
 export type TablesInsert<
   DefaultSchemaTableNameOrOptions extends
     | keyof DefaultSchema["Tables"]
-    | { schema: keyof DatabaseWithoutInternals },
+    | { schema: keyof Database },
   TableName extends DefaultSchemaTableNameOrOptions extends {
-    schema: keyof DatabaseWithoutInternals
+    schema: keyof Database
   }
-    ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
+    ? keyof Database[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
     : never = never,
 > = DefaultSchemaTableNameOrOptions extends {
-  schema: keyof DatabaseWithoutInternals
+  schema: keyof Database
 }
-  ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
+  ? Database[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
       Insert: infer I
     }
     ? I
@@ -914,16 +1422,16 @@ export type TablesInsert<
 export type TablesUpdate<
   DefaultSchemaTableNameOrOptions extends
     | keyof DefaultSchema["Tables"]
-    | { schema: keyof DatabaseWithoutInternals },
+    | { schema: keyof Database },
   TableName extends DefaultSchemaTableNameOrOptions extends {
-    schema: keyof DatabaseWithoutInternals
+    schema: keyof Database
   }
-    ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
+    ? keyof Database[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
     : never = never,
 > = DefaultSchemaTableNameOrOptions extends {
-  schema: keyof DatabaseWithoutInternals
+  schema: keyof Database
 }
-  ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
+  ? Database[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
       Update: infer U
     }
     ? U
@@ -939,16 +1447,16 @@ export type TablesUpdate<
 export type Enums<
   DefaultSchemaEnumNameOrOptions extends
     | keyof DefaultSchema["Enums"]
-    | { schema: keyof DatabaseWithoutInternals },
+    | { schema: keyof Database },
   EnumName extends DefaultSchemaEnumNameOrOptions extends {
-    schema: keyof DatabaseWithoutInternals
+    schema: keyof Database
   }
-    ? keyof DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
+    ? keyof Database[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
     : never = never,
 > = DefaultSchemaEnumNameOrOptions extends {
-  schema: keyof DatabaseWithoutInternals
+  schema: keyof Database
 }
-  ? DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"][EnumName]
+  ? Database[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"][EnumName]
   : DefaultSchemaEnumNameOrOptions extends keyof DefaultSchema["Enums"]
     ? DefaultSchema["Enums"][DefaultSchemaEnumNameOrOptions]
     : never
@@ -956,16 +1464,16 @@ export type Enums<
 export type CompositeTypes<
   PublicCompositeTypeNameOrOptions extends
     | keyof DefaultSchema["CompositeTypes"]
-    | { schema: keyof DatabaseWithoutInternals },
+    | { schema: keyof Database },
   CompositeTypeName extends PublicCompositeTypeNameOrOptions extends {
-    schema: keyof DatabaseWithoutInternals
+    schema: keyof Database
   }
-    ? keyof DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
+    ? keyof Database[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
     : never = never,
 > = PublicCompositeTypeNameOrOptions extends {
-  schema: keyof DatabaseWithoutInternals
+  schema: keyof Database
 }
-  ? DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"][CompositeTypeName]
+  ? Database[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"][CompositeTypeName]
   : PublicCompositeTypeNameOrOptions extends keyof DefaultSchema["CompositeTypes"]
     ? DefaultSchema["CompositeTypes"][PublicCompositeTypeNameOrOptions]
     : never
