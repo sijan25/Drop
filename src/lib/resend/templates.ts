@@ -435,3 +435,27 @@ export function emailActualizacionEstado(opts: {
     html: layout(content, opts.tiendaNombre),
   }
 }
+
+export function emailNuevoDropActivo(opts: {
+  tiendaNombre: string;
+  dropNombre: string;
+  dropUrl: string;
+  descripcion?: string | null;
+}) {
+  const content = `
+    <p style="margin:0 0 6px 0;font-size:13px;color:#666;">¡Novedad de <strong>${escapeHtml(opts.tiendaNombre)}</strong>!</p>
+    <h1 style="margin:0 0 16px 0;font-size:22px;font-weight:700;color:#0a0a0a;">
+      Nuevo drop en vivo: ${escapeHtml(opts.dropNombre)}
+    </h1>
+    ${opts.descripcion ? `<p style="margin:0 0 20px 0;font-size:15px;color:#444;">${escapeHtml(opts.descripcion)}</p>` : ''}
+    <p style="margin:0 0 24px 0;font-size:15px;color:#444;">
+      Te anotaste para recibir novedades de esta tienda. ¡El drop ya está activo, entrá antes de que se agote!
+    </p>
+    ${actionButton(opts.dropUrl, 'Ver drop ahora', '#c0392b')}
+  `;
+
+  return {
+    subject: `🔴 Nuevo drop: ${opts.dropNombre} — ${opts.tiendaNombre}`,
+    html: layout(content, opts.tiendaNombre),
+  };
+}

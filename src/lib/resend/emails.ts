@@ -5,6 +5,7 @@ import {
   emailPagoConfirmado,
   emailPagoRechazado,
   emailActualizacionEstado,
+  emailNuevoDropActivo,
 } from './templates'
 import { buildOrderTrackingUrl, getPublicAppUrl } from '@/lib/security/order-access'
 
@@ -270,4 +271,35 @@ export async function notificarCambioEstado(opts: {
     replyTo: opts.tiendaEmail,
     idempotencyKey: `estado-${opts.nuevoEstado}-${opts.numeroPedido}`,
   })
+}
+
+export async function notificarSuscriptoresNuevoDrop(opts: {
+  suscriptores: { nombre: string; email: string }[];
+  tiendaNombre: string;
+  tiendaUsername: string;
+  dropId: string;
+  dropNombre: string;
+  descripcion?: string | null;
+}) {
+  const dropUrl = `${APP_URL}/${opts.tiendaUsername}/drop/${opts.dropId}`;
+  const results = await Promise.allSettled(
+    opts.suscriptores
+      .filter(s => normalizarEmail(s.email))
+      .map(s => {
+        const { subject, html } = emailNuevoDropActivo({
+          tiendaNombre: opts.tiendaNombre,
+          dropNombre: opts.dropNombre,
+          dropUrl,
+          descripcion: opts.descripcion,
+        });
+        return enviarEmail({
+          to: s.email,
+          subject,
+          html,
+          tag: 'nuevo_drop',
+          idempotencyKey: `nuevo-drop-${opts.dropId}-${s.email}`,
+        });
+      })
+  );
+  return results;
 }

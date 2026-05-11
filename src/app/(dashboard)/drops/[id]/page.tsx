@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
 import { useParams, useRouter } from 'next/navigation';
+import { activarDropAction } from './actions';
 import { Icons } from '@/components/shared/icons';
 import { CountdownTimer } from '@/components/drops/countdown-timer';
 import { Ph } from '@/components/shared/image-placeholder';
@@ -411,11 +412,10 @@ export default function DropDetallePage() {
 
   async function activarDrop() {
     if (!drop) return;
-    const supabase = createClient();
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    await supabase.from('drops').update({ estado: 'activo', inicia_at: new Date().toISOString() } as any).eq('id', drop.id as never);
+    const res = await activarDropAction(drop.id);
+    if (res.error) { toast.error(res.error); return; }
     setDrop(prev => prev ? { ...prev, estado: 'activo', inicia_at: new Date().toISOString() } : prev);
-    toast.success('¡Drop activado! Ya está en vivo.');
+    toast.success('¡Drop activado! Notificando suscriptores...');
   }
 
   async function cambiarEstadoPrenda(prendaId: string, nuevoEstado: EstadoPrenda) {

@@ -536,7 +536,7 @@ export default function DropsPage() {
             </div>
           </div>
 
-          <div className="drops-history-card card overflow-hidden">
+          <div className="drops-history-card card overflow-hidden max-h-[500px] overflow-y-auto">
             <div className="drops-history-head mono grid grid-cols-[2fr_120px_130px_90px_90px_90px_110px_130px_34px] px-4 py-[10px] border-b border-[var(--line)] text-[11px] text-[var(--ink-3)] uppercase tracking-[0]">
               <div>Drop</div><div>Estado</div><div>Fecha</div><div>Unidades</div><div>Vendidas</div><div>Sin vender</div><div>Viewers</div><div>Recaudado</div><div/>
             </div>

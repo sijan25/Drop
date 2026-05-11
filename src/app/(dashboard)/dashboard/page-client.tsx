@@ -189,7 +189,7 @@ export default function DashboardPageClient({
               <div className="text-[15px] font-bold">Drops recientes</div>
               <button onClick={() => router.push('/drops')} className="btn btn-outline btn-sm">Gestionar drops <Icons.arrow width={13} height={13}/></button>
             </div>
-            <div className="card overflow-hidden">
+            <div className="card overflow-hidden max-h-[240px] overflow-y-auto">
               {drops.length === 0 ? (
                 <div className="p-9 text-center">
                   <div className="text-[14px] font-semibold mb-[6px]">No tienes drops aún</div>
