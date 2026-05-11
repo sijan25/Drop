@@ -88,7 +88,7 @@ function LoginContent() {
             ['Gestión completa', 'Inventario, pedidos, envíos y reportes en un solo lugar'],
           ].map(([t, d]) => (
             <div key={t} className={s.featureItem}>
-              <div className={s.featureDot} style={{ background: '#C96442' }} />
+              <div className={s.featureDot} />
               <div>
                 <div className={s.featureTitle}>{t}</div>
                 <div className={s.featureDesc}>{d}</div>
@@ -119,12 +119,12 @@ function LoginContent() {
                   </svg>
                 </div>
                 <div className={s.formTitle}>Revisá tu bandeja</div>
-                <div className={s.formSub}>Enviamos un link a <strong style={{ color: '#0a0a0a' }}>{email}</strong>. Hacé click para restablecer.</div>
+                <div className={s.formSub}>Enviamos un link a <strong className="text-[#0a0a0a]">{email}</strong>. Hacé click para restablecer.</div>
                 <div className={s.sentNote}>
                   El link vence en 15 min. ¿No llegó? Revisá spam o{' '}
-                  <button onClick={() => setForgotSent(false)} style={{ textDecoration: 'underline', fontWeight: 500, background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'inherit', color: '#C96442' }}>reenviar</button>.
+                  <button onClick={() => setForgotSent(false)} className="underline font-medium bg-transparent border-0 cursor-pointer font-[inherit] text-[#C96442]">reenviar</button>.
                 </div>
-                <button onClick={() => { setForgotMode(false); setForgotSent(false); setError(''); }} className="btn btn-ghost btn-sm" style={{ marginTop: 20, color: '#737373' }}>
+                <button onClick={() => { setForgotMode(false); setForgotSent(false); setError(''); }} className="btn btn-ghost btn-sm mt-5 text-[#737373]">
                   ← Volver al inicio de sesión
                 </button>
               </>
@@ -141,10 +141,10 @@ function LoginContent() {
                   </div>
                 </div>
                 {error && <div className={s.fieldError}>{error}</div>}
-                <button onClick={handleForgotPassword} disabled={loading} className="btn btn-primary btn-lg btn-block" style={{ marginTop: 20, opacity: loading ? 0.6 : 1 }}>
+                <button onClick={handleForgotPassword} disabled={loading} className={`btn btn-primary btn-lg btn-block mt-5 ${loading ? 'opacity-60' : ''}`}>
                   {loading ? 'Enviando…' : 'Enviar link de recuperación'}
                 </button>
-                <button onClick={() => { setForgotMode(false); setError(''); }} className="btn btn-ghost btn-sm btn-block" style={{ marginTop: 10, color: '#737373' }}>
+                <button onClick={() => { setForgotMode(false); setError(''); }} className="btn btn-ghost btn-sm btn-block mt-[10px] text-[#737373]">
                   ← Volver al inicio de sesión
                 </button>
               </>
@@ -176,10 +176,10 @@ function LoginContent() {
                 </svg>
               </div>
               <div className={s.formTitle}>Revisá tu bandeja</div>
-              <div className={s.formSub}>Enviamos un link a <strong style={{ color: '#0a0a0a' }}>{email}</strong>. Hacé click desde este dispositivo.</div>
+              <div className={s.formSub}>Enviamos un link a <strong className="text-[#0a0a0a]">{email}</strong>. Hacé click desde este dispositivo.</div>
               <div className={s.sentNote}>
                 El link vence en 15 min. ¿No llegó? Revisá spam o{' '}
-                <button onClick={() => setSent(false)} style={{ textDecoration: 'underline', fontWeight: 500, background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'inherit', color: '#C96442' }}>reenviar</button>.
+                <button onClick={() => setSent(false)} className="underline font-medium bg-transparent border-0 cursor-pointer font-[inherit] text-[#C96442]">reenviar</button>.
               </div>
             </>
           ) : (
@@ -188,7 +188,7 @@ function LoginContent() {
               <div className={s.formSub}>
                 ¿No tenés cuenta?{' '}
                 <button onClick={() => router.push('/onboarding')}
-                  style={{ fontWeight: 600, color: '#C96442', textDecoration: 'underline', background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'inherit', fontSize: 'inherit' }}>
+                  className="font-semibold text-[#C96442] underline bg-transparent border-0 cursor-pointer font-[inherit] text-[inherit]">
                   Crear tienda
                 </button>
               </div>
@@ -215,28 +215,31 @@ function LoginContent() {
               <div className={s.fields}>
                 <div>
                   <label className="label">Correo electrónico</label>
-                  <input className="input input-lg" type="email" placeholder="mariela@miciclita.hn"
-                    value={email} onChange={e => { setEmail(e.target.value); setError(''); }}
+                  <input
+                    type="email"
+                    placeholder="mariela@miciclita.hn"
+                    value={email}
+                    onChange={e => { setEmail(e.target.value); setError(''); }}
                     onKeyDown={e => mode === 'password' && e.key === 'Enter' && handleLogin()}
-                    style={error && (!email.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) ? { borderColor: '#dc2626' } : undefined}
+                    className={`input input-lg${error && (!email.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) ? ' border-[#dc2626]' : ''}`}
                   />
                 </div>
 
                 {mode === 'password' && (
                   <div>
                     <div className={s.passLabelRow}>
-                      <label className="label" style={{ margin: 0 }}>Contraseña</label>
+                      <label className="label m-0">Contraseña</label>
                       <button onClick={() => { setForgotMode(true); setError(''); }}
-                        style={{ fontSize: 12, background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'inherit', color: '#C96442', fontWeight: 500 }}>
+                        className="text-[12px] bg-transparent border-0 cursor-pointer font-[inherit] text-[#C96442] font-medium">
                         ¿Olvidaste la contraseña?
                       </button>
                     </div>
-                    <div style={{ position: 'relative' }}>
-                      <input className="input input-lg" type={showPass ? 'text' : 'password'}
+                    <div className="relative">
+                      <input className={`input input-lg pr-[44px]${error && !password ? ' border-[#dc2626]' : ''}`}
+                        type={showPass ? 'text' : 'password'}
                         placeholder="••••••••" value={password}
                         onChange={e => { setPassword(e.target.value); setError(''); }}
                         onKeyDown={e => e.key === 'Enter' && handleLogin()}
-                        style={{ paddingRight: 44, ...(error && !password ? { borderColor: '#dc2626' } : {}) }}
                       />
                       <button onClick={() => setShowPass(v => !v)} className={s.showPass}>
                         <svg width="16" height="16" viewBox="0 0 20 20" fill="none">
@@ -254,8 +257,7 @@ function LoginContent() {
               {error && <div className={s.fieldError}>{error}</div>}
 
               <button onClick={mode === 'password' ? handleLogin : handleMagicLink}
-                disabled={loading} className="btn btn-primary btn-lg btn-block"
-                style={{ marginTop: 20, opacity: loading ? 0.6 : 1 }}>
+                disabled={loading} className={`btn btn-primary btn-lg btn-block mt-5 ${loading ? 'opacity-60' : ''}`}>
                 {loading ? 'Entrando…' : mode === 'password' ? 'Iniciar sesión' : 'Enviar acceso sin contraseña'}
               </button>
             </>

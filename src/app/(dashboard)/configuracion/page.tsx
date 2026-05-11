@@ -15,6 +15,11 @@ export default async function ConfiguracionPage() {
 
   if (!tienda) redirect('/onboarding');
 
+  const tiendaSinSecret = {
+    ...tienda,
+    pixelpay_secret_key: tienda.pixelpay_secret_key ? '' : null,
+  };
+
   const { data: metodosPago } = await supabase
     .from('metodos_pago')
     .select('*')
@@ -37,7 +42,7 @@ export default async function ConfiguracionPage() {
 
   return (
     <ConfiguracionClient
-      tienda={tienda}
+      tienda={tiendaSinSecret}
       ownerEmail={user.email ?? ''}
       metodosPago={metodosPago ?? []}
       metodosEnvio={metodosEnvio ?? []}

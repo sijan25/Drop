@@ -22,11 +22,13 @@ export function ModalOverlay({ onClose, children, zIndex = 300, maxWidth = 540, 
 
   return (
     <div
-      style={{ position: 'fixed', inset: 0, zIndex, display: 'flex', alignItems: 'center', justifyContent: 'center', background: bg, backdropFilter: `blur(${blur})`, WebkitBackdropFilter: `blur(${blur})`, padding: 18 }}
+      className="fixed inset-0 flex items-center justify-center p-[18px]"
+      style={{ zIndex, background: bg, backdropFilter: `blur(${blur})`, WebkitBackdropFilter: `blur(${blur})` }}
       onClick={e => { if (e.target === e.currentTarget) onClose(); }}
     >
       <div
-        style={{ width: `min(${typeof maxWidth === 'number' ? `${maxWidth}px` : maxWidth}, calc(100vw - 32px))`, maxHeight: 'calc(100vh - 36px)', overflowY: 'auto', background: '#fff', borderRadius: 18, boxShadow: '0 30px 90px rgba(0,0,0,0.28)', animation: 'slideUp .22s ease', position: 'relative' }}
+        className="max-h-[calc(100vh-36px)] overflow-y-auto bg-white rounded-[18px] shadow-[0_30px_90px_rgba(0,0,0,0.28)] [animation:slideUp_.22s_ease] relative"
+        style={{ width: `min(${typeof maxWidth === 'number' ? `${maxWidth}px` : maxWidth}, calc(100vw - 32px))` }}
         onClick={e => e.stopPropagation()}
       >
         {children}

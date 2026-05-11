@@ -280,12 +280,17 @@ export async function agregarItemCarrito(input: z.input<typeof addSchema>): Prom
     .select('id', { count: 'exact', head: true })
     .eq('carrito_id', cart.id);
 
-  const { data: existing } = await service
+  let existingQuery = service
     .from('carrito_items')
     .select('id')
     .eq('carrito_id', cart.id)
-    .eq('prenda_id', parsed.data.prendaId)
-    .maybeSingle();
+    .eq('prenda_id', parsed.data.prendaId);
+
+  existingQuery = tallaSeleccionada
+    ? existingQuery.eq('talla_seleccionada', tallaSeleccionada)
+    : existingQuery.is('talla_seleccionada', null);
+
+  const { data: existing } = await existingQuery.maybeSingle();
 
   if (!existing && (count ?? 0) >= MAX_CART_ITEMS) {
     return { items: await loadCartItems(service, cart), error: 'El carrito llegó al máximo de prendas.' };
@@ -302,11 +307,6 @@ export async function agregarItemCarrito(input: z.input<typeof addSchema>): Prom
       });
 
     if (error) return { items: await loadCartItems(service, cart), error: 'No pudimos agregar esa prenda al carrito.' };
-  } else {
-    await service
-      .from('carrito_items')
-      .update({ talla_seleccionada: tallaSeleccionada })
-      .eq('id', existing.id);
   }
 
   return { items: await loadCartItems(service, cart) };

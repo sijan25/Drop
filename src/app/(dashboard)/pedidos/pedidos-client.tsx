@@ -25,16 +25,16 @@ function TrackingModal({
 
   return (
     <ModalOverlay onClose={onClose} maxWidth={420}>
-      <div style={{ padding: 24 }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 18 }}>
-          <div style={{ fontSize: 16, fontWeight: 700 }}>Marcar como enviado</div>
-          <button onClick={onClose} style={{ color: 'var(--ink-3)', background: 'none', border: 'none', cursor: 'pointer' }}>
+      <div className="p-6">
+        <div className="flex items-center justify-between mb-[18px]">
+          <div className="text-[16px] font-bold">Marcar como enviado</div>
+          <button onClick={onClose} className="text-[var(--ink-3)] bg-none border-none cursor-pointer">
             <Icons.close width={16} height={16} />
           </button>
         </div>
-        <div style={{ display: 'grid', gap: 14 }}>
+        <div className="grid gap-[14px]">
           <div>
-            <label className="label">Número de guía <span style={{ color: 'var(--ink-3)', fontWeight: 400 }}>(opcional)</span></label>
+            <label className="label">Número de guía <span className="text-[var(--ink-3)] font-normal">(opcional)</span></label>
             <input
               className="input mono"
               placeholder="ej. 1234567890"
@@ -44,13 +44,13 @@ function TrackingModal({
           </div>
           {baseTrackingUrl ? (
             urlGenerada ? (
-              <div style={{ fontSize: 12, color: 'var(--ink-3)', background: 'var(--surface-2)', borderRadius: 8, padding: '8px 12px', lineHeight: 1.5 }}>
-                Link generado: <a href={urlGenerada} target="_blank" rel="noreferrer" style={{ color: 'var(--accent)', wordBreak: 'break-all' }}>{urlGenerada}</a>
+              <div className="text-[12px] text-[var(--ink-3)] bg-[var(--surface-2)] rounded-lg px-3 py-2 leading-[1.5]">
+                Link generado: <a href={urlGenerada} target="_blank" rel="noreferrer" className="text-[var(--accent)] break-all">{urlGenerada}</a>
               </div>
             ) : null
           ) : (
             <div>
-              <label className="label">Link de rastreo <span style={{ color: 'var(--ink-3)', fontWeight: 400 }}>(opcional)</span></label>
+              <label className="label">Link de rastreo <span className="text-[var(--ink-3)] font-normal">(opcional)</span></label>
               <input
                 className="input"
                 placeholder="https://..."
@@ -60,10 +60,10 @@ function TrackingModal({
             </div>
           )}
         </div>
-        <p style={{ fontSize: 12, color: 'var(--ink-3)', marginTop: 12, marginBottom: 18, lineHeight: 1.5 }}>
+        <p className="text-[12px] text-[var(--ink-3)] mt-3 mb-[18px] leading-[1.5]">
           Si ingresás estos datos, el comprador los recibirá por email y WhatsApp.
         </p>
-        <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+        <div className="flex gap-2 justify-end">
           <button onClick={onClose} className="btn btn-outline btn-sm">Cancelar</button>
           <button
             onClick={() => onConfirm({ numero, url: urlFinal })}
@@ -143,6 +143,10 @@ function prendaLabel(items: Item[]) {
 }
 
 function tallaLabel(items: Item[]) {
+  if (items.length > 1) {
+    const tallas = items.map(i => i.talla_seleccionada ?? i.prenda?.talla).filter(Boolean)
+    return tallas.length > 0 ? tallas.join(', ') : '—'
+  }
   const item = items[0]
   return item?.talla_seleccionada ?? item?.prenda?.talla ?? '—'
 }
@@ -315,15 +319,15 @@ export default function PedidosClient({
   const desktopColumns = '90px 1.2fr 1.4fr 70px 90px 80px 110px 110px 28px'
 
   return (
-    <div ref={shellRef} className="orders-shell" style={{ height: '100%', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-      <div className="orders-header" style={{ padding: '20px 28px 16px', borderBottom: '1px solid var(--line)', display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: 20, flexShrink: 0 }}>
+    <div ref={shellRef} className="orders-shell h-full flex flex-col overflow-hidden">
+      <div className="orders-header px-7 pt-5 pb-4 border-b border-[var(--line)] flex items-end justify-between gap-5 shrink-0">
         <div>
-          <div style={{ fontSize: 20, fontWeight: 600, letterSpacing: '-0.015em' }}>Pedidos</div>
-          <div className="t-mute" style={{ fontSize: 13, marginTop: 3 }}>
+          <div className="text-[20px] font-semibold tracking-[-0.015em]">Pedidos</div>
+          <div className="t-mute text-[13px] mt-[3px]">
             {semanaCount} pedidos esta semana · L {transitoTotal.toLocaleString()} en tránsito
           </div>
         </div>
-        <div className="orders-header-actions" style={{ display: 'flex', gap: 8 }}>
+        <div className="orders-header-actions flex gap-2">
           <button className={`btn btn-sm ${showFilters ? 'btn-primary' : 'btn-outline'}`} onClick={() => setShowFilters(v => !v)}>
             <Icons.filter width={13} height={13}/> Filtros{(fechaDesde || fechaHasta) ? ' ·' : ''}
           </button>
@@ -332,17 +336,17 @@ export default function PedidosClient({
       </div>
 
       {showFilters && (
-        <div className="orders-filters-panel" style={{ padding: '12px 28px', borderBottom: '1px solid var(--line)', background: 'var(--surface-2)', display: 'flex', gap: 16, alignItems: 'center', flexShrink: 0 }}>
-          <span style={{ fontSize: 12, color: 'var(--ink-3)', fontWeight: 500 }}>Fecha</span>
-          <div className="orders-date-filter" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <input type="date" className="input" value={fechaDesde} onChange={e => setFechaDesde(e.target.value)} style={{ height: 32, fontSize: 12, padding: '0 10px', width: 148 }} />
-            <span style={{ fontSize: 12, color: 'var(--ink-3)' }}>→</span>
-            <input type="date" className="input" value={fechaHasta} onChange={e => setFechaHasta(e.target.value)} style={{ height: 32, fontSize: 12, padding: '0 10px', width: 148 }} />
+        <div className="orders-filters-panel px-7 py-3 border-b border-[var(--line)] bg-[var(--surface-2)] flex gap-4 items-center shrink-0">
+          <span className="text-[12px] text-[var(--ink-3)] font-medium">Fecha</span>
+          <div className="orders-date-filter flex items-center gap-2">
+            <input type="date" className="input h-8 text-[12px] px-[10px] w-[148px]" value={fechaDesde} onChange={e => setFechaDesde(e.target.value)} />
+            <span className="text-[12px] text-[var(--ink-3)]">→</span>
+            <input type="date" className="input h-8 text-[12px] px-[10px] w-[148px]" value={fechaHasta} onChange={e => setFechaHasta(e.target.value)} />
           </div>
           {(fechaDesde || fechaHasta) && (
             <button className="btn btn-outline btn-sm" onClick={() => { setFechaDesde(''); setFechaHasta('') }}>Limpiar</button>
           )}
-          <span style={{ fontSize: 12, color: 'var(--ink-3)', marginLeft: 'auto' }}>{pedidosFiltrados.length} resultado{pedidosFiltrados.length !== 1 ? 's' : ''}</span>
+          <span className="text-[12px] text-[var(--ink-3)] ml-auto">{pedidosFiltrados.length} resultado{pedidosFiltrados.length !== 1 ? 's' : ''}</span>
         </div>
       )}
 
@@ -367,93 +371,122 @@ export default function PedidosClient({
         />
       )}
 
-      <div className="orders-content" style={{ flex: 1, overflowY: 'auto', padding: '20px 28px' }}>
+      <div className="orders-content flex-1 overflow-y-auto px-7 py-5">
         {pedidos.length === 0 ? (
-          <div className="card" style={{ padding: 40, textAlign: 'center', color: 'var(--ink-3)' }}>
+          <div className="card p-10 text-center text-[var(--ink-3)]">
             Sin pedidos todavía
           </div>
         ) : (
-          <div className="card orders-table-card" style={{
-            overflow: isCompact ? 'visible' : 'hidden',
-            display: isCompact ? 'grid' : undefined,
-            gap: isCompact ? 10 : undefined,
-            border: isCompact ? 'none' : undefined,
-            background: isCompact ? 'transparent' : undefined,
-            boxShadow: isCompact ? 'none' : undefined,
-          }}>
-            <div style={{ display: isCompact ? 'none' : 'grid', gridTemplateColumns: desktopColumns, padding: '10px 16px', borderBottom: '1px solid var(--line)', fontSize: 11, color: 'var(--ink-3)', textTransform: 'uppercase', letterSpacing: 0.04 }} className="mono orders-table-head">
+          <div
+            className={`card orders-table-card ${isCompact ? 'overflow-visible grid gap-[10px] border-0 bg-transparent shadow-none' : 'overflow-hidden'}`}
+          >
+            <div
+              className={`mono orders-table-head px-4 py-[10px] border-b border-[var(--line)] text-[11px] text-[var(--ink-3)] uppercase tracking-[0.04em] ${isCompact ? 'hidden' : 'grid'}`}
+              style={{ gridTemplateColumns: desktopColumns }}
+            >
               <div>Pedido</div><div>Cliente</div><div>Prenda</div><div>Talla</div><div>Drop</div><div>Monto</div><div>Fecha</div><div>Estado</div><div/>
             </div>
 
             {pedidosFiltrados.length === 0 ? (
-              <div style={{ padding: 32, textAlign: 'center', color: 'var(--ink-3)', fontSize: 13 }}>Sin resultados para ese rango de fechas</div>
+              <div className="p-8 text-center text-[var(--ink-3)] text-[13px]">Sin resultados para ese rango de fechas</div>
             ) : pedidosFiltrados.map((r, i) => (
-              <div className="orders-card-wrap" key={r.id} style={isCompact ? {
-                overflow: 'hidden',
-                border: '1px solid var(--line)',
-                borderRadius: 12,
-                background: 'var(--surface)',
-                boxShadow: 'var(--shadow-sm)',
-              } : undefined}>
+              <div
+                className={`orders-card-wrap ${isCompact ? 'overflow-hidden border border-[var(--line)] rounded-[12px] bg-[var(--surface)] shadow-[var(--shadow-sm)]' : ''}`}
+                key={r.id}
+              >
                 <div
-                  className="orders-row"
+                  className="orders-row grid items-center text-[12px] cursor-pointer"
                   onClick={() => setExpanded(e => e === r.numero ? null : r.numero)}
                   style={{
-                    display: 'grid',
                     gridTemplateColumns: isCompact ? 'minmax(0, 1fr) auto 28px' : desktopColumns,
                     gap: isCompact ? '5px 12px' : undefined,
                     padding: isCompact ? 14 : '12px 16px',
                     borderBottom: !isCompact && i < pedidosFiltrados.length - 1 ? '1px solid var(--line-2)' : 'none',
-                    alignItems: 'center',
-                    fontSize: 12,
-                    cursor: 'pointer',
                   }}
                 >
-                  <div className="mono tnum orders-number" style={{ fontWeight: 500, gridColumn: isCompact ? 1 : undefined, gridRow: isCompact ? 1 : undefined }}>{r.numero}</div>
-                  <div className="orders-client" style={{
-                    gridColumn: isCompact ? 1 : undefined,
-                    gridRow: isCompact ? 2 : undefined,
-                    minWidth: isCompact ? 0 : undefined,
-                    overflow: isCompact ? 'hidden' : undefined,
-                    textOverflow: isCompact ? 'ellipsis' : undefined,
-                    whiteSpace: isCompact ? 'nowrap' : undefined,
-                    fontWeight: isCompact ? 600 : undefined,
-                  }}>{r.comprador_nombre}</div>
-                  <div className="t-mute orders-product" style={{ gridColumn: isCompact ? 1 : undefined, gridRow: isCompact ? 3 : undefined, minWidth: isCompact ? 0 : undefined, overflowWrap: isCompact ? 'anywhere' : undefined }}>{prendaLabel(r.items)}</div>
-                  <div className="t-mute orders-size" style={{ gridColumn: isCompact ? 1 : undefined, gridRow: isCompact ? 4 : undefined, fontSize: isCompact ? 11 : undefined }}>
+                  <div
+                    className="mono tnum orders-number font-medium"
+                    style={{ gridColumn: isCompact ? 1 : undefined, gridRow: isCompact ? 1 : undefined }}
+                  >{r.numero}</div>
+                  <div
+                    className={`orders-client ${isCompact ? 'min-w-0 overflow-hidden text-ellipsis whitespace-nowrap font-semibold' : ''}`}
+                    style={{ gridColumn: isCompact ? 1 : undefined, gridRow: isCompact ? 2 : undefined }}
+                  >{r.comprador_nombre}</div>
+                  <div
+                    className={`t-mute orders-product ${isCompact ? 'min-w-0 break-words' : ''}`}
+                    style={{ gridColumn: isCompact ? 1 : undefined, gridRow: isCompact ? 3 : undefined }}
+                  >{prendaLabel(r.items)}</div>
+                  <div
+                    className={`t-mute orders-size ${isCompact ? 'text-[11px]' : ''}`}
+                    style={{ gridColumn: isCompact ? 1 : undefined, gridRow: isCompact ? 4 : undefined }}
+                  >
                     {isCompact ? `Talla: ${tallaLabel(r.items)}` : tallaLabel(r.items)}
                   </div>
-                  <div className="mono t-mute orders-drop" style={{ gridColumn: isCompact ? 1 : undefined, gridRow: isCompact ? 5 : undefined, fontSize: isCompact ? 11 : undefined }}>
+                  <div
+                    className={`mono t-mute orders-drop ${isCompact ? 'text-[11px]' : ''}`}
+                    style={{ gridColumn: isCompact ? 1 : undefined, gridRow: isCompact ? 5 : undefined }}
+                  >
                     {isCompact ? `Drop: ${dropLabel(r.drop)}` : dropLabel(r.drop)}
                   </div>
-                  <div className="mono tnum orders-amount" style={{ fontWeight: 500, gridColumn: isCompact ? 2 : undefined, gridRow: isCompact ? 1 : undefined, alignSelf: isCompact ? 'start' : undefined, whiteSpace: 'nowrap' }}>L {r.monto_total.toLocaleString()}</div>
-                  <div className="t-mute orders-date" style={{ gridColumn: isCompact ? 1 : undefined, gridRow: isCompact ? 6 : undefined, fontSize: isCompact ? 11 : undefined }}>
+                  <div
+                    className="mono tnum orders-amount font-medium whitespace-nowrap"
+                    style={{ gridColumn: isCompact ? 2 : undefined, gridRow: isCompact ? 1 : undefined, alignSelf: isCompact ? 'start' : undefined }}
+                  >L {r.monto_total.toLocaleString()}</div>
+                  <div
+                    className={`t-mute orders-date ${isCompact ? 'text-[11px]' : ''}`}
+                    style={{ gridColumn: isCompact ? 1 : undefined, gridRow: isCompact ? 6 : undefined }}
+                  >
                     {isCompact ? `Fecha: ${fmt(r.created_at)}` : fmt(r.created_at)}
                   </div>
-                  <div className="orders-status" style={{ gridColumn: isCompact ? '1 / 3' : undefined, gridRow: isCompact ? 7 : undefined, justifySelf: isCompact ? 'start' : undefined, paddingTop: isCompact ? 4 : undefined }}><span className={badgeClass(r.estado)}>{estadoLabel(r.estado)}</span></div>
-                  <div className="orders-expand-icon" style={{ gridColumn: isCompact ? 3 : undefined, gridRow: isCompact ? 1 : undefined, justifySelf: isCompact ? 'end' : undefined, alignSelf: isCompact ? 'start' : undefined, transform: expanded === r.numero ? 'rotate(90deg)' : 'none', transition: 'transform .15s', color: 'var(--ink-3)' }}>
+                  <div
+                    className="orders-status"
+                    style={{ gridColumn: isCompact ? '1 / 3' : undefined, gridRow: isCompact ? 7 : undefined, justifySelf: isCompact ? 'start' : undefined, paddingTop: isCompact ? 4 : undefined }}
+                  ><span className={badgeClass(r.estado)}>{estadoLabel(r.estado)}</span></div>
+                  <div
+                    className={`orders-expand-icon text-[var(--ink-3)] transition-transform duration-150 ${expanded === r.numero ? 'rotate-90' : ''}`}
+                    style={{ gridColumn: isCompact ? 3 : undefined, gridRow: isCompact ? 1 : undefined, justifySelf: isCompact ? 'end' : undefined, alignSelf: isCompact ? 'start' : undefined }}
+                  >
                     <Icons.arrow width={13} height={13}/>
                   </div>
                 </div>
 
                 {expanded === r.numero && (
-                  <div className="orders-expanded" style={{ padding: isCompact ? 14 : '18px 24px 22px', background: 'var(--surface-2)', borderTop: isCompact ? '1px solid var(--line)' : undefined, borderBottom: isCompact ? 'none' : '1px solid var(--line)' }}>
-                    <div className="orders-expanded-grid" style={{ display: 'grid', gridTemplateColumns: isCompact ? '1fr' : '1fr 1fr', gap: isCompact ? 18 : 24 }}>
+                  <div
+                    className={`orders-expanded bg-[var(--surface-2)] ${isCompact ? 'p-[14px] border-t border-[var(--line)]' : 'px-6 pt-[18px] pb-[22px] border-b border-[var(--line)]'}`}
+                  >
+                    {r.items.length > 0 && (
+                      <div className="mb-[18px]">
+                        <div className="mono t-mute text-[10px] uppercase tracking-[0.06em] mb-[10px]">Prendas</div>
+                        <div className="grid gap-[6px]">
+                          {r.items.map(item => (
+                            <div key={item.id} className="flex gap-[10px] items-center text-[12px]">
+                              <div className="flex-1 font-medium">{item.prenda?.nombre ?? '—'}{item.prenda?.marca ? ` · ${item.prenda.marca}` : ''}</div>
+                              <div className="mono t-mute whitespace-nowrap">{(item.talla_seleccionada ?? item.prenda?.talla) ? `T. ${item.talla_seleccionada ?? item.prenda?.talla}` : '—'}</div>
+                              <div className="mono tnum whitespace-nowrap font-medium">L {Number(item.precio).toLocaleString()}</div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                    <div
+                      className="orders-expanded-grid grid"
+                      style={{ gridTemplateColumns: isCompact ? '1fr' : '1fr 1fr', gap: isCompact ? 18 : 24 }}
+                    >
                       {/* Timeline */}
                       <div>
-                        <div className="mono t-mute" style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: 0.06, marginBottom: 10 }}>Timeline</div>
-                        <div style={{ display: 'grid', gap: 10 }}>
+                        <div className="mono t-mute text-[10px] uppercase tracking-[0.06em] mb-[10px]">Timeline</div>
+                        <div className="grid gap-[10px]">
                           {[
                             { t: 'Pagado',   d: r.pagado_at },
                             { t: 'Empacado', d: r.empacado_at },
                             { t: 'Enviado',  d: r.en_camino_at },
                           ].map(({ t, d }) => (
-                            <div key={t} style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
-                              <div style={{ width: 14, height: 14, borderRadius: 7, background: d ? 'var(--ink)' : '#fff', border: d ? 'none' : '1.5px solid var(--line)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                                {d && <Icons.check width={8} height={8} style={{ color: '#fff' }}/>}
+                            <div key={t} className="flex gap-[10px] items-center">
+                              <div className={`w-[14px] h-[14px] rounded-full flex items-center justify-center shrink-0 ${d ? 'bg-[var(--ink)]' : 'bg-white border-[1.5px] border-[var(--line)]'}`}>
+                                {d && <Icons.check width={8} height={8} className="text-white"/>}
                               </div>
-                              <div style={{ flex: 1, fontSize: 12, fontWeight: d ? 500 : 400, color: d ? 'var(--ink)' : 'var(--ink-3)' }}>{t}</div>
-                              <div className="mono t-mute" style={{ fontSize: 11 }}>{fmt(d)}</div>
+                              <div className={`flex-1 text-[12px] ${d ? 'font-medium text-[var(--ink)]' : 'font-normal text-[var(--ink-3)]'}`}>{t}</div>
+                              <div className="mono t-mute text-[11px]">{fmt(d)}</div>
                             </div>
                           ))}
                         </div>
@@ -461,8 +494,8 @@ export default function PedidosClient({
 
                       {/* Entrega */}
                       <div>
-                        <div className="mono t-mute" style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: 0.06, marginBottom: 10 }}>Entrega</div>
-                        <div style={{ fontSize: 12, lineHeight: 1.6 }}>
+                        <div className="mono t-mute text-[10px] uppercase tracking-[0.06em] mb-[10px]">Entrega</div>
+                        <div className="text-[12px] leading-[1.6]">
                           <div><span className="t-mute">WhatsApp:</span> <span className="mono">{r.comprador_telefono}</span></div>
                           {r.direccion && <div><span className="t-mute">Dirección:</span> {r.direccion}</div>}
                           <div><span className="t-mute">Método:</span> {metodoEnvioLabel(r)}</div>
@@ -473,22 +506,22 @@ export default function PedidosClient({
                             <div><span className="t-mute">Estado Boxful:</span> {r.envio_estado}</div>
                           )}
                           {(r.tracking_numero || r.envio_tracking_url) && (
-                            <div style={{ marginTop: 6 }}>
+                            <div className="mt-[6px]">
                               <span className="t-mute">Guía:</span>{' '}
                               {(r.envio_tracking_url ?? r.tracking_url)
-                                ? <a href={(r.envio_tracking_url ?? r.tracking_url)!} target="_blank" rel="noreferrer" className="mono" style={{ color: '#16a34a', fontWeight: 600 }}>{r.tracking_numero ?? 'Rastrear envío'}</a>
-                                : <span className="mono" style={{ fontWeight: 600 }}>{r.tracking_numero}</span>
+                                ? <a href={(r.envio_tracking_url ?? r.tracking_url)!} target="_blank" rel="noreferrer" className="mono text-[#16a34a] font-semibold">{r.tracking_numero ?? 'Rastrear envío'}</a>
+                                : <span className="mono font-semibold">{r.tracking_numero}</span>
                               }
                             </div>
                           )}
                           {r.envio_label_url && (
                             <div>
                               <span className="t-mute">Etiqueta:</span>{' '}
-                              <a href={r.envio_label_url} target="_blank" rel="noreferrer" style={{ color: 'var(--accent)', fontWeight: 600 }}>Abrir etiqueta</a>
+                              <a href={r.envio_label_url} target="_blank" rel="noreferrer" className="text-[var(--accent)] font-semibold">Abrir etiqueta</a>
                             </div>
                           )}
                         </div>
-                        <div className="orders-expanded-actions" style={{ display: 'flex', gap: 8, marginTop: 14, flexWrap: isCompact ? 'wrap' : undefined, alignItems: isCompact ? 'stretch' : undefined }}>
+                        <div className={`orders-expanded-actions flex gap-2 mt-[14px] ${isCompact ? 'flex-wrap items-stretch' : ''}`}>
                           {r.estado === 'por_verificar' ? (
                             <button
                               onClick={() => router.push('/comprobantes')}
@@ -526,24 +559,14 @@ export default function PedidosClient({
                             <button
                               onClick={(e) => { e.stopPropagation(); handleCancelar(r.id) }}
                               disabled={pending}
-                              className="btn btn-outline btn-sm"
-                              style={{ color: 'var(--urgent)', borderColor: '#fecaca' }}
+                              className="btn btn-outline btn-sm text-[var(--urgent)] border-[#fecaca]"
                             >
                               Cancelar
                             </button>
                           )}
                         </div>
                         {message?.pedidoId === r.id && (
-                          <div style={{
-                            marginTop: 10,
-                            padding: '9px 11px',
-                            borderRadius: 8,
-                            fontSize: 12,
-                            lineHeight: 1.45,
-                            color: message.tone === 'ok' ? '#065f46' : '#991b1b',
-                            background: message.tone === 'ok' ? '#ecfdf5' : '#fef2f2',
-                            border: `1px solid ${message.tone === 'ok' ? '#a7f3d0' : '#fecaca'}`,
-                          }}>
+                          <div className={`mt-[10px] px-[11px] py-[9px] rounded-lg text-[12px] leading-[1.45] ${message.tone === 'ok' ? 'text-[#065f46] bg-[#ecfdf5] border border-[#a7f3d0]' : 'text-[#991b1b] bg-[#fef2f2] border border-[#fecaca]'}`}>
                             {message.text}
                           </div>
                         )}

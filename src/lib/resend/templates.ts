@@ -94,12 +94,15 @@ export function emailPedidoConfirmado(opts: {
   metodoEnvio: string
   direccion?: string | null
   comprobanteSubido: boolean
+  pagoConfirmado?: boolean
   trackingUrl?: string | null
 }) {
-  const estadoLabel = opts.comprobanteSubido
+  const estadoLabel = opts.pagoConfirmado
+    ? 'Pagado'
+    : opts.comprobanteSubido
     ? 'Por verificar'
     : 'Apartado (48h)'
-  const estadoColor = opts.comprobanteSubido ? '#1d4ed8' : '#92400e'
+  const estadoColor = opts.pagoConfirmado ? '#166534' : opts.comprobanteSubido ? '#1d4ed8' : '#92400e'
 
   const content = `
     <h1 style="font-size:24px;font-weight:700;margin:0 0 4px;letter-spacing:-0.02em;color:#0a0a0a;">
@@ -134,7 +137,13 @@ export function emailPedidoConfirmado(opts: {
       : ''
     }
 
-    ${opts.comprobanteSubido
+    ${opts.pagoConfirmado
+      ? `<div style="background:#ecfdf5;border-radius:10px;padding:16px 20px;margin-bottom:20px;border-left:3px solid #22c55e;">
+          <p style="margin:0;font-size:14px;color:#166534;line-height:1.6;">
+            <strong>Pago confirmado.</strong> Tu pago con tarjeta fue procesado correctamente.
+          </p>
+        </div>`
+      : opts.comprobanteSubido
       ? `<div style="background:#eff6ff;border-radius:10px;padding:16px 20px;margin-bottom:20px;border-left:3px solid #3b82f6;">
           <p style="margin:0;font-size:14px;color:#1e40af;line-height:1.6;">
             <strong>Comprobante recibido.</strong> La tienda verificará tu pago y te notificaremos por email cuando esté confirmado.

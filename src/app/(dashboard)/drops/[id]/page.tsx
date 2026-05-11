@@ -179,33 +179,33 @@ function ModalAgregarPrenda({ dropId, tiendaId, onGuardado, onCerrar }: {
   }
 
   return (
-    <div onClick={onCerrar} style={{ position: 'fixed', inset: 0, background: 'rgba(15,20,25,0.45)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 400, padding: 24 }}>
-      <div onClick={e => e.stopPropagation()} style={{ width: '100%', maxWidth: 520, background: '#fff', borderRadius: 16, boxShadow: '0 30px 80px rgba(0,0,0,0.2)', display: 'flex', flexDirection: 'column', maxHeight: '90vh' }}>
-        <div style={{ padding: '18px 22px', borderBottom: '1px solid var(--line)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0 }}>
-          <div style={{ fontSize: 16, fontWeight: 600 }}>Agregar prenda</div>
-          <button onClick={onCerrar} style={{ color: 'var(--ink-3)' }}><Icons.close width={16} height={16}/></button>
+    <div onClick={onCerrar} className="fixed inset-0 bg-[rgba(15,20,25,0.45)] flex items-center justify-center z-[400] p-6">
+      <div onClick={e => e.stopPropagation()} className="w-full max-w-[520px] bg-white rounded-2xl shadow-[0_30px_80px_rgba(0,0,0,0.2)] flex flex-col max-h-[90vh]">
+        <div className="px-[22px] py-[18px] border-b border-[var(--line)] flex items-center justify-between shrink-0">
+          <div className="text-[16px] font-semibold">Agregar prenda</div>
+          <button onClick={onCerrar} className="text-[var(--ink-3)]"><Icons.close width={16} height={16}/></button>
         </div>
-        <div style={{ padding: '20px 22px', overflowY: 'auto', display: 'grid', gap: 14 }}>
+        <div className="px-[22px] py-5 overflow-y-auto grid gap-[14px]">
           <div>
             <label className="label">Foto</label>
-            <input ref={fotoRef} type="file" accept="image/jpeg,image/png,image/webp" style={{ display: 'none' }} onChange={handleFoto}/>
-            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+            <input ref={fotoRef} type="file" accept="image/jpeg,image/png,image/webp" className="hidden" onChange={handleFoto}/>
+            <div className="flex gap-2 flex-wrap">
               {fotos.map((url, i) => (
-                <div key={i} style={{ position: 'relative', width: 64, height: 64 }}>
+                <div key={i} className="relative w-16 h-16">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img loading="lazy" src={url} alt="" style={{ width: 64, height: 64, objectFit: 'cover', borderRadius: 8, display: 'block' }}/>
-                  <button onClick={() => setFotos(f => f.filter((_, j) => j !== i))} style={{ position: 'absolute', top: -6, right: -6, width: 18, height: 18, borderRadius: 9, background: '#111', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10 }}>×</button>
+                  <img loading="lazy" src={url} alt="" className="w-16 h-16 object-cover rounded-lg block"/>
+                  <button onClick={() => setFotos(f => f.filter((_, j) => j !== i))} className="absolute -top-[6px] -right-[6px] w-[18px] h-[18px] rounded-full bg-[#111] text-white flex items-center justify-center text-[10px]">×</button>
                 </div>
               ))}
               {fotos.length < 5 && (
-                <div onClick={() => fotoRef.current?.click()} style={{ width: 64, height: 64, border: '1.5px dashed var(--line)', borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', background: 'var(--surface-2)', flexDirection: 'column', gap: 4 }}>
-                  {uploading ? <Icons.upload width={16} height={16} style={{ color: 'var(--ink-3)', opacity: 0.4 }}/> : <Icons.upload width={16} height={16} style={{ color: 'var(--ink-3)' }}/>}
-                  <span style={{ fontSize: 9, color: 'var(--ink-3)' }}>{uploading ? 'Subiendo…' : 'Foto'}</span>
+                <div onClick={() => fotoRef.current?.click()} className="w-16 h-16 border-[1.5px] border-dashed border-[var(--line)] rounded-lg flex flex-col items-center justify-center cursor-pointer bg-[var(--surface-2)] gap-1">
+                  {uploading ? <Icons.upload width={16} height={16} className="text-[var(--ink-3)] opacity-40"/> : <Icons.upload width={16} height={16} className="text-[var(--ink-3)]"/>}
+                  <span className="text-[9px] text-[var(--ink-3)]">{uploading ? 'Subiendo…' : 'Foto'}</span>
                 </div>
               )}
             </div>
           </div>
-          <div className="drop-detail-form-grid-2" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+          <div className="drop-detail-form-grid-2 grid grid-cols-2 gap-3">
             <div>
               <label className="label">Nombre *</label>
               <input className="input" placeholder={productoPlaceholder} value={form.nombre} onChange={e => set('nombre', e.target.value)}/>
@@ -235,18 +235,18 @@ function ModalAgregarPrenda({ dropId, tiendaId, onGuardado, onCerrar }: {
               tipoNegocio={tipoNegocio}
               allowEmpty
             />
-            <div className="t-mute" style={{ fontSize: 11, marginTop: 6 }}>
+            <div className="t-mute text-[11px] mt-[6px]">
               {form.tallas.length > 0
                 ? `Total actual: ${totalPorTallas} unidad${totalPorTallas === 1 ? '' : 'es'}.`
                 : 'Si no lleva talla, usá la cantidad general.'}
             </div>
           </div>
-          <div className="drop-detail-form-grid-price" style={{ display: 'grid', gridTemplateColumns: form.tallas.length > 0 ? '1fr' : '1fr 120px', gap: 12 }}>
+          <div className="drop-detail-form-grid-price grid gap-3" style={{ gridTemplateColumns: form.tallas.length > 0 ? '1fr' : '1fr 120px' }}>
             <div>
               <label className="label">Precio (L) *</label>
-              <div style={{ position: 'relative' }}>
-                <span style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', fontSize: 14, fontWeight: 600, color: 'var(--ink-3)' }}>L</span>
-                <input className="input mono tnum" style={{ paddingLeft: 28 }} placeholder="0.00" type="number" min="0" step="0.01" value={form.precio} onChange={e => set('precio', e.target.value)}/>
+              <div className="relative">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[14px] font-semibold text-[var(--ink-3)]">L</span>
+                <input className="input mono tnum pl-7" placeholder="0.00" type="number" min="0" step="0.01" value={form.precio} onChange={e => set('precio', e.target.value)}/>
               </div>
             </div>
             {form.tallas.length === 0 && (
@@ -257,12 +257,12 @@ function ModalAgregarPrenda({ dropId, tiendaId, onGuardado, onCerrar }: {
             )}
           </div>
           <div>
-            <label className="label">Descripción <span className="t-mute" style={{ fontWeight: 400 }}>(opcional)</span></label>
-            <textarea className="input" style={{ height: 72, padding: 12, resize: 'none', fontSize: 13 }} placeholder="Color, estado, medidas…" value={form.descripcion} onChange={e => set('descripcion', e.target.value)}/>
+            <label className="label">Descripción <span className="t-mute font-normal">(opcional)</span></label>
+            <textarea className="input h-[72px] p-3 resize-none text-[13px]" placeholder="Color, estado, medidas…" value={form.descripcion} onChange={e => set('descripcion', e.target.value)}/>
           </div>
-          {error && <div style={{ padding: '10px 14px', background: '#fef2f2', border: '1px solid #fecaca', borderRadius: 8, fontSize: 13, color: 'var(--urgent)' }}>{error}</div>}
+          {error && <div className="px-[14px] py-[10px] bg-[#fef2f2] border border-[#fecaca] rounded-lg text-[13px] text-[var(--urgent)]">{error}</div>}
         </div>
-        <div className="drop-detail-modal-footer" style={{ padding: '14px 22px', borderTop: '1px solid var(--line)', display: 'flex', justifyContent: 'flex-end', gap: 8, flexShrink: 0 }}>
+        <div className="drop-detail-modal-footer px-[22px] py-[14px] border-t border-[var(--line)] flex justify-end gap-2 shrink-0">
           <button onClick={onCerrar} className="btn btn-outline">Cancelar</button>
           <button onClick={guardar} className="btn btn-primary" disabled={guardando}>{guardando ? 'Guardando…' : 'Agregar prenda'}</button>
         </div>
@@ -312,13 +312,13 @@ function ModalEditarTiempo({ drop, onGuardado, onCerrar }: {
   }
 
   return (
-    <div onClick={onCerrar} style={{ position: 'fixed', inset: 0, background: 'rgba(15,20,25,0.45)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 400, padding: 24 }}>
-      <div onClick={e => e.stopPropagation()} style={{ width: '100%', maxWidth: 360, background: '#fff', borderRadius: 16, boxShadow: '0 30px 80px rgba(0,0,0,0.2)' }}>
-        <div style={{ padding: '18px 22px', borderBottom: '1px solid var(--line)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <div style={{ fontSize: 16, fontWeight: 600 }}>Cambiar cierre del drop</div>
-          <button onClick={onCerrar} style={{ color: 'var(--ink-3)' }}><Icons.close width={16} height={16}/></button>
+    <div onClick={onCerrar} className="fixed inset-0 bg-[rgba(15,20,25,0.45)] flex items-center justify-center z-[400] p-6">
+      <div onClick={e => e.stopPropagation()} className="w-full max-w-[360px] bg-white rounded-2xl shadow-[0_30px_80px_rgba(0,0,0,0.2)]">
+        <div className="px-[22px] py-[18px] border-b border-[var(--line)] flex items-center justify-between">
+          <div className="text-[16px] font-semibold">Cambiar cierre del drop</div>
+          <button onClick={onCerrar} className="text-[var(--ink-3)]"><Icons.close width={16} height={16}/></button>
         </div>
-        <div style={{ padding: '20px 22px', display: 'grid', gap: 14 }}>
+        <div className="px-[22px] py-5 grid gap-[14px]">
           <div>
             <label className="label">Nueva fecha y hora de cierre</label>
             <input
@@ -329,9 +329,9 @@ function ModalEditarTiempo({ drop, onGuardado, onCerrar }: {
               onChange={e => setValor(e.target.value)}
             />
           </div>
-          {error && <div style={{ padding: '8px 12px', background: '#fef2f2', border: '1px solid #fecaca', borderRadius: 8, fontSize: 13, color: 'var(--urgent)' }}>{error}</div>}
+          {error && <div className="px-3 py-2 bg-[#fef2f2] border border-[#fecaca] rounded-lg text-[13px] text-[var(--urgent)]">{error}</div>}
         </div>
-        <div style={{ padding: '14px 22px', borderTop: '1px solid var(--line)', display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
+        <div className="px-[22px] py-[14px] border-t border-[var(--line)] flex justify-end gap-2">
           <button onClick={onCerrar} className="btn btn-outline btn-sm">Cancelar</button>
           <button onClick={guardar} className="btn btn-primary btn-sm" disabled={guardando}>
             {guardando ? 'Guardando…' : 'Confirmar'}
@@ -548,32 +548,32 @@ export default function DropDetallePage() {
 
   return (
     <>
-      <div className="drop-detail-shell" style={{ height: '100%', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+      <div className="drop-detail-shell h-full flex flex-col overflow-hidden">
         {/* Barra de estado */}
         {!loading && drop && (
-          <div style={{ height: 3, background: accentColor, flexShrink: 0, opacity: drop.estado === 'cerrado' ? 0.3 : 1 }}/>
+          <div className="h-[3px] shrink-0" style={{ background: accentColor, opacity: drop.estado === 'cerrado' ? 0.3 : 1 }}/>
         )}
-        <div className="drop-detail-header" style={{ padding: '18px 28px 14px', borderBottom: '1px solid var(--line)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 20, flexShrink: 0 }}>
-          <div className="drop-detail-title-wrap" style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-            <button onClick={() => router.push('/drops')} className="btn-ghost" style={{ color: 'var(--ink-3)' }}>
-              <Icons.arrow width={16} height={16} style={{ transform: 'rotate(180deg)' }}/>
+        <div className="drop-detail-header px-7 pt-[18px] pb-[14px] border-b border-[var(--line)] flex items-center justify-between gap-5 shrink-0">
+          <div className="drop-detail-title-wrap flex items-center gap-3">
+            <button onClick={() => router.push('/drops')} className="btn-ghost text-[var(--ink-3)]">
+              <Icons.arrow width={16} height={16} className="rotate-180"/>
             </button>
             <div>
-              <div className="drop-detail-title-row" style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                <div style={{ fontSize: 20, fontWeight: 600, letterSpacing: '-0.015em' }}>
+              <div className="drop-detail-title-row flex items-center gap-[10px]">
+                <div className="text-[20px] font-semibold tracking-[-0.015em]">
                   {loading ? 'Cargando…' : (drop?.nombre ?? 'Drop no encontrado')}
                 </div>
                 {!loading && drop && (
                   drop.estado === 'activo' ? (
-                    <span className="badge badge-live" style={{ fontSize: 12 }}><span className="dot"/>En vivo</span>
+                    <span className="badge badge-live text-[12px]"><span className="dot"/>En vivo</span>
                   ) : drop.estado === 'programado' ? (
-                    <span className="badge" style={{ fontSize: 12, background: '#eff6ff', color: '#3b82f6', borderColor: '#bfdbfe' }}>Programado</span>
+                    <span className="badge text-[12px] bg-[#eff6ff] text-[#3b82f6] border-[#bfdbfe]">Programado</span>
                   ) : (
-                    <span className="badge" style={{ fontSize: 12 }}>Cerrado</span>
+                    <span className="badge text-[12px]">Cerrado</span>
                   )
                 )}
               </div>
-              <div className="t-mute" style={{ fontSize: 13, marginTop: 3 }}>
+              <div className="t-mute text-[13px] mt-[3px]">
                 {!loading && drop && (
                   <>
                     {prendas.length} prendas · {totalUnidades} unidades
@@ -588,7 +588,7 @@ export default function DropDetallePage() {
               </div>
             </div>
           </div>
-          <div className="drop-detail-header-actions" style={{ display: 'flex', gap: 8 }}>
+          <div className="drop-detail-header-actions flex gap-2">
             <button
               className="drop-detail-public-btn btn btn-outline btn-sm"
               onClick={() => drop && tiendaUsername && router.push(`/${tiendaUsername}/drop/${drop.id}`)}
@@ -624,49 +624,48 @@ export default function DropDetallePage() {
           </div>
         </div>
 
-        <div className="drop-detail-content" style={{ flex: 1, overflowY: 'auto', padding: '20px 28px 28px' }}>
+        <div className="drop-detail-content flex-1 overflow-y-auto px-7 pt-5 pb-7">
           {!loading && drop?.estado === 'cerrado' && (
-            <div className="drop-detail-closed-card card" style={{ padding: 24, marginBottom: 20 }}>
-              <div style={{ textAlign: 'center', padding: '10px 0 22px', borderBottom: '1px solid var(--line)' }}>
-                <div className="mono t-mute" style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: 0 }}>Total recaudado</div>
-                <div className="tnum" style={{ fontSize: 56, lineHeight: 1.05, fontWeight: 800, marginTop: 8 }}>
+            <div className="drop-detail-closed-card card p-6 mb-5">
+              <div className="text-center pt-[10px] pb-[22px] border-b border-[var(--line)]">
+                <div className="mono t-mute text-[11px] uppercase tracking-[0]">Total recaudado</div>
+                <div className="tnum text-[56px] leading-[1.05] font-extrabold mt-2">
                   {dinero(drop.recaudado_total)}
                 </div>
                 {valorApartado > 0 && (
-                  <div className="t-mute" style={{ fontSize: 14, marginTop: 8 }}>
+                  <div className="t-mute text-[14px] mt-2">
                     + {dinero(valorApartado)} pendientes de apartados
                   </div>
                 )}
               </div>
 
-              <div className="drop-detail-closed-stats" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, padding: '20px 0', borderBottom: '1px solid var(--line)' }}>
+              <div className="drop-detail-closed-stats grid grid-cols-4 gap-3 py-5 border-b border-[var(--line)]">
                 {[
                   ['Vendidas', vendidas || (drop.vendidas_count ?? 0)],
                   ['Apartadas', apartadas],
                   ['Sin vender', sinVender],
                   ['Viewers únicas', drop.viewers_count ?? 0],
                 ].map(([label, value]) => (
-                  <div key={label} style={{ textAlign: 'center' }}>
-                    <div className="tnum" style={{ fontSize: 28, fontWeight: 700 }}>{value}</div>
-                    <div className="t-mute" style={{ fontSize: 12, marginTop: 2 }}>{label}</div>
+                  <div key={label} className="text-center">
+                    <div className="tnum text-[28px] font-bold">{value}</div>
+                    <div className="t-mute text-[12px] mt-[2px]">{label}</div>
                   </div>
                 ))}
               </div>
 
-              <div className="drop-detail-closed-actions" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12, paddingTop: 20 }}>
-                <button onClick={() => router.push('/pedidos')} className="btn btn-outline" style={{ height: 52, justifyContent: 'space-between', padding: '0 18px' }}>
+              <div className="drop-detail-closed-actions grid grid-cols-3 gap-3 pt-5">
+                <button onClick={() => router.push('/pedidos')} className="btn btn-outline h-[52px] justify-between px-[18px]">
                   <span><Icons.bag width={14} height={14}/> Ver pedidos</span>
                   <Icons.arrow width={14} height={14}/>
                 </button>
-                <button onClick={() => router.push('/comprobantes')} className="btn btn-outline" style={{ height: 52, justifyContent: 'space-between', padding: '0 18px' }}>
+                <button onClick={() => router.push('/comprobantes')} className="btn btn-outline h-[52px] justify-between px-[18px]">
                   <span><Icons.inbox width={14} height={14}/> Verificar</span>
                   <Icons.arrow width={14} height={14}/>
                 </button>
                 {tienePrendasParaMigrar && (
                   <button
                     onClick={migrarRemanentes}
-                    className="btn btn-primary"
-                    style={{ height: 52, justifyContent: 'space-between', padding: '0 18px' }}
+                    className="btn btn-primary h-[52px] justify-between px-[18px]"
                     disabled={migrando}
                   >
                     <span><Icons.box width={14} height={14}/> <span className="drop-detail-migrate-label">{migrando ? 'Migrando...' : 'Migrar a inventario'}</span></span>
@@ -677,7 +676,7 @@ export default function DropDetallePage() {
             </div>
           )}
 
-          <div className="drop-detail-stats-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, marginBottom: 24 }}>
+          <div className="drop-detail-stats-grid grid grid-cols-4 gap-3 mb-6">
             {[
               { label: 'Viendo ahora', value: drop?.estado === 'activo' ? liveViewerCount : (drop?.viewers_count ?? 0), icon: Icons.eye },
               { label: 'Vendidas', value: vendidas || (drop?.vendidas_count ?? 0), icon: Icons.bag },
@@ -686,13 +685,13 @@ export default function DropDetallePage() {
             ].map(s => {
               const Ic = s.icon;
               return (
-                <div key={s.label} style={{ padding: '14px 18px', background: '#fff', border: '1px solid var(--line)', borderRadius: 12, display: 'flex', alignItems: 'center', gap: 12 }}>
-                  <div style={{ width: 34, height: 34, borderRadius: 8, background: 'var(--surface-2)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <div key={s.label} className="px-[18px] py-[14px] bg-white border border-[var(--line)] rounded-xl flex items-center gap-3">
+                  <div className="w-[34px] h-[34px] rounded-lg bg-[var(--surface-2)] flex items-center justify-center">
                     <Ic width={15} height={15}/>
                   </div>
                   <div>
-                    <div className="mono t-mute" style={{ fontSize: 10, textTransform: 'uppercase' }}>{s.label}</div>
-                    <div className="tnum" style={{ fontSize: 20, fontWeight: 600, letterSpacing: '-0.02em' }}>{s.value}</div>
+                    <div className="mono t-mute text-[10px] uppercase">{s.label}</div>
+                    <div className="tnum text-[20px] font-semibold tracking-[-0.02em]">{s.value}</div>
                   </div>
                 </div>
               );
@@ -700,18 +699,13 @@ export default function DropDetallePage() {
           </div>
 
           {/* Tab switcher */}
-          <div className="drop-tabs-bar" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
-            <div style={{ display: 'flex', gap: 4, background: 'var(--surface-2)', borderRadius: 8, padding: 3 }}>
+          <div className="drop-tabs-bar flex items-center justify-between mb-3">
+            <div className="flex gap-1 bg-[var(--surface-2)] rounded-lg p-[3px]">
               {(['prendas', 'suscriptores'] as const).map(t => (
                 <button
                   key={t}
                   onClick={() => setTab(t)}
-                  style={{
-                    padding: '5px 14px', borderRadius: 6, fontSize: 13, fontWeight: 500, border: 'none', cursor: 'pointer',
-                    background: tab === t ? '#fff' : 'transparent',
-                    color: tab === t ? 'var(--ink)' : 'var(--ink-3)',
-                    boxShadow: tab === t ? '0 1px 3px rgba(0,0,0,0.08)' : 'none',
-                  }}
+                  className={`px-[14px] py-[5px] rounded-md text-[13px] font-medium border-0 cursor-pointer ${tab === t ? 'bg-white text-[var(--ink)] shadow-[0_1px_3px_rgba(0,0,0,0.08)]' : 'bg-transparent text-[var(--ink-3)]'}`}
                 >
                   {t === 'prendas' ? `Prendas (${prendas.length})` : `Suscriptores (${anotaciones.length})`}
                 </button>
@@ -723,7 +717,7 @@ export default function DropDetallePage() {
               </button>
             )}
             {tab === 'suscriptores' && anotaciones.length > 0 && (
-              <div style={{ display: 'flex', gap: 8 }}>
+              <div className="flex gap-2">
                 <button className="btn btn-outline btn-sm" onClick={copiarWhatsApp}>Copiar números WhatsApp</button>
                 <button className="btn btn-outline btn-sm" onClick={exportarSuscriptoresCSV}>Exportar CSV</button>
               </div>
@@ -731,16 +725,16 @@ export default function DropDetallePage() {
           </div>
 
           {tab === 'prendas' && (
-          <div className="drop-detail-products-card card" style={{ overflow: 'hidden' }}>
+          <div className="drop-detail-products-card card overflow-hidden">
             {loading ? (
-              <div style={{ padding: '24px 16px', textAlign: 'center', color: 'var(--ink-3)', fontSize: 13 }}>Cargando prendas…</div>
+              <div className="px-4 py-6 text-center text-[var(--ink-3)] text-[13px]">Cargando prendas…</div>
             ) : prendas.length === 0 ? (
-              <div style={{ padding: '40px 16px', textAlign: 'center' }}>
-                <div style={{ width: 44, height: 44, borderRadius: 22, background: 'var(--surface-2)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 12px' }}>
-                  <Icons.grid width={18} height={18} style={{ color: 'var(--ink-3)' }}/>
+              <div className="px-4 py-10 text-center">
+                <div className="w-11 h-11 rounded-full bg-[var(--surface-2)] flex items-center justify-center mx-auto mb-3">
+                  <Icons.grid width={18} height={18} className="text-[var(--ink-3)]"/>
                 </div>
-                <div style={{ fontSize: 13, fontWeight: 500, marginBottom: 6 }}>Sin prendas todavía</div>
-                <div className="t-mute" style={{ fontSize: 12, marginBottom: 16 }}>Agregá las prendas que van a estar en este drop.</div>
+                <div className="text-[13px] font-medium mb-[6px]">Sin prendas todavía</div>
+                <div className="t-mute text-[12px] mb-4">Agregá las prendas que van a estar en este drop.</div>
                 {drop?.estado !== 'cerrado' && (
                   <button className="btn btn-primary btn-sm" onClick={() => setModalAbierto(true)}>
                     <Icons.plus width={13} height={13}/> Agregar primera prenda
@@ -749,28 +743,28 @@ export default function DropDetallePage() {
               </div>
             ) : (
               <>
-                <div className="drop-detail-products-head mono" style={{ display: 'grid', gridTemplateColumns: '56px 1.5fr 1fr 80px 70px 120px 36px', padding: '10px 16px', borderBottom: '1px solid var(--line)', fontSize: 11, color: 'var(--ink-3)', textTransform: 'uppercase', letterSpacing: 0.04 }}>
+                <div className="drop-detail-products-head mono grid grid-cols-[56px_1.5fr_1fr_80px_70px_120px_36px] px-4 py-[10px] border-b border-[var(--line)] text-[11px] text-[var(--ink-3)] uppercase tracking-[0.04em]">
                   <div/><div>Prenda</div><div>Marca / Talla</div><div>Precio</div><div>Cant.</div><div>Estado</div><div/>
                 </div>
                 {prendas.map((p, i) => (
-                  <div key={p.id} className="drop-detail-product-row" style={{ display: 'grid', gridTemplateColumns: '56px 1.5fr 1fr 80px 70px 120px 36px', padding: '10px 16px', borderBottom: i < prendas.length - 1 ? '1px solid var(--line-2)' : 'none', alignItems: 'center', fontSize: 12 }}>
-                    <div className="drop-detail-product-thumb" style={{ width: 40, height: 40, borderRadius: 6, overflow: 'hidden', flexShrink: 0 }}>
+                  <div key={p.id} className={`drop-detail-product-row grid grid-cols-[56px_1.5fr_1fr_80px_70px_120px_36px] px-4 py-[10px] items-center text-[12px]${i < prendas.length - 1 ? ' border-b border-[var(--line-2)]' : ''}`}>
+                    <div className="drop-detail-product-thumb w-10 h-10 rounded-md overflow-hidden shrink-0">
                       {p.fotos?.[0] ? (
                         // eslint-disable-next-line @next/next/no-img-element
-                        <img loading="lazy" src={p.fotos[0]} alt="" style={{ width: 40, height: 40, objectFit: 'cover', display: 'block' }}/>
+                        <img loading="lazy" src={p.fotos[0]} alt="" className="w-10 h-10 object-cover block"/>
                       ) : (
                         <Ph tone={TONES[i % TONES.length]} radius={6}/>
                       )}
                     </div>
-                    <div className="drop-detail-product-name" style={{ fontWeight: 500 }}>{p.nombre}</div>
+                    <div className="drop-detail-product-name font-medium">{p.nombre}</div>
                     <div className="drop-detail-product-meta t-mute">{[p.marca, formatProductSizes(p)].filter(Boolean).join(' · ')}</div>
-                    <div className="drop-detail-product-price mono tnum" style={{ fontWeight: 500 }}>L {p.precio}</div>
-                    <div className="drop-detail-product-qty mono tnum" style={{ fontWeight: 600 }}>{getProductTotalQuantity(p)}</div>
+                    <div className="drop-detail-product-price mono tnum font-medium">L {p.precio}</div>
+                    <div className="drop-detail-product-qty mono tnum font-semibold">{getProductTotalQuantity(p)}</div>
                     <div className="drop-detail-product-status"><span className={`badge ${BADGE[p.estado] ?? ''}`}>{LABEL[p.estado] ?? p.estado}</span></div>
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
-                        <button className="drop-detail-product-menu btn-ghost" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                          <Icons.more width={13} height={13} style={{ color: 'var(--ink-3)' }}/>
+                        <button className="drop-detail-product-menu btn-ghost flex items-center justify-center">
+                          <Icons.more width={13} height={13} className="text-[var(--ink-3)]"/>
                         </button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
@@ -780,7 +774,7 @@ export default function DropDetallePage() {
                           </DropdownMenuItem>
                         )}
                         {p.estado === 'vendida' && (
-                          <DropdownMenuItem disabled style={{ opacity: 0.45, cursor: 'not-allowed' }}>
+                          <DropdownMenuItem disabled className="opacity-45 cursor-not-allowed">
                             <Icons.check width={14} height={14}/> Vendida · no modificable
                           </DropdownMenuItem>
                         )}
@@ -813,25 +807,25 @@ export default function DropDetallePage() {
           )}
 
           {tab === 'suscriptores' && (
-          <div className="drop-subs-card card" style={{ overflow: 'hidden' }}>
+          <div className="drop-subs-card card overflow-hidden">
             {loading ? (
-              <div style={{ padding: '24px 16px', textAlign: 'center', color: 'var(--ink-3)', fontSize: 13 }}>Cargando…</div>
+              <div className="px-4 py-6 text-center text-[var(--ink-3)] text-[13px]">Cargando…</div>
             ) : anotaciones.length === 0 ? (
-              <div style={{ padding: '40px 16px', textAlign: 'center' }}>
-                <div style={{ fontSize: 13, fontWeight: 500, marginBottom: 6 }}>Sin suscriptores todavía</div>
-                <div className="t-mute" style={{ fontSize: 12 }}>Cuando alguien se anote al drop aparecerá aquí.</div>
+              <div className="px-4 py-10 text-center">
+                <div className="text-[13px] font-medium mb-[6px]">Sin suscriptores todavía</div>
+                <div className="t-mute text-[12px]">Cuando alguien se anote al drop aparecerá aquí.</div>
               </div>
             ) : (
               <>
-                <div className="drop-subs-head mono" style={{ display: 'grid', gridTemplateColumns: '1.5fr 1fr 1.5fr 120px', padding: '10px 16px', borderBottom: '1px solid var(--line)', fontSize: 11, color: 'var(--ink-3)', textTransform: 'uppercase', letterSpacing: 0.04 }}>
+                <div className="drop-subs-head mono grid grid-cols-[1.5fr_1fr_1.5fr_120px] px-4 py-[10px] border-b border-[var(--line)] text-[11px] text-[var(--ink-3)] uppercase tracking-[0.04em]">
                   <div>Nombre</div><div>Teléfono</div><div>Email</div><div>Fecha</div>
                 </div>
                 {anotaciones.map((a, i) => (
-                  <div key={a.id} className="drop-subs-row" style={{ display: 'grid', gridTemplateColumns: '1.5fr 1fr 1.5fr 120px', padding: '10px 16px', borderBottom: i < anotaciones.length - 1 ? '1px solid var(--line-2)' : 'none', alignItems: 'center', fontSize: 13 }}>
-                    <div className="drop-subs-name" style={{ fontWeight: 500 }}>{[a.nombre, a.apellido].filter(Boolean).join(' ') || '—'}</div>
+                  <div key={a.id} className={`drop-subs-row grid grid-cols-[1.5fr_1fr_1.5fr_120px] px-4 py-[10px] items-center text-[13px]${i < anotaciones.length - 1 ? ' border-b border-[var(--line-2)]' : ''}`}>
+                    <div className="drop-subs-name font-medium">{[a.nombre, a.apellido].filter(Boolean).join(' ') || '—'}</div>
                     <div className="drop-subs-phone mono t-mute">{a.telefono || '—'}</div>
-                    <div className="drop-subs-email t-mute" style={{ fontSize: 12 }}>{a.email || '—'}</div>
-                    <div className="drop-subs-date mono t-mute" style={{ fontSize: 11 }}>
+                    <div className="drop-subs-email t-mute text-[12px]">{a.email || '—'}</div>
+                    <div className="drop-subs-date mono t-mute text-[11px]">
                       {a.created_at ? new Date(a.created_at).toLocaleDateString('es-HN', { day: '2-digit', month: 'short' }) : '—'}
                     </div>
                   </div>

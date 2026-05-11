@@ -30,19 +30,42 @@ export type CheckoutPrenda = {
   fotos: string[] | null;
 };
 
+export function CheckoutProcessingOverlay({ message, total }: { message: string; total?: number }) {
+  return (
+    <div className="absolute inset-0 z-20 bg-white/95 backdrop-blur-[2px] flex items-center justify-center px-6">
+      <div className="w-full max-w-[360px] text-center">
+        <div className="w-[54px] h-[54px] rounded-full border-[4px] border-[var(--line)] border-t-[var(--accent)] animate-spin mx-auto mb-5" />
+        <div className="text-[22px] font-bold tracking-[-0.02em] mb-2">Procesando compra</div>
+        <div className="text-[14px] text-[var(--ink-2)] leading-[1.55] mb-5">
+          {message}
+        </div>
+        {typeof total === 'number' && (
+          <div className="inline-flex items-baseline gap-[4px] rounded-[999px] bg-[var(--surface-2)] px-4 py-2">
+            <span className="text-[11px] text-[var(--ink-3)]">{PLATFORM.currency}</span>
+            <span className="mono tnum text-[18px] font-extrabold">{formatCurrency(total)}</span>
+          </div>
+        )}
+        <div className="mt-5 text-[12px] text-[var(--ink-3)]">
+          No cerrés esta ventana ni presionés atrás.
+        </div>
+      </div>
+    </div>
+  );
+}
+
 /* ──────── RESUMEN DE LÍNEAS ──────── */
 export function ResumenLineas({ precio, costoEnvio, total }: { precio: number; costoEnvio: number; total: number }) {
   return (
     <>
-      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, color: 'var(--ink-2)', marginBottom: 6 }}>
+      <div className="flex justify-between text-[13px] text-[var(--ink-2)] mb-[6px]">
         <span>Subtotal</span><span className="mono tnum">{formatCurrency(precio)}</span>
       </div>
-      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, color: 'var(--ink-2)', marginBottom: 8 }}>
+      <div className="flex justify-between text-[13px] text-[var(--ink-2)] mb-2">
         <span>Envío</span><span className="mono tnum">{formatCurrencyFree(costoEnvio)}</span>
       </div>
-      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 15, fontWeight: 700 }}>
+      <div className="flex justify-between text-[15px] font-bold">
         <span>Total</span>
-        <span><span style={{ fontSize: 11, color: 'var(--ink-3)', marginRight: 3 }}>{PLATFORM.currency}</span><span className="mono tnum">{formatCurrency(total)}</span></span>
+        <span><span className="text-[11px] text-[var(--ink-3)] mr-[3px]">{PLATFORM.currency}</span><span className="mono tnum">{formatCurrency(total)}</span></span>
       </div>
     </>
   );
@@ -56,20 +79,20 @@ function PrendaSummary({ prenda, tallaSeleccionada, costoEnvio, total }: {
   total: number;
 }) {
   return (
-    <div className="buyer-checkout-summary" style={{ background: 'var(--surface-2)', borderRadius: 12, padding: '14px 16px', marginBottom: 24 }}>
-      <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
-        <div style={{ width: 56, height: 70, borderRadius: 8, overflow: 'hidden', flexShrink: 0, position: 'relative' }}>
+    <div className="buyer-checkout-summary bg-[var(--surface-2)] rounded-[12px] px-4 py-[14px] mb-6">
+      <div className="flex gap-3 items-center">
+        <div className="w-14 h-[70px] rounded-[8px] overflow-hidden shrink-0 relative">
           {prenda.fotos?.[0]
-            ? <Image src={prenda.fotos[0]} alt="" fill sizes="56px" style={{ objectFit: 'cover' }} />
+            ? <Image src={prenda.fotos[0]} alt="" fill sizes="56px" className="object-cover" />
             : <Ph tone="rose" aspect="4/5" radius={0} />}
         </div>
-        <div style={{ flex: 1 }}>
-          <div style={{ fontSize: 14, fontWeight: 600 }}>{prenda.nombre}</div>
-          <div style={{ fontSize: 12, color: 'var(--ink-3)' }}>{prenda.marca}{tallaSeleccionada ? ` · Talla ${tallaSeleccionada}` : ''}</div>
+        <div className="flex-1">
+          <div className="text-[14px] font-semibold">{prenda.nombre}</div>
+          <div className="text-[12px] text-[var(--ink-3)]">{prenda.marca}{tallaSeleccionada ? ` · Talla ${tallaSeleccionada}` : ''}</div>
         </div>
-        <div className="mono tnum" style={{ fontSize: 15, fontWeight: 700 }}>{formatCurrency(prenda.precio)}</div>
+        <div className="mono tnum text-[15px] font-bold">{formatCurrency(prenda.precio)}</div>
       </div>
-      <hr style={{ border: 'none', borderTop: '1px solid var(--line)', margin: '12px 0' }} />
+      <hr className="border-none border-t border-[var(--line)] my-3" />
       <ResumenLineas precio={prenda.precio} costoEnvio={costoEnvio} total={total} />
     </div>
   );
@@ -149,8 +172,8 @@ export function BoxfulAddressFields({ originCity, itemsCount, subtotal, onBoxful
   }, [boxfulStateId, boxfulCityId]);
 
   return (
-    <div style={{ display: 'grid', gap: 12 }}>
-      <div className="buyer-checkout-two-col" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+    <div className="grid gap-3">
+      <div className="buyer-checkout-two-col grid grid-cols-2 gap-3">
         <div>
           <label className="label">Departamento</label>
           <select className="input input-lg" value={boxfulStateId}
@@ -175,21 +198,21 @@ export function BoxfulAddressFields({ originCity, itemsCount, subtotal, onBoxful
           </select>
         </div>
       </div>
-      {boxfulQuoteLoading && <div style={{ fontSize: 12, color: 'var(--ink-3)' }}>Calculando envío...</div>}
+      {boxfulQuoteLoading && <div className="text-[12px] text-[var(--ink-3)]">Calculando envío...</div>}
       {boxfulQuote && (
-        <div style={{ border: '1px solid var(--line)', borderRadius: 10, padding: '10px 12px', background: 'var(--surface-2)' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, fontSize: 12 }}>
-            <span style={{ fontWeight: 700 }}>{boxfulQuote.courierName}</span>
-            <span className="mono tnum" style={{ fontWeight: 700 }}>{formatCurrency(boxfulQuote.price)}</span>
+        <div className="border border-[var(--line)] rounded-[10px] px-3 py-[10px] bg-[var(--surface-2)]">
+          <div className="flex justify-between gap-3 text-[12px]">
+            <span className="font-bold">{boxfulQuote.courierName}</span>
+            <span className="mono tnum font-bold">{formatCurrency(boxfulQuote.price)}</span>
           </div>
-          <div style={{ fontSize: 11, color: 'var(--ink-3)', marginTop: 3 }}>
+          <div className="text-[11px] text-[var(--ink-3)] mt-[3px]">
             {boxfulQuote.estimatedDelivery}
             {boxfulQuote.source === 'local_estimate' ? ' · Estimado local' : ' · Cotización Boxful'}
           </div>
-          {boxfulQuote.note && <div style={{ fontSize: 11, color: 'var(--ink-3)', marginTop: 3 }}>{boxfulQuote.note}</div>}
+          {boxfulQuote.note && <div className="text-[11px] text-[var(--ink-3)] mt-[3px]">{boxfulQuote.note}</div>}
         </div>
       )}
-      {boxfulQuoteError && <div style={{ fontSize: 12, color: 'var(--urgent)' }}>{boxfulQuoteError}</div>}
+      {boxfulQuoteError && <div className="text-[12px] text-[var(--urgent)]">{boxfulQuoteError}</div>}
     </div>
   );
 }
@@ -208,36 +231,41 @@ export function ShippingSelector({ metodosEnvio, metodoEnvioId, boxfulQuote, box
     : boxfulQuoteLoading ? 'Calculando...' : '—';
 
   return (
-    <div style={{ display: 'grid', gap: 10 }}>
+    <div className="grid gap-[10px]">
       {/* Boxful */}
-      <div onClick={() => onChange(BOXFUL_ID)}
-        style={{ padding: '14px 16px', border: `1.5px solid ${isBoxfulSelected ? 'var(--ink)' : 'var(--line)'}`, borderRadius: 12, cursor: 'pointer', background: '#fff' }}>
-        <div style={{ display: 'flex', alignItems: 'flex-start', gap: 14 }}>
+      <div
+        onClick={() => onChange(BOXFUL_ID)}
+        className={`px-4 py-[14px] rounded-[12px] cursor-pointer bg-white border-[1.5px] ${isBoxfulSelected ? 'border-[var(--ink)]' : 'border-[var(--line)]'}`}
+      >
+        <div className="flex items-start gap-[14px]">
           <input type="radio" name="envio" checked={isBoxfulSelected} onChange={() => onChange(BOXFUL_ID)}
-            style={{ marginTop: 3, accentColor: 'var(--ink)', width: 16, height: 16, flexShrink: 0 }} />
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12 }}>
-              <div style={{ fontSize: 14, fontWeight: 700 }}>Envío con Boxful</div>
-              <div className="mono tnum" style={{ fontSize: 14, fontWeight: 700, whiteSpace: 'nowrap' }}>
+            className="mt-[3px] w-4 h-4 shrink-0 accent-[var(--ink)]" />
+          <div className="flex-1 min-w-0">
+            <div className="flex justify-between gap-3">
+              <div className="text-[14px] font-bold">Envío con Boxful</div>
+              <div className="mono tnum text-[14px] font-bold whitespace-nowrap">
                 {isBoxfulSelected ? boxfulResumen : '—'}
               </div>
             </div>
-            <div style={{ fontSize: 12, color: 'var(--ink-3)', marginTop: 2 }}>Envíos a todo Honduras con seguimiento.</div>
+            <div className="text-[12px] text-[var(--ink-3)] mt-[2px]">Envíos a todo Honduras con seguimiento.</div>
           </div>
         </div>
       </div>
       {/* Métodos manuales de la tienda */}
       {metodosEnvio.map(m => (
-        <label key={m.id} style={{ display: 'flex', alignItems: 'flex-start', gap: 14, padding: '14px 16px', border: `1.5px solid ${metodoEnvioId === m.id ? 'var(--ink)' : 'var(--line)'}`, borderRadius: 12, cursor: 'pointer', background: '#fff', transition: 'border-color .12s' }}>
+        <label
+          key={m.id}
+          className={`flex items-start gap-[14px] px-4 py-[14px] rounded-[12px] cursor-pointer bg-white transition-[border-color] duration-[120ms] border-[1.5px] ${metodoEnvioId === m.id ? 'border-[var(--ink)]' : 'border-[var(--line)]'}`}
+        >
           <input type="radio" name="envio" checked={metodoEnvioId === m.id} onChange={() => onChange(m.id)}
-            style={{ marginTop: 3, accentColor: 'var(--ink)', width: 16, height: 16, flexShrink: 0 }} />
-          <div style={{ flex: 1 }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-              <div style={{ fontSize: 14, fontWeight: 600 }}>{m.nombre}</div>
-              <div className="mono tnum" style={{ fontSize: 14, fontWeight: 600 }}>{formatCurrencyFree(m.precio)}</div>
+            className="mt-[3px] w-4 h-4 shrink-0 accent-[var(--ink)]" />
+          <div className="flex-1">
+            <div className="flex justify-between">
+              <div className="text-[14px] font-semibold">{m.nombre}</div>
+              <div className="mono tnum text-[14px] font-semibold">{formatCurrencyFree(m.precio)}</div>
             </div>
-            <div style={{ fontSize: 12, color: 'var(--ink-3)', marginTop: 2 }}>{m.proveedor} · {m.tiempo_estimado}</div>
-            <div style={{ fontSize: 12, color: 'var(--ink-3)' }}>{m.cobertura}</div>
+            <div className="text-[12px] text-[var(--ink-3)] mt-[2px]">{m.proveedor} · {m.tiempo_estimado}</div>
+            <div className="text-[12px] text-[var(--ink-3)]">{m.cobertura}</div>
           </div>
         </label>
       ))}
@@ -264,50 +292,50 @@ export function EnvioPanel({ prenda, tallaSeleccionada, nombre, email, whatsapp,
   onCerrar: () => void;
 }) {
   return (
-    <div className="buyer-checkout-panel" style={{ padding: '24px 28px' }}>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24 }}>
+    <div className="buyer-checkout-panel px-7 py-6">
+      <div className="flex items-center justify-between mb-6">
         <div>
-          <div style={{ fontSize: 11, color: 'var(--ink-3)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 2 }}>PASO 1 DE 2</div>
-          <div style={{ fontSize: 20, fontWeight: 700, letterSpacing: '-0.02em' }}>Envío</div>
+          <div className="text-[11px] text-[var(--ink-3)] uppercase tracking-[0.06em] mb-[2px]">PASO 1 DE 2</div>
+          <div className="text-[20px] font-bold tracking-[-0.02em]">Envío</div>
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+        <div className="flex items-center gap-3">
           {dropTarget != null && (
-            <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, color: 'var(--urgent)', fontWeight: 600 }}>
+            <div className="flex items-center gap-[6px] text-[12px] text-[var(--urgent)] font-semibold">
               <Icons.clock width={13} height={13} />
               <CountdownTimer target={dropTarget} size="sm" urgent />
             </div>
           )}
-          <button onClick={onCerrar} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--ink-3)', display: 'flex' }}>
+          <button onClick={onCerrar} className="bg-none border-none cursor-pointer text-[var(--ink-3)] flex">
             <Icons.close width={20} height={20} />
           </button>
         </div>
       </div>
-      <div style={{ height: 2, background: 'var(--line)', borderRadius: 2, marginBottom: 28 }}>
-        <div style={{ height: '100%', width: '50%', background: 'var(--ink)', borderRadius: 2 }} />
+      <div className="h-[2px] bg-[var(--line)] rounded-[2px] mb-7">
+        <div className="h-full w-1/2 bg-[var(--ink)] rounded-[2px]" />
       </div>
       <PrendaSummary prenda={prenda} tallaSeleccionada={tallaSeleccionada} costoEnvio={costoEnvio} total={total} />
       <BuyerCheckoutAccess buyer={buyer} onBuyer={onBuyer} />
-      <div style={{ marginBottom: 14 }}>
+      <div className="mb-[14px]">
         <label className="label">Nombre completo</label>
         <input className="input input-lg" placeholder="Karla Morales" value={nombre} onChange={e => onChange('nombre', e.target.value)} />
       </div>
-      <div style={{ marginBottom: 14 }}>
+      <div className="mb-[14px]">
         <label className="label">WhatsApp</label>
         <PhoneInput value={whatsapp} onChange={v => onChange('whatsapp', v)} size="lg" />
       </div>
-      <div style={{ marginBottom: 6 }}>
+      <div className="mb-[6px]">
         <label className="label">
-          Email <span style={{ fontSize: 11, color: 'var(--ink-3)', fontWeight: 400 }}>(opcional — para recibir notificaciones)</span>
+          Email <span className="text-[11px] text-[var(--ink-3)] font-normal">(opcional — para recibir notificaciones)</span>
         </label>
         <input className="input input-lg" type="email" placeholder="karla@email.com" value={email} onChange={e => onChange('email', e.target.value)} />
       </div>
-      <div style={{ fontSize: 12, color: 'var(--ink-3)', marginBottom: 20 }}>Te avisamos por WhatsApp y email cuando salga tu pedido</div>
-      <div style={{ marginBottom: 14 }}>
+      <div className="text-[12px] text-[var(--ink-3)] mb-5">Te avisamos por WhatsApp y email cuando salga tu pedido</div>
+      <div className="mb-[14px]">
         <label className="label">Dirección</label>
         <input className="input input-lg" placeholder="Col. Kennedy, Calle 5, Casa 12" value={direccion} onChange={e => onChange('direccion', e.target.value)} />
       </div>
       {metodoEnvioId === BOXFUL_ID ? (
-        <div style={{ marginBottom: 24 }}>
+        <div className="mb-6">
           <BoxfulAddressFields
             originCity={boxfulOriginCity}
             itemsCount={1}
@@ -317,18 +345,18 @@ export function EnvioPanel({ prenda, tallaSeleccionada, nombre, email, whatsapp,
           />
         </div>
       ) : (
-        <div className="buyer-checkout-two-col" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 24 }}>
+        <div className="buyer-checkout-two-col grid grid-cols-2 gap-3 mb-6">
           <div>
             <label className="label">Ciudad</label>
             <input className="input input-lg" placeholder={PLATFORM.defaultCity} value={ciudad} onChange={e => onChange('ciudad', e.target.value)} />
           </div>
           <div>
             <label className="label">País</label>
-            <input className="input input-lg" value={PLATFORM.country} readOnly style={{ background: 'var(--surface-2)', color: 'var(--ink-3)' }} />
+            <input className="input input-lg bg-[var(--surface-2)] text-[var(--ink-3)]" value={PLATFORM.country} readOnly />
           </div>
         </div>
       )}
-      <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 12 }}>Método de envío</div>
+      <div className="text-[14px] font-semibold mb-3">Método de envío</div>
       <ShippingSelector
         metodosEnvio={metodosEnvio}
         metodoEnvioId={metodoEnvioId}
@@ -338,9 +366,9 @@ export function EnvioPanel({ prenda, tallaSeleccionada, nombre, email, whatsapp,
           if (id !== BOXFUL_ID) onBoxfulChange?.({ isBoxful: false, quote: null, destination: null, mode: 'boxful_dropoff' });
         }}
       />
-      <div style={{ height: 24 }} />
-      {errorMsg && <div style={{ marginBottom: 12 }}><Alert type="error" message={errorMsg} /></div>}
-      <button className="btn btn-primary btn-block" style={{ height: 52, fontSize: 15 }} onClick={onContinuar}>
+      <div className="h-6" />
+      {errorMsg && <div className="mb-3"><Alert type="error" message={errorMsg} /></div>}
+      <button className="btn btn-primary btn-block h-[52px] text-[15px]" onClick={onContinuar}>
         Continuar al pago <Icons.arrow width={15} height={15} />
       </button>
     </div>
@@ -348,15 +376,19 @@ export function EnvioPanel({ prenda, tallaSeleccionada, nombre, email, whatsapp,
 }
 
 /* ──────── PANEL PAGO ──────── */
-export function PagoPanel({ prenda, tallaSeleccionada, metodosPago, metodoPagoId, tiendaEmail, costoEnvio, total, dropTarget, uploading, comprobanteUrl, errorMsg, loading, fileRef, compradorNombre, onChange, onSubirComprobante, onConfirmar, onVolver }: {
+export type CardData = { number: string; holder: string; expireMonth: string; expireYear: string; cvv: string; billingAddress: string; billingCity: string; billingState: string; billingPhone: string };
+
+export function PagoPanel({ prenda, tallaSeleccionada, metodosPago, metodoPagoId, tiendaEmail, costoEnvio, total, dropTarget, uploading, comprobanteUrl, errorMsg, loading, processingMessage, fileRef, compradorNombre, cardData, onCardChange, onChange, onSubirComprobante, onConfirmar, onVolver }: {
   prenda: CheckoutPrenda;
   tallaSeleccionada: string | null;
   metodosPago: MetodoPago[];
   metodoPagoId: string; tiendaEmail: string; costoEnvio: number; total: number;
   dropTarget?: number;
-  uploading: boolean; comprobanteUrl: string | null; errorMsg: string; loading: boolean;
+  uploading: boolean; comprobanteUrl: string | null; errorMsg: string; loading: boolean; processingMessage?: string;
   fileRef: React.RefObject<HTMLInputElement | null>;
   compradorNombre?: string;
+  cardData?: CardData;
+  onCardChange?: (field: keyof CardData, value: string) => void;
   onChange: (f: string, v: string) => void;
   onSubirComprobante: (file: File) => void;
   onConfirmar: () => void;
@@ -364,90 +396,129 @@ export function PagoPanel({ prenda, tallaSeleccionada, metodosPago, metodoPagoId
 }) {
   const metodoPago = metodosPago.find(m => m.id === metodoPagoId);
   const esTransferencia = metodoPago?.tipo === 'transferencia';
+  const esPixelPay = metodoPago?.tipo === 'tarjeta' && metodoPago?.proveedor?.toLowerCase().includes('pixelpay');
   const refPedido = compradorNombre ? compradorNombre.trim().split(' ').slice(0, 2).join(' ') : 'tu nombre completo';
 
   return (
-    <div className="buyer-checkout-panel" style={{ padding: '24px 28px' }}>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <button onClick={onVolver} style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex', color: 'var(--ink-3)' }}>
+    <div className="buyer-checkout-panel relative min-h-screen px-7 py-6">
+      {loading && (
+        <CheckoutProcessingOverlay
+          message={processingMessage ?? 'Estamos validando tu pedido y confirmando la compra.'}
+          total={total}
+        />
+      )}
+      <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center gap-[10px]">
+          <button onClick={onVolver} disabled={loading} className="bg-none border-none cursor-pointer flex text-[var(--ink-3)] disabled:opacity-40">
             <Icons.back width={20} height={20} />
           </button>
           <div>
-            <div style={{ fontSize: 11, color: 'var(--ink-3)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 2 }}>PASO 2 DE 2</div>
-            <div style={{ fontSize: 20, fontWeight: 700, letterSpacing: '-0.02em' }}>Pago</div>
+            <div className="text-[11px] text-[var(--ink-3)] uppercase tracking-[0.06em] mb-[2px]">PASO 2 DE 2</div>
+            <div className="text-[20px] font-bold tracking-[-0.02em]">Pago</div>
           </div>
         </div>
         {dropTarget != null && (
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, color: 'var(--urgent)', fontWeight: 600 }}>
+          <div className="flex items-center gap-[6px] text-[12px] text-[var(--urgent)] font-semibold">
             <Icons.clock width={13} height={13} />
             <CountdownTimer target={dropTarget} size="sm" urgent />
           </div>
         )}
       </div>
-      <div style={{ height: 2, background: 'var(--line)', borderRadius: 2, marginBottom: 28 }}>
-        <div style={{ height: '100%', width: '100%', background: 'var(--ink)', borderRadius: 2 }} />
+      <div className="h-[2px] bg-[var(--line)] rounded-[2px] mb-7">
+        <div className="h-full w-full bg-[var(--ink)] rounded-[2px]" />
       </div>
       <PrendaSummary prenda={prenda} tallaSeleccionada={tallaSeleccionada} costoEnvio={costoEnvio} total={total} />
-      <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 12 }}>Método de pago</div>
-      <div style={{ display: 'grid', gap: 10, marginBottom: 20 }}>
-        {metodosPago.map(m => (
-          <label key={m.id} style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '14px 16px', border: `1.5px solid ${metodoPagoId === m.id ? 'var(--ink)' : 'var(--line)'}`, borderRadius: 12, cursor: 'pointer', background: '#fff', transition: 'border-color .12s' }}>
-            <div style={{ width: 36, height: 36, borderRadius: 8, background: 'var(--surface-2)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-              <Icons.bank width={18} height={18} />
-            </div>
-            <div style={{ flex: 1 }}>
-              <div style={{ fontSize: 14, fontWeight: 600 }}>{m.proveedor}</div>
-              {m.detalle && <div style={{ fontSize: 12, color: 'var(--ink-3)' }}>{m.detalle}</div>}
-            </div>
-            <input type="radio" name="pago" checked={metodoPagoId === m.id} onChange={() => onChange('metodoPagoId', m.id)} style={{ accentColor: 'var(--ink)', width: 16, height: 16 }} />
-          </label>
-        ))}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '14px 16px', border: '1.5px solid var(--line)', borderRadius: 12, background: 'var(--surface-2)', opacity: 0.6, cursor: 'not-allowed' }}>
-          <div style={{ width: 36, height: 36, borderRadius: 8, background: '#e8e8e8', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-            <Icons.card width={18} height={18} />
-          </div>
-          <div style={{ flex: 1 }}>
-            <div style={{ fontSize: 14, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 8 }}>
-              Pagar con tarjeta
-              <span style={{ fontSize: 10, fontWeight: 600, background: 'var(--ink-3)', color: '#fff', padding: '2px 7px', borderRadius: 20, letterSpacing: '0.04em' }}>Próximamente</span>
-            </div>
-            <div style={{ fontSize: 12, color: 'var(--ink-3)' }}>Visa · Mastercard</div>
-          </div>
-          <input type="radio" name="pago" disabled style={{ accentColor: 'var(--ink)', width: 16, height: 16 }} />
-        </div>
+      <div className="text-[14px] font-semibold mb-3">Método de pago</div>
+      <div className="grid gap-[10px] mb-5">
+        {metodosPago.map(m => {
+          const esTarjeta = m.tipo === 'tarjeta';
+          const Ic = esTarjeta ? Icons.card : Icons.bank;
+          return (
+            <label
+              key={m.id}
+              className={`flex items-center gap-[14px] px-4 py-[14px] rounded-[12px] cursor-pointer bg-white transition-[border-color] duration-[120ms] border-[1.5px] ${metodoPagoId === m.id ? 'border-[var(--ink)]' : 'border-[var(--line)]'}`}
+            >
+              <div className="w-9 h-9 rounded-[8px] bg-[var(--surface-2)] flex items-center justify-center shrink-0">
+                <Ic width={18} height={18} />
+              </div>
+              <div className="flex-1">
+                <div className="text-[14px] font-semibold">{m.nombre ?? m.proveedor}</div>
+                {esTarjeta ? (
+                  <div className="text-[12px] text-[var(--ink-3)]">Visa · Mastercard</div>
+                ) : (
+                  m.detalle && <div className="text-[12px] text-[var(--ink-3)]">{m.detalle}</div>
+                )}
+              </div>
+              <input type="radio" name="pago" checked={metodoPagoId === m.id} disabled={loading} onChange={() => onChange('metodoPagoId', m.id)} className="accent-[var(--ink)] w-4 h-4" />
+            </label>
+          );
+        })}
       </div>
+      {esPixelPay && cardData && onCardChange && (
+        <div className="mt-4 mb-4 border border-[var(--line)] rounded-[14px] p-4 grid gap-3 bg-[var(--surface-2)]">
+          <div className="text-[13px] font-semibold text-[var(--ink-2)] mb-[2px]">Datos de la tarjeta</div>
+          <div>
+            <label className="label">Número de tarjeta</label>
+            <input className="input input-lg mono tnum" placeholder="4111 1111 1111 1111" maxLength={19} inputMode="numeric"
+              value={cardData.number}
+              onChange={e => { const v = e.target.value.replace(/\D/g, '').slice(0, 16); onCardChange('number', v.replace(/(.{4})/g, '$1 ').trim()); }} />
+          </div>
+          <div>
+            <label className="label">Nombre en la tarjeta</label>
+            <input className="input input-lg" placeholder="KARLA MORALES" value={cardData.holder}
+              onChange={e => onCardChange('holder', e.target.value.toUpperCase())} />
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="label">Vence (MM/AA)</label>
+              <input className="input input-lg mono tnum" placeholder="12/28" maxLength={5} inputMode="numeric"
+                value={cardData.expireMonth && cardData.expireYear ? `${cardData.expireMonth}/${cardData.expireYear}` : cardData.expireMonth}
+                onChange={e => { const raw = e.target.value.replace(/\D/g, '').slice(0, 4); onCardChange('expireMonth', raw.slice(0, 2)); onCardChange('expireYear', raw.slice(2)); }} />
+            </div>
+            <div>
+              <label className="label">CVV</label>
+              <input className="input input-lg mono tnum" placeholder="123" maxLength={4} inputMode="numeric" type="password"
+                value={cardData.cvv} onChange={e => onCardChange('cvv', e.target.value.replace(/\D/g, '').slice(0, 4))} />
+            </div>
+          </div>
+          <div>
+            <label className="label">Teléfono de facturación</label>
+            <input className="input input-lg" placeholder="+504 9999-9999" value={cardData.billingPhone}
+              onChange={e => onCardChange('billingPhone', e.target.value)} />
+          </div>
+        </div>
+      )}
       {esTransferencia && (
-        <div style={{ background: 'var(--surface-2)', borderRadius: 12, padding: '16px 18px', marginBottom: 16 }}>
-          <div style={{ fontSize: 12, color: 'var(--ink-3)', marginBottom: 8 }}>Transferí este monto exacto:</div>
-          <div className="mono tnum" style={{ fontSize: 32, fontWeight: 700, letterSpacing: '-0.04em' }}>{formatCurrency(total)}</div>
-          <div style={{ fontSize: 13, color: 'var(--ink-3)', marginTop: 6 }}>Concepto: <strong>{refPedido}</strong></div>
+        <div className="bg-[var(--surface-2)] rounded-[12px] px-[18px] py-4 mb-4">
+          <div className="text-[12px] text-[var(--ink-3)] mb-2">Transferí este monto exacto:</div>
+          <div className="mono tnum text-[32px] font-bold tracking-[-0.04em]">{formatCurrency(total)}</div>
+          <div className="text-[13px] text-[var(--ink-3)] mt-[6px]">Concepto: <strong>{refPedido}</strong></div>
         </div>
       )}
       {esTransferencia && (
         <>
-          <input ref={fileRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={e => { const f = e.target.files?.[0]; if (f) onSubirComprobante(f); }} />
-          <button className="btn btn-outline btn-block" style={{ height: 48, fontSize: 14, marginBottom: 16 }} onClick={() => fileRef.current?.click()} disabled={uploading}>
+          <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={e => { const f = e.target.files?.[0]; if (f) onSubirComprobante(f); }} />
+          <button className="btn btn-outline btn-block h-12 text-[14px] mb-4" onClick={() => fileRef.current?.click()} disabled={uploading}>
             {uploading ? 'Subiendo...' : comprobanteUrl ? '✓ Comprobante adjuntado' : '↑ Subir comprobante'}
           </button>
         </>
       )}
-      <div style={{ border: '1px solid var(--line)', borderRadius: 12, padding: '14px 16px', marginBottom: 16, background: '#fff' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 14, fontWeight: 700, marginBottom: 8 }}>
+      <div className="border border-[var(--line)] rounded-[12px] px-4 py-[14px] mb-4 bg-white">
+        <div className="flex items-center gap-2 text-[14px] font-bold mb-2">
           <Icons.clock width={15} height={15} />
           Devoluciones y cancelaciones
         </div>
-        <div style={{ fontSize: 13, color: 'var(--ink-2)', lineHeight: 1.55 }}>
+        <div className="text-[13px] text-[var(--ink-2)] leading-[1.55]">
           Una vez procesada la compra no se puede cancelar la orden. No se aceptan devoluciones de ningún tipo.
           {tiendaEmail && (
             <> Para casos relacionados con tu pedido, escribí a{' '}
-              <a href={`mailto:${tiendaEmail}`} style={{ color: 'var(--ink)', fontWeight: 700, textDecoration: 'underline' }}>{tiendaEmail}</a>.
+              <a href={`mailto:${tiendaEmail}`} className="text-[var(--ink)] font-bold underline">{tiendaEmail}</a>.
             </>
           )}
         </div>
       </div>
-      {errorMsg && <div style={{ marginBottom: 12 }}><Alert type="error" message={errorMsg} /></div>}
-      <button className="btn btn-primary btn-block" style={{ height: 52, fontSize: 15 }} onClick={onConfirmar} disabled={loading || uploading}>
+      {errorMsg && <div className="mb-3"><Alert type="error" message={errorMsg} /></div>}
+      <button className="btn btn-primary btn-block h-[52px] text-[15px]" onClick={onConfirmar} disabled={loading || uploading}>
         {loading ? 'Procesando...' : 'Realizar compra'}
       </button>
     </div>
@@ -462,25 +533,25 @@ export function ConfirmadoPanel({ numero, onVerPedido, onCerrar, secondaryAction
   secondaryAction?: { label: string; onClick: () => void };
 }) {
   return (
-    <div className="buyer-confirmed-panel" style={{ padding: '60px 40px', textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '100vh' }}>
-      <div style={{ width: 72, height: 72, borderRadius: 36, background: '#ecfdf5', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 32, marginBottom: 24 }}>✓</div>
-      <div style={{ fontSize: 26, fontWeight: 700, letterSpacing: '-0.02em', marginBottom: 8 }}>¡Compra realizada!</div>
-      <div style={{ fontSize: 15, color: 'var(--ink-3)', marginBottom: 32, lineHeight: 1.55 }}>
+    <div className="buyer-confirmed-panel px-10 py-[60px] text-center flex flex-col items-center justify-center min-h-screen">
+      <div className="w-[72px] h-[72px] rounded-[36px] bg-[#ecfdf5] flex items-center justify-center text-[32px] mb-6">✓</div>
+      <div className="text-[26px] font-bold tracking-[-0.02em] mb-2">¡Compra realizada!</div>
+      <div className="text-[15px] text-[var(--ink-3)] mb-8 leading-[1.55]">
         Tu pedido fue registrado correctamente.<br />Te avisamos por WhatsApp cuando salga tu pedido.
       </div>
-      <div style={{ background: 'var(--surface-2)', borderRadius: 12, padding: '18px 32px', marginBottom: 36, width: '100%' }}>
-        <div style={{ fontSize: 12, color: 'var(--ink-3)', marginBottom: 6, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Número de pedido</div>
-        <div className="mono tnum" style={{ fontSize: 24, fontWeight: 700 }}>{numero}</div>
+      <div className="bg-[var(--surface-2)] rounded-[12px] px-8 py-[18px] mb-9 w-full">
+        <div className="text-[12px] text-[var(--ink-3)] mb-[6px] uppercase tracking-[0.06em]">Número de pedido</div>
+        <div className="mono tnum text-[24px] font-bold">{numero}</div>
       </div>
-      <button className="btn btn-primary btn-block" style={{ height: 52, fontSize: 15, marginBottom: 10 }} onClick={onVerPedido}>
+      <button className="btn btn-primary btn-block h-[52px] text-[15px] mb-[10px]" onClick={onVerPedido}>
         Ver estado del pedido
       </button>
       {secondaryAction && (
-        <button className="btn btn-outline btn-block" style={{ height: 50, fontSize: 14, marginBottom: 10 }} onClick={secondaryAction.onClick}>
+        <button className="btn btn-outline btn-block h-[50px] text-[14px] mb-[10px]" onClick={secondaryAction.onClick}>
           {secondaryAction.label}
         </button>
       )}
-      <button className="btn btn-ghost btn-block" style={{ height: 48, fontSize: 14 }} onClick={onCerrar}>
+      <button className="btn btn-ghost btn-block h-12 text-[14px]" onClick={onCerrar}>
         Cerrar
       </button>
     </div>

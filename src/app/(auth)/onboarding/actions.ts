@@ -3,6 +3,7 @@
 import { createClient, createServiceClient, getServiceRoleConfigError } from '@/lib/supabase/server';
 import { guardServerMutation } from '@/lib/security/request';
 import { STORE_USERNAME_TAKEN_ERROR, validateStoreUsername } from '@/lib/stores/username';
+import { encryptPixelPaySecret } from '@/lib/pixelpay/security';
 
 export async function createAccount(data: {
   email: string;
@@ -13,9 +14,12 @@ export async function createAccount(data: {
   tiktok: string | null;
   facebook: string | null;
   ubicacion: string | null;
+  departamento: string | null;
+  ciudad: string | null;
   tipo_negocio: 'ropa' | 'zapatos' | 'mixto';
   metodosEnvio: { nombre: string; proveedor: string; precio: number; tiempoEstimado: string | null; cobertura: string | null; trackingUrl: string | null }[];
   cuentaBancaria: { banco: string; cuenta: string; titular: string } | null;
+  pixelpay: { sandbox: boolean; endpoint: string; keyId: string; secretKey: string } | null;
 }): Promise<{ error?: string; needsConfirmation?: boolean }> {
   const serviceRoleError = getServiceRoleConfigError();
   if (serviceRoleError) return { error: 'Error de configuración del servidor: ' + serviceRoleError };
@@ -65,6 +69,19 @@ export async function createAccount(data: {
   const userId = signUpData.user?.id;
   if (!userId) return { error: 'Error inesperado al crear la cuenta.' };
 
+  let encryptedPixelPaySecret: string | null = null;
+  if (data.pixelpay && !data.pixelpay.sandbox) {
+    if (!data.pixelpay.endpoint || !data.pixelpay.keyId || !data.pixelpay.secretKey) {
+      return { error: 'Completá las credenciales de PixelPay o usá modo sandbox.' };
+    }
+    try {
+      encryptedPixelPaySecret = encryptPixelPaySecret(data.pixelpay.secretKey);
+    } catch {
+      await service.auth.admin.deleteUser(userId);
+      return { error: 'No se pudo cifrar el Secret Key. Configurá PIXELPAY_CREDENTIALS_SECRET.' };
+    }
+  }
+
   const insertPayload = {
     user_id: userId,
     username,
@@ -74,10 +91,21 @@ export async function createAccount(data: {
     tiktok: data.tiktok,
     facebook: data.facebook,
     ubicacion: data.ubicacion,
+    departamento: data.departamento,
+    ciudad: data.ciudad,
     plan: 'starter',
     activa: true,
     tipo_negocio: data.tipo_negocio,
     order_prefix: username.slice(0, 4).toUpperCase(),
+    ...(data.pixelpay ? {
+      pixelpay_enabled: true,
+      pixelpay_sandbox: data.pixelpay.sandbox,
+      ...(!data.pixelpay.sandbox ? {
+        pixelpay_endpoint: data.pixelpay.endpoint,
+        pixelpay_key_id: data.pixelpay.keyId,
+        pixelpay_secret_key: encryptedPixelPaySecret,
+      } : {}),
+    } : {}),
   };
 
   const { error: insertError } = await service.from('tiendas').insert(insertPayload);

@@ -26,121 +26,95 @@ export function CarritoDrawer() {
     <>
       {/* Overlay */}
       <div
-        style={{
-          position: 'fixed', inset: 0, zIndex: 50,
-          background: 'rgba(0,0,0,0.3)',
-          backdropFilter: 'blur(2px)', WebkitBackdropFilter: 'blur(2px)',
-        }}
+        className="fixed inset-0 z-50 bg-black/30 backdrop-blur-[2px]"
         onClick={cerrarDrawer}
       />
 
       {/* Panel */}
-      <div style={{
-        position: 'fixed', top: 0, right: 0, bottom: 0, zIndex: 51,
-        width: 420, maxWidth: '100vw',
-        background: '#fff',
-        boxShadow: '-20px 0 60px rgba(0,0,0,0.12)',
-        display: 'flex', flexDirection: 'column',
-        animation: 'slideIn .22s ease',
-      }}>
+      <div className="fixed top-0 right-0 bottom-0 z-[51] w-[420px] max-w-[100vw] bg-white shadow-[-20px_0_60px_rgba(0,0,0,0.12)] flex flex-col [animation:slideIn_.22s_ease]">
         {/* Header */}
-        <div style={{
-          padding: '20px 24px',
-          borderBottom: '1px solid var(--line)',
-          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-        }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+        <div className="px-6 py-5 border-b border-[var(--line)] flex items-center justify-between">
+          <div className="flex items-center gap-[10px]">
             <Icons.bag width={20} height={20} />
-            <span style={{ fontSize: 17, fontWeight: 700, letterSpacing: '-0.01em' }}>
+            <span className="text-[17px] font-bold tracking-[-0.01em]">
               Mi carrito
             </span>
             {count > 0 && (
-              <span style={{
-                background: '#0a0a0a', color: '#fff',
-                borderRadius: 20, padding: '2px 8px',
-                fontSize: 12, fontWeight: 700,
-              }}>
+              <span className="bg-[#0a0a0a] text-white rounded-[20px] px-2 py-[2px] text-[12px] font-bold">
                 {count}
               </span>
             )}
           </div>
           <button
             onClick={cerrarDrawer}
-            style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--ink-3)', display: 'flex' }}
+            className="bg-none border-none cursor-pointer text-[var(--ink-3)] flex"
           >
             <Icons.close width={20} height={20} />
           </button>
         </div>
 
         {/* Items */}
-        <div style={{ flex: 1, overflowY: 'auto', padding: '16px 24px' }}>
+        <div className="flex-1 overflow-y-auto px-6 py-4">
           {errorHidratacion ? (
-            <div style={{ textAlign: 'center', padding: '60px 0', color: 'var(--ink-3)' }}>
-              <div style={{ fontSize: 14, color: 'var(--urgent)', marginBottom: 12 }}>No se pudo cargar el carrito.</div>
-              <button onClick={() => window.location.reload()} className="btn btn-outline" style={{ height: 36, fontSize: 13 }}>Reintentar</button>
+            <div className="text-center py-[60px] text-[var(--ink-3)]">
+              <div className="text-[14px] text-[var(--urgent)] mb-3">No se pudo cargar el carrito.</div>
+              <button onClick={() => window.location.reload()} className="btn btn-outline h-[36px] text-[13px]">Reintentar</button>
             </div>
           ) : count === 0 ? (
-            <div style={{ textAlign: 'center', padding: '60px 0', color: 'var(--ink-3)' }}>
-              <div style={{ width: 56, height: 56, borderRadius: 16, background: 'var(--surface-2)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
-                <Icons.bag width={26} height={26} style={{ color: 'var(--ink-3)' }} />
+            <div className="text-center py-[60px] text-[var(--ink-3)]">
+              <div className="w-14 h-14 rounded-2xl bg-[var(--surface-2)] flex items-center justify-center mx-auto mb-4">
+                <Icons.bag width={26} height={26} className="text-[var(--ink-3)]" />
               </div>
-              <div style={{ fontSize: 15, fontWeight: 600, color: 'var(--ink-2)', marginBottom: 6 }}>
+              <div className="text-[15px] font-semibold text-[var(--ink-2)] mb-[6px]">
                 Tu carrito está vacío
               </div>
-              <div style={{ fontSize: 13, color: 'var(--ink-3)', lineHeight: 1.55 }}>
+              <div className="text-[13px] text-[var(--ink-3)] leading-[1.55]">
                 Agregá prendas del catálogo para verlas aquí.
               </div>
               <button
                 onClick={cerrarDrawer}
-                className="btn btn-outline"
-                style={{ marginTop: 20, height: 42, padding: '0 20px' }}
+                className="btn btn-outline mt-5 h-[42px] px-5"
               >
                 Seguir viendo
               </button>
             </div>
           ) : (
-            <div style={{ display: 'grid', gap: 12 }}>
+            <div className="grid gap-3">
               {items.map(item => (
                 <div
                   key={carritoItemKey(item.prendaId, item.talla)}
-                  style={{
-                    display: 'grid', gridTemplateColumns: '72px 1fr auto',
-                    gap: 14, alignItems: 'center',
-                    padding: '14px 16px',
-                    border: '1px solid var(--line)',
-                    borderRadius: 14, background: '#fff',
-                  }}
+                  className="grid gap-[14px] items-center p-[14px_16px] border border-[var(--line)] rounded-[14px] bg-white grid-cols-[72px_1fr_auto]"
                 >
                   {/* Foto */}
                   <div
-                    style={{ width: 72, height: 90, borderRadius: 10, overflow: 'hidden', cursor: 'pointer', flexShrink: 0 }}
+                    className="w-[72px] h-[90px] rounded-[10px] overflow-hidden cursor-pointer shrink-0"
                     onClick={() => irAComprar(item.tiendaUsername, item.prendaId)}
                   >
                     {item.foto
                       // eslint-disable-next-line @next/next/no-img-element
-                      ? <img src={item.foto} alt={item.nombre} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                      : <div style={{ width: '100%', height: '100%', background: 'var(--surface-2)' }} />}
+                      ? <img src={item.foto} alt={item.nombre} className="w-full h-full object-cover" />
+                      : <div className="w-full h-full bg-[var(--surface-2)]" />}
                   </div>
 
                   {/* Info */}
                   <div
-                    style={{ minWidth: 0, cursor: 'pointer' }}
+                    className="min-w-0 cursor-pointer"
                     onClick={() => irAComprar(item.tiendaUsername, item.prendaId)}
                   >
                     {item.marca && (
-                      <div style={{ fontSize: 10, fontWeight: 600, color: 'var(--ink-3)', textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 3 }}>
+                      <div className="text-[10px] font-semibold text-[var(--ink-3)] uppercase tracking-[0.07em] mb-[3px]">
                         {item.marca}
                       </div>
                     )}
-                    <div style={{ fontSize: 14, fontWeight: 600, lineHeight: 1.3, marginBottom: 4 }}>
+                    <div className="text-[14px] font-semibold leading-[1.3] mb-1">
                       {item.nombre}
                     </div>
                     {item.talla && (
-                      <div style={{ fontSize: 12, color: 'var(--ink-3)', marginBottom: 6 }}>
+                      <div className="text-[12px] text-[var(--ink-3)] mb-[6px]">
                         Talla {item.talla}
                       </div>
                     )}
-                    <div className="mono tnum" style={{ fontSize: 15, fontWeight: 700 }}>
+                    <div className="mono tnum text-[15px] font-bold">
                       L {item.precio.toLocaleString()}
                     </div>
                   </div>
@@ -148,11 +122,7 @@ export function CarritoDrawer() {
                   {/* Quitar */}
                   <button
                     onClick={() => quitarItem(item.prendaId, item.talla)}
-                    style={{
-                      background: 'none', border: 'none', cursor: 'pointer',
-                      color: 'var(--ink-3)', padding: 4, display: 'flex',
-                      alignSelf: 'flex-start',
-                    }}
+                    className="bg-none border-none cursor-pointer text-[var(--ink-3)] p-1 flex self-start"
                     title="Quitar del carrito"
                   >
                     <Icons.close width={16} height={16} />
@@ -165,31 +135,26 @@ export function CarritoDrawer() {
 
         {/* Footer con total */}
         {count > 0 && (
-          <div style={{
-            padding: '20px 24px',
-            borderTop: '1px solid var(--line)',
-            background: '#fff',
-          }}>
+          <div className="px-6 py-5 border-t border-[var(--line)] bg-white">
             {/* Resumen */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 4 }}>
-              <span style={{ fontSize: 13, color: 'var(--ink-3)' }}>
+            <div className="flex justify-between items-baseline mb-1">
+              <span className="text-[13px] text-[var(--ink-3)]">
                 {count} {count === 1 ? 'prenda' : 'prendas'}
               </span>
-              <div style={{ display: 'flex', alignItems: 'baseline', gap: 4 }}>
-                <span style={{ fontSize: 11, color: 'var(--ink-3)' }}>Total estimado</span>
-                <span className="mono tnum" style={{ fontSize: 22, fontWeight: 800, letterSpacing: '-0.03em' }}>
+              <div className="flex items-baseline gap-1">
+                <span className="text-[11px] text-[var(--ink-3)]">Total estimado</span>
+                <span className="mono tnum text-[22px] font-[800] tracking-[-0.03em]">
                   L {total.toLocaleString()}
                 </span>
               </div>
             </div>
-            <div style={{ fontSize: 12, color: 'var(--ink-3)', marginBottom: 16, lineHeight: 1.4 }}>
+            <div className="text-[12px] text-[var(--ink-3)] mb-4 leading-[1.4]">
               El envío se calcula al finalizar cada compra. Cada prenda se compra por separado.
             </div>
 
             {/* Botón finalizar */}
             <button
-              className="btn btn-primary"
-              style={{ height: 52, fontSize: 15, fontWeight: 600, borderRadius: 12, width: '100%' }}
+              className="btn btn-primary h-[52px] text-[15px] font-semibold rounded-[12px] w-full"
               onClick={irAlCheckout}
             >
               Finalizar compra
@@ -197,12 +162,7 @@ export function CarritoDrawer() {
 
             <button
               onClick={() => { limpiar(); cerrarDrawer(); }}
-              style={{
-                width: '100%', marginTop: 10,
-                height: 38, background: 'none', border: 'none',
-                color: 'var(--ink-3)', fontSize: 12, cursor: 'pointer',
-                textDecoration: 'underline',
-              }}
+              className="w-full mt-[10px] h-[38px] bg-transparent border-none text-[var(--ink-3)] text-[12px] cursor-pointer underline"
             >
               Vaciar carrito
             </button>

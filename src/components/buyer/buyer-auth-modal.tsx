@@ -99,33 +99,33 @@ export function BuyerAuthModal({
   return (
     <div
       onClick={e => { if (e.target === e.currentTarget) onClose(); }}
-      style={{ position: 'fixed', inset: 0, zIndex: 360, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(8,8,8,0.62)', backdropFilter: 'blur(10px)', WebkitBackdropFilter: 'blur(10px)', padding: 18 }}
+      className="fixed inset-0 z-[360] flex items-center justify-center bg-[rgba(8,8,8,0.62)] backdrop-blur-[10px] p-[18px]"
     >
       <div
         onClick={e => e.stopPropagation()}
-        style={{ width: 'min(540px, calc(100vw - 32px))', maxHeight: 'calc(100vh - 36px)', overflowY: 'auto', background: '#fff', borderRadius: 18, padding: 0, boxShadow: '0 30px 90px rgba(0,0,0,0.28)', animation: 'slideUp .22s ease', position: 'relative' }}
+        className="w-[min(540px,calc(100vw-32px))] max-h-[calc(100vh-36px)] overflow-y-auto bg-white rounded-[18px] p-0 shadow-[0_30px_90px_rgba(0,0,0,0.28)] [animation:slideUp_.22s_ease] relative"
       >
         {/* Header */}
-        <div style={{ padding: '28px 28px 20px', borderBottom: '1px solid rgba(0,0,0,0.07)', background: 'linear-gradient(180deg,#fbfbfb 0%,#fff 100%)' }}>
+        <div className="px-7 pt-7 pb-5 border-b border-[rgba(0,0,0,0.07)] bg-gradient-to-b from-[#fbfbfb] to-white">
           {/* Fila: ícono + botón cerrar */}
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
-            <div style={{ width: 46, height: 46, borderRadius: 14, background: 'var(--accent)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+          <div className="flex items-center justify-between mb-[14px]">
+            <div className="w-[46px] h-[46px] rounded-[14px] bg-[var(--accent)] text-white flex items-center justify-center shrink-0">
               <Icons.user width={20} height={20} />
             </div>
             {/* Botón cerrar inline (quitamos el absolute) */}
             <button
               onClick={onClose}
               aria-label="Cerrar"
-              style={{ width: 36, height: 36, borderRadius: 18, border: '1px solid rgba(0,0,0,0.08)', background: '#fff', color: '#555', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', flexShrink: 0 }}
+              className="w-9 h-9 rounded-[18px] border border-[rgba(0,0,0,0.08)] bg-white text-[#555] flex items-center justify-center cursor-pointer shrink-0"
             >
               <Icons.close width={16} height={16} />
             </button>
           </div>
           {/* Título y subtítulo sin competir con el botón cerrar */}
-          <div style={{ fontSize: 22, fontWeight: 900, letterSpacing: '-0.03em', color: '#111', lineHeight: 1.2 }}>
+          <div className="text-[22px] font-[900] tracking-[-0.03em] text-[#111] leading-[1.2]">
             {mode === 'forgot' ? 'Olvidé mi contraseña' : mode === 'login' ? 'Bienvenido de nuevo' : 'Creá tu cuenta'}
           </div>
-          <div style={{ fontSize: 13, color: '#777', lineHeight: 1.5, marginTop: 6 }}>
+          <div className="text-[13px] text-[#777] leading-[1.5] mt-[6px]">
             {mode === 'forgot'
               ? 'Te enviamos un link para crear una nueva contraseña.'
               : mode === 'login'
@@ -135,16 +135,16 @@ export function BuyerAuthModal({
         </div>
 
         {/* Body */}
-        <div style={{ padding: 30 }}>
+        <div className="p-[30px]">
 
           {/* Toggle login / register */}
           {mode !== 'forgot' && (
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6, background: '#f3f3f3', borderRadius: 12, padding: 4, marginBottom: 22 }}>
+            <div className="grid grid-cols-2 gap-[6px] bg-[#f3f3f3] rounded-[12px] p-1 mb-[22px]">
               {(['login', 'register'] as const).map(m => (
                 <button
                   key={m} type="button"
                   onClick={() => { setMode(m); setError(''); setNotice(''); }}
-                  style={{ height: 42, borderRadius: 9, fontSize: 13, fontWeight: 800, cursor: 'pointer', background: mode === m ? '#fff' : 'transparent', border: mode === m ? '1px solid rgba(0,0,0,0.08)' : '1px solid transparent', color: mode === m ? '#111' : '#777', boxShadow: mode === m ? '0 1px 5px rgba(0,0,0,0.06)' : 'none' }}
+                  className={`h-[42px] rounded-[9px] text-[13px] font-[800] cursor-pointer ${mode === m ? 'bg-white border border-[rgba(0,0,0,0.08)] text-[#111] shadow-[0_1px_5px_rgba(0,0,0,0.06)]' : 'bg-transparent border border-transparent text-[#777]'}`}
                 >
                   {m === 'login' ? 'Iniciar sesión' : 'Crear cuenta'}
                 </button>
@@ -152,18 +152,18 @@ export function BuyerAuthModal({
             </div>
           )}
 
-          <form onSubmit={submit} style={{ display: 'grid', gap: 14 }}>
+          <form onSubmit={submit} className="grid gap-[14px]">
 
             {/* Campos solo en registro */}
             {mode === 'register' && (
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(190px, 1fr))', gap: 12 }}>
+              <div className="grid gap-3 grid-cols-[repeat(auto-fit,minmax(190px,1fr))]">
                 <div>
                   <label className="label">Nombre completo</label>
                   <input className="input input-lg" autoComplete="name" placeholder="Karla Morales" value={nombre}
                     onChange={e => { setNombre(e.target.value); setError(''); setNotice(''); }} />
                 </div>
                 <div>
-                  <label className="label">WhatsApp <span style={{ fontWeight: 400, color: '#999' }}>opcional</span></label>
+                  <label className="label">WhatsApp <span className="font-normal text-[#999]">opcional</span></label>
                   <PhoneInput size="lg" value={telefono} onChange={v => { setTelefono(v); setError(''); setNotice(''); }} />
                 </div>
               </div>
@@ -179,16 +179,16 @@ export function BuyerAuthModal({
             {/* Contraseña */}
             {mode !== 'forgot' && (
               <div>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, marginBottom: 6 }}>
-                  <span className="label" style={{ display: 'inline-flex', alignItems: 'center', gap: 6, margin: 0, flexShrink: 1 }}>
+                <div className="flex items-center justify-between gap-2 mb-[6px]">
+                  <span className="label inline-flex items-center gap-[6px] m-0 shrink">
                     Contraseña
-                    {mode === 'register' && <span style={{ fontWeight: 400, color: '#999' }}>mín. 8 caracteres</span>}
+                    {mode === 'register' && <span className="font-normal text-[#999]">mín. 8 caracteres</span>}
                   </span>
                   {mode === 'login' && (
                     <button
                       type="button"
                       onClick={() => { setMode('forgot'); setError(''); setNotice(''); }}
-                      style={{ fontSize: 12, color: 'var(--accent)', background: 'none', border: 'none', cursor: 'pointer', fontWeight: 700, padding: 0, textDecoration: 'none', flexShrink: 0, whiteSpace: 'nowrap' }}
+                      className="text-[12px] text-[var(--accent)] bg-none border-none cursor-pointer font-bold p-0 no-underline shrink-0 whitespace-nowrap"
                     >
                       ¿Olvidaste tu contraseña?
                     </button>
@@ -207,11 +207,11 @@ export function BuyerAuthModal({
 
             {/* Perks registro */}
             {mode === 'register' && (
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+              <div className="grid grid-cols-2 gap-2">
                 {([['Seguimiento de pedidos', Icons.bag], ['Checkout más rápido', Icons.sparkle]] as const).map(([label, Icon]) => {
                   const Ic = Icon as typeof Icons.bag;
                   return (
-                    <div key={label} style={{ border: '1px solid rgba(0,0,0,0.08)', borderRadius: 11, padding: '10px 11px', display: 'flex', alignItems: 'center', gap: 8, color: '#555', fontSize: 12, fontWeight: 800 }}>
+                    <div key={label} className="border border-[rgba(0,0,0,0.08)] rounded-[11px] p-[10px_11px] flex items-center gap-2 text-[#555] text-[12px] font-[800]">
                       <Ic width={14} height={14} />{label}
                     </div>
                   );
@@ -220,13 +220,12 @@ export function BuyerAuthModal({
             )}
 
             {/* Errores y avisos */}
-            {error && <div style={{ fontSize: 13, color: '#b91c1c', padding: '10px 12px', background: '#fef2f2', borderRadius: 10 }}>{error}</div>}
-            {notice && <div style={{ fontSize: 13, color: '#047857', padding: '10px 12px', background: '#ecfdf5', borderRadius: 10, lineHeight: 1.45 }}>{notice}</div>}
+            {error && <div className="text-[13px] text-[#b91c1c] px-3 py-[10px] bg-[#fef2f2] rounded-[10px]">{error}</div>}
+            {notice && <div className="text-[13px] text-[#047857] px-3 py-[10px] bg-[#ecfdf5] rounded-[10px] leading-[1.45]">{notice}</div>}
 
             {/* Botón principal */}
             <button
-              className="btn btn-primary btn-block"
-              style={{ height: 52, fontSize: 15, marginTop: 4, borderRadius: 14, fontWeight: 900 }}
+              className="btn btn-primary btn-block h-[52px] text-[15px] mt-1 rounded-[14px] font-[900]"
               disabled={loading}
             >
               {loading ? 'Procesando...' : mode === 'forgot' ? 'Enviar link de recuperación' : mode === 'login' ? 'Entrar' : 'Crear cuenta'}
@@ -237,7 +236,7 @@ export function BuyerAuthModal({
               <button
                 type="button"
                 onClick={() => { setMode('login'); setError(''); setNotice(''); }}
-                style={{ fontSize: 13, color: '#777', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'center', textDecoration: 'underline', textUnderlineOffset: 2 }}
+                className="text-[13px] text-[#777] bg-none border-none cursor-pointer text-center underline underline-offset-[2px]"
               >
                 ← Volver a iniciar sesión
               </button>

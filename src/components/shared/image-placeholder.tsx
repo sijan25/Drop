@@ -21,21 +21,21 @@ const tones = {
 export function Ph({ label, aspect = '1/1', radius = 10, tone = 'neutral', style = {} }: PhProps) {
   const t = tones[tone] || tones.neutral;
   return (
-    <div style={{
-      position: 'relative', width: '100%', aspectRatio: aspect,
-      background: t.bg,
-      backgroundImage: `repeating-linear-gradient(135deg, ${t.stripe} 0, ${t.stripe} 1px, transparent 1px, transparent 10px)`,
-      borderRadius: radius, overflow: 'hidden',
-      ...style,
-    }}>
+    <div
+      className="relative w-full overflow-hidden"
+      style={{
+        aspectRatio: aspect,
+        background: t.bg,
+        backgroundImage: `repeating-linear-gradient(135deg, ${t.stripe} 0, ${t.stripe} 1px, transparent 1px, transparent 10px)`,
+        borderRadius: radius,
+        ...style,
+      }}
+    >
       {label && (
-        <div style={{
-          position: 'absolute', left: 8, bottom: 8, right: 8,
-          fontFamily: 'var(--font-mono)',
-          fontSize: 10, color: tone === 'dark' ? 'rgba(255,255,255,0.5)' : 'rgba(10,10,10,0.4)',
-          letterSpacing: '-0.01em', lineHeight: 1.2,
-          whiteSpace: 'pre-line',
-        }}>{label}</div>
+        <div
+          className="absolute left-2 bottom-2 right-2 text-[10px] leading-[1.2] tracking-[-0.01em] whitespace-pre-line font-[var(--font-mono)]"
+          style={{ color: tone === 'dark' ? 'rgba(255,255,255,0.5)' : 'rgba(10,10,10,0.4)' }}
+        >{label}</div>
       )}
     </div>
   );

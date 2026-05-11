@@ -9,30 +9,12 @@ export function AppLoadingScreen({ fixed = false }: AppLoadingScreenProps) {
     <div
       aria-label="Cargando Droppi"
       aria-live="polite"
-      style={{
-        position: fixed ? 'fixed' : 'relative',
-        inset: fixed ? 0 : undefined,
-        minHeight: '100vh',
-        width: '100%',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        background: '#FAF9F7',
-        zIndex: fixed ? 9999 : undefined,
-      }}
+      className={`min-h-screen w-full flex items-center justify-center bg-[#FAF9F7] ${fixed ? 'fixed inset-0 z-[9999]' : 'relative'}`}
     >
-      <div style={{ display: 'grid', justifyItems: 'center', gap: 32 }}>
+      <div className="grid justify-items-center gap-8">
         <Logo size={72} wordmarkSize={44} />
         <div
-          className="droppi-loading-spinner"
-          style={{
-            width: 42,
-            height: 42,
-            borderRadius: '50%',
-            border: '4px solid #E8DED5',
-            borderTopColor: '#C96442',
-            animation: 'droppi-loading-spin 0.72s linear infinite',
-          }}
+          className="droppi-loading-spinner w-[42px] h-[42px] rounded-full border-4 border-[#E8DED5] border-t-[#C96442] [animation:droppi-loading-spin_0.72s_linear_infinite]"
         />
       </div>
       <style>{`

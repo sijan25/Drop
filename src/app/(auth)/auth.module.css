@@ -255,6 +255,7 @@
   display: flex;
   flex-direction: column;
   position: relative;
+  overflow-x: hidden;
 }
 
 .obPage::before {
@@ -383,11 +384,14 @@
   align-items: flex-start;
   justify-content: center;
   padding: 48px 24px;
+  width: 100%;
+  min-width: 0;
 }
 
 .obFormWrap {
   width: 100%;
   max-width: 560px;
+  min-width: 0;
 }
 
 /* ── Responsive ── */
@@ -436,14 +440,115 @@
 
 .obGrid2 {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 14px;
 }
 
 .obGrid3 {
   display: grid;
-  grid-template-columns: 1fr 1fr 1fr;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 10px;
+}
+
+.obGrid2 > *,
+.obGrid3 > * {
+  min-width: 0;
+}
+
+.obStoreTypeGrid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 8px;
+}
+
+.obStoreTypeOption {
+  position: relative;
+  min-width: 0;
+  min-height: 58px;
+  padding: 10px 42px 10px 12px;
+  border-radius: 10px;
+  border: 1px solid var(--line);
+  background: rgba(255,255,255,0.82);
+  color: var(--ink);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  text-align: left;
+  font-family: inherit;
+  transition: border-color .14s ease, background .14s ease, box-shadow .14s ease, transform .14s ease;
+}
+
+.obStoreTypeOption:hover {
+  border-color: rgba(201,100,66,0.55);
+  background: #fff;
+  box-shadow: 0 8px 22px rgba(14,30,26,0.06);
+}
+
+.obStoreTypeOption[data-active="true"] {
+  border-color: var(--accent);
+  background: #fff7f3;
+  box-shadow: 0 0 0 1px rgba(201,100,66,0.18), 0 10px 26px rgba(201,100,66,0.10);
+}
+
+.obStoreTypeOption::after {
+  content: '';
+  position: absolute;
+  right: 14px;
+  top: 50%;
+  width: 16px;
+  height: 16px;
+  border-radius: 999px;
+  border: 1.5px solid var(--line);
+  transform: translateY(-50%);
+  background: #fff;
+}
+
+.obStoreTypeOption[data-active="true"]::after {
+  border-color: var(--accent);
+  background:
+    radial-gradient(circle at center, var(--accent) 0 42%, transparent 44%),
+    #fff;
+}
+
+.obStoreTypeIcon {
+  width: 34px;
+  height: 34px;
+  border-radius: 9px;
+  background: var(--surface-2);
+  color: var(--ink-2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.obStoreTypeOption[data-active="true"] .obStoreTypeIcon {
+  background: var(--accent);
+  color: #fff;
+}
+
+.obStoreTypeText {
+  min-width: 0;
+  display: grid;
+  gap: 2px;
+}
+
+.obStoreTypeTitle {
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1.2;
+  color: var(--ink);
+}
+
+.obStoreTypeDesc {
+  font-size: 11px;
+  line-height: 1.25;
+  color: var(--ink-3);
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
 }
 
 @media (max-width: 640px) {
@@ -477,8 +582,15 @@
   }
 
   .obGrid3 {
-    grid-template-columns: 1fr 1fr 1fr;
     gap: 8px;
+  }
+
+  .obStoreTypeGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .obStoreTypeOption {
+    min-height: 58px;
   }
 }
 
@@ -489,5 +601,9 @@
 
   .obCard {
     padding: 20px 14px;
+  }
+
+  .obGrid3 {
+    gap: 6px;
   }
 }

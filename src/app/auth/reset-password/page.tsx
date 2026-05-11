@@ -90,8 +90,7 @@ function ResetPasswordContent() {
               </div>
               <button
                 onClick={() => router.push(isBuyerReset ? '/' : '/dashboard')}
-                className="btn btn-primary btn-lg btn-block"
-                style={{ marginTop: 24 }}
+                className="btn btn-primary btn-lg btn-block mt-6"
               >
                 {isBuyerReset ? 'Ir a Droppi' : 'Ir al dashboard'}
               </button>
@@ -106,15 +105,14 @@ function ResetPasswordContent() {
               <div className={s.fields}>
                 <div>
                   <label className="label">Nueva contraseña</label>
-                  <div style={{ position: 'relative' }}>
+                  <div className="relative">
                     <input
-                      className="input input-lg"
+                      className="input input-lg pr-[44px]"
                       type={showPass ? 'text' : 'password'}
                       placeholder="Mínimo 8 caracteres"
                       value={password}
                       onChange={e => { setPassword(e.target.value); setError(''); }}
                       onKeyDown={e => e.key === 'Enter' && handleReset()}
-                      style={{ paddingRight: 44 }}
                       autoFocus
                     />
                     <button onClick={() => setShowPass(v => !v)} className={s.showPass}>
@@ -131,13 +129,12 @@ function ResetPasswordContent() {
                 <div>
                   <label className="label">Confirmar contraseña</label>
                   <input
-                    className="input input-lg"
+                    className={`input input-lg${error && confirm && password !== confirm ? ' border-[#dc2626]' : ''}`}
                     type={showPass ? 'text' : 'password'}
                     placeholder="Repetí la contraseña"
                     value={confirm}
                     onChange={e => { setConfirm(e.target.value); setError(''); }}
                     onKeyDown={e => e.key === 'Enter' && handleReset()}
-                    style={error && confirm && password !== confirm ? { borderColor: '#dc2626' } : undefined}
                   />
                 </div>
               </div>
@@ -147,16 +144,14 @@ function ResetPasswordContent() {
               <button
                 onClick={handleReset}
                 disabled={loading}
-                className="btn btn-primary btn-lg btn-block"
-                style={{ marginTop: 20, opacity: loading ? 0.6 : 1 }}
+                className={`btn btn-primary btn-lg btn-block mt-5${loading ? ' opacity-60' : ''}`}
               >
                 {loading ? 'Guardando…' : 'Guardar nueva contraseña'}
               </button>
 
               <button
                 onClick={() => router.push(isBuyerReset ? '/' : '/login')}
-                className="btn btn-ghost btn-sm btn-block"
-                style={{ marginTop: 10, color: '#737373' }}
+                className="btn btn-ghost btn-sm btn-block mt-[10px] text-[#737373]"
               >
                 {isBuyerReset ? '← Volver a Droppi' : '← Volver al inicio de sesión'}
               </button>

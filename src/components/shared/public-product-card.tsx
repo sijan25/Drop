@@ -93,22 +93,9 @@ export function PublicProductCard({
         event.currentTarget.style.transform = 'none';
         event.currentTarget.style.boxShadow = 'none';
       }}
-      style={{
-        background: '#fff',
-        borderRadius: isCompact ? 14 : 16,
-        overflow: 'hidden',
-        cursor: 'pointer',
-        border: '1px solid #E8E4DF',
-        transition: 'transform .18s ease, box-shadow .18s ease',
-        position: 'relative',
-        display: 'flex',
-        flexDirection: 'column',
-        height: '100%',
-        color: 'inherit',
-        outline: 'none',
-      }}
+      className={`bg-white overflow-hidden cursor-pointer border border-[#E8E4DF] transition-[transform,box-shadow] duration-[180ms] ease-in-out relative flex flex-col h-full text-inherit outline-none ${isCompact ? 'rounded-[14px]' : 'rounded-[16px]'}`}
     >
-      <div style={{ position: 'relative', aspectRatio: '3/4', overflow: 'hidden', background: '#F2F0EC' }}>
+      <div className="relative overflow-hidden bg-[#F2F0EC] aspect-[3/4]">
         {product.fotos?.[0] ? (
           <Image
             src={cld(product.fotos[0], 'card')}
@@ -125,19 +112,19 @@ export function PublicProductCard({
           <Ph tone={disponible ? tone : 'warm'} aspect="3/4" radius={0} />
         )}
 
-        <div style={{ position: 'absolute', top: 10, left: 10, display: 'flex', gap: 5, flexWrap: 'wrap' }}>
+        <div className="absolute top-[10px] left-[10px] flex gap-[5px] flex-wrap">
           {isNew && (
-            <span style={{ background: 'var(--dark)', color: '#fff', fontSize: 10, fontWeight: 800, padding: '4px 8px', borderRadius: 6, letterSpacing: '0.04em' }}>
+            <span className="bg-[var(--dark)] text-white text-[10px] font-[800] px-2 py-1 rounded-[6px] tracking-[0.04em]">
               NUEVO
             </span>
           )}
           {isPreview && disponible && (
-            <span style={{ background: 'rgba(10,10,10,0.78)', color: '#fff', fontSize: 10, fontWeight: 800, padding: '4px 8px', borderRadius: 999, letterSpacing: '0.05em', textTransform: 'uppercase' }}>
+            <span className="bg-[rgba(10,10,10,0.78)] text-white text-[10px] font-[800] px-2 py-1 rounded-[999px] tracking-[0.05em] uppercase">
               Preview
             </span>
           )}
           {views !== null && views > 600 && (
-            <span style={{ background: 'rgba(201,100,66,0.12)', color: '#C96442', fontSize: 10, fontWeight: 800, padding: '4px 8px', borderRadius: 6, border: '1px solid rgba(201,100,66,0.3)', letterSpacing: '0.04em', display: 'flex', alignItems: 'center', gap: 4 }}>
+            <span className="bg-[rgba(201,100,66,0.12)] text-[#C96442] text-[10px] font-[800] px-2 py-1 rounded-[6px] border border-[rgba(201,100,66,0.3)] tracking-[0.04em] flex items-center gap-1">
               <Icons.sparkle width={11} height={11} />
               HOT
             </span>
@@ -145,70 +132,61 @@ export function PublicProductCard({
         </div>
 
         {!disponible && (
-          <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <span style={{ background: vendida ? 'rgba(10,10,10,0.86)' : 'rgba(120,60,0,0.84)', color: '#fff', padding: '6px 13px', borderRadius: 8, fontSize: 10, fontWeight: 800, letterSpacing: '0.08em', textTransform: 'uppercase', backdropFilter: 'blur(4px)', WebkitBackdropFilter: 'blur(4px)' }}>
+          <div className="absolute inset-0 flex items-center justify-center">
+            <span className={`text-white px-[13px] py-[6px] rounded-[8px] text-[10px] font-[800] tracking-[0.08em] uppercase backdrop-blur-[4px] ${vendida ? 'bg-[rgba(10,10,10,0.86)]' : 'bg-[rgba(120,60,0,0.84)]'}`}>
               {vendida ? 'Vendida' : 'Apartada'}
             </span>
           </div>
         )}
       </div>
 
-      <div style={{ padding: isCompact ? '10px 11px 11px' : '11px 12px 12px', flex: 1, display: 'flex', flexDirection: 'column', gap: isCompact ? 6 : 7 }}>
+      <div className={`flex-1 flex flex-col ${isCompact ? 'p-[10px_11px_11px] gap-[6px]' : 'p-[11px_12px_12px] gap-[7px]'}`}>
         <div>
-          <div style={{ fontSize: isCompact ? 13 : 14, fontWeight: 800, color: disponible ? '#111' : '#aaa', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', lineHeight: 1.2 }}>
+          <div className={`font-[800] whitespace-nowrap overflow-hidden text-ellipsis leading-[1.2] ${isCompact ? 'text-[13px]' : 'text-[14px]'} ${disponible ? 'text-[#111]' : 'text-[#aaa]'}`}>
             {product.nombre}
           </div>
           {product.marca && (
-            <div style={{ fontSize: isCompact ? 11 : 12, fontWeight: 500, color: '#999', marginTop: 3, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+            <div className={`font-medium text-[#999] mt-[3px] whitespace-nowrap overflow-hidden text-ellipsis ${isCompact ? 'text-[11px]' : 'text-[12px]'}`}>
               {product.marca}
             </div>
           )}
         </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: 4, flexWrap: 'wrap', minHeight: 24 }}>
+        <div className="flex items-center gap-1 flex-wrap min-h-6">
           {sizes.length > 0 ? sizes.map(size => {
             const qty = qtys[size] ?? 0;
             const active = disponible && qty > 0;
             return (
               <span
                 key={size}
-                style={{
-                  fontSize: 11,
-                  fontWeight: 800,
-                  padding: '4px 8px',
-                  borderRadius: 7,
-                  background: active ? '#f0fdf4' : '#f5f5f5',
-                  color: active ? '#16a34a' : '#bbb',
-                  border: `1px solid ${active ? '#bbf7d0' : '#e5e5e5'}`,
-                  lineHeight: 1,
-                }}
+                className={`text-[11px] font-[800] px-2 py-1 rounded-[7px] leading-none ${active ? 'bg-[#f0fdf4] text-[#16a34a] border border-[#bbf7d0]' : 'bg-[#f5f5f5] text-[#bbb] border border-[#e5e5e5]'}`}
               >
                 {size}
               </span>
             );
           }) : (
             disponible && totalUnits > 0 && (
-              <span style={{ fontSize: 11, fontWeight: 800, padding: '4px 8px', borderRadius: 7, background: '#f0fdf4', color: '#16a34a', border: '1px solid #bbf7d0', lineHeight: 1 }}>
+              <span className="text-[11px] font-[800] px-2 py-1 rounded-[7px] bg-[#f0fdf4] text-[#16a34a] border border-[#bbf7d0] leading-none">
                 {totalUnits} disp.
               </span>
             )
           )}
         </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, marginTop: 'auto' }}>
-          <span className="mono tnum" style={{ fontSize: isCompact ? 15 : 17, fontWeight: 850, color: disponible ? '#111' : '#bbb', textDecoration: !disponible ? 'line-through' : 'none', lineHeight: 1 }}>
+        <div className="flex items-center justify-between gap-[10px] mt-auto">
+          <span className={`mono tnum font-[850] leading-none ${isCompact ? 'text-[15px]' : 'text-[17px]'} ${disponible ? 'text-[#111]' : 'text-[#bbb] line-through'}`}>
             L {product.precio.toLocaleString()}
           </span>
-          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: isCompact ? 11 : 12, fontWeight: 700, whiteSpace: 'nowrap' }}>
-            <span style={{ width: 7, height: 7, borderRadius: 99, flexShrink: 0, background: vendida ? '#ef4444' : apartada ? '#f59e0b' : isPreview ? '#888' : '#22c55e' }} />
-            <span style={{ color: vendida ? '#ef4444' : apartada ? '#f59e0b' : isPreview ? '#777' : '#16a34a' }}>
+          <span className={`inline-flex items-center gap-[5px] font-bold whitespace-nowrap ${isCompact ? 'text-[11px]' : 'text-[12px]'}`}>
+            <span className={`w-[7px] h-[7px] rounded-[99px] shrink-0 ${vendida ? 'bg-[#ef4444]' : apartada ? 'bg-[#f59e0b]' : isPreview ? 'bg-[#888]' : 'bg-[#22c55e]'}`} />
+            <span className={vendida ? 'text-[#ef4444]' : apartada ? 'text-[#f59e0b]' : isPreview ? 'text-[#777]' : 'text-[#16a34a]'}>
               {vendida ? 'Vendida' : apartada ? 'Apartada' : isPreview ? 'Preview' : 'Disponible'}
             </span>
           </span>
         </div>
 
         {views !== null && views > 0 && (
-          <span style={{ fontSize: 11, color: '#aaa', display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+          <span className="text-[11px] text-[#aaa] inline-flex items-center gap-1">
             <Icons.eye width={12} height={12} />
             {views} viendo
           </span>
@@ -216,14 +194,14 @@ export function PublicProductCard({
       </div>
 
       {hasActions && (
-        <div style={{ padding: isCompact ? '0 11px 11px' : '0 12px 12px', display: 'grid', gridTemplateColumns: '1fr auto', gap: 8 }}>
+        <div className={`grid gap-2 grid-cols-[1fr_auto] ${isCompact ? 'px-[11px] pb-[11px]' : 'px-3 pb-3'}`}>
           <button
             type="button"
             onClick={event => {
               event.stopPropagation();
               (onBuy ?? onOpen)();
             }}
-            style={{ height: isCompact ? 36 : 40, borderRadius: 9, background: '#C96442', color: '#fff', border: 'none', fontSize: 13, fontWeight: 800, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+            className={`rounded-[9px] bg-[#C96442] text-white border-none text-[13px] font-[800] cursor-pointer flex items-center justify-center ${isCompact ? 'h-[36px]' : 'h-[40px]'}`}
           >
             Comprar
           </button>
@@ -234,18 +212,7 @@ export function PublicProductCard({
               (onCart ?? onOpen)();
             }}
             title={cartTitle}
-            style={{
-              width: isCompact ? 36 : 40,
-              height: isCompact ? 36 : 40,
-              borderRadius: 9,
-              border: '1.5px solid #E8E4DF',
-              background: cartActive ? 'var(--accent-3)' : '#fff',
-              color: cartActive ? '#fff' : 'var(--accent-3)',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-            }}
+            className={`rounded-[9px] border-[1.5px] border-[#E8E4DF] cursor-pointer flex items-center justify-center ${isCompact ? 'w-[36px] h-[36px]' : 'w-[40px] h-[40px]'} ${cartActive ? 'bg-[var(--accent-3)] text-white' : 'bg-white text-[var(--accent-3)]'}`}
           >
             <Icons.bag width={15} height={15} />
           </button>

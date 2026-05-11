@@ -271,7 +271,6 @@ function NavButton({ href, children }: { href: string; children: React.ReactNode
   return (
     <Link className="landing-nav-cta" href={href}>
       {children}
-      <ArrowRight size={14} />
     </Link>
   );
 }
@@ -280,7 +279,6 @@ function PrimaryButton({ href, children }: { href: string; children: React.React
   return (
     <Link className="landing-btn-primary" href={href}>
       {children}
-      <ArrowRight size={16} />
     </Link>
   );
 }
@@ -570,7 +568,7 @@ export default function Home() {
       <section className="landing-section" id="faq">
         <div className="landing-shell">
           <div className="landing-section-kicker" data-reveal>FAQS</div>
-          <h2 className="landing-section-title" style={{ textAlign: 'center' }} data-reveal data-delay="1">
+          <h2 className="landing-section-title text-center" data-reveal data-delay="1">
             Preguntas
             <br />
             <span>frecuentes.</span>

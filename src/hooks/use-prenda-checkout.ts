@@ -53,8 +53,10 @@ export function usePrendaCheckout({
   const [metodoPagoId, setMetodoPagoId] = useState(metodosPago[0]?.id ?? '');
   const [uploading, setUploading] = useState(false);
   const [comprobanteUrl, setComprobanteUrl] = useState<string | null>(null);
+  const [cardData, setCardData] = useState({ number: '', holder: '', expireMonth: '', expireYear: '', cvv: '', billingAddress: '', billingCity: '', billingState: 'HN-CR', billingPhone: '' });
   const [errorMsg, setErrorMsg] = useState('');
   const [loadingPedido, setLoadingPedido] = useState(false);
+  const [processingMessage, setProcessingMessage] = useState('');
   const [pedidoNumero, setPedidoNumero] = useState('');
   const [pedidoTrackingUrl, setPedidoTrackingUrl] = useState('');
   const [tallaSeleccionada, setTallaSeleccionada] = useState(getAvailableProductSizes(prenda)[0] ?? getPrimaryProductSize(prenda) ?? '');
@@ -190,6 +192,8 @@ export function usePrendaCheckout({
   }
 
   async function confirmarApartado() {
+    if (loadingPedido || uploading) return;
+
     if (!tieneStock) { setErrorMsg('Esta prenda ya no tiene unidades disponibles.'); return; }
     if (tallasProducto.length > 0 && !tallaActiva) { setErrorMsg('Seleccioná una talla disponible.'); return; }
     if (!nombre.trim()) { setErrorMsg('Ingresá tu nombre completo.'); return; }
@@ -206,10 +210,26 @@ export function usePrendaCheckout({
       setErrorMsg('Debés subir el comprobante de transferencia para completar la compra.');
       return;
     }
+    const esPixelPay = metodoPagoSel?.tipo === 'tarjeta' && metodoPagoSel?.proveedor?.toLowerCase().includes('pixelpay');
+    if (esPixelPay) {
+      if (!cardData.number.trim()) { setErrorMsg('Ingresá el número de tarjeta.'); return; }
+      if (!cardData.holder.trim()) { setErrorMsg('Ingresá el nombre del titular.'); return; }
+      if (!cardData.expireMonth.trim() || !cardData.expireYear.trim()) { setErrorMsg('Ingresá la fecha de vencimiento.'); return; }
+      if (!cardData.cvv.trim()) { setErrorMsg('Ingresá el CVV.'); return; }
+      if (!cardData.billingPhone.trim()) { setErrorMsg('Ingresá tu teléfono de facturación.'); return; }
+    }
 
     setLoadingPedido(true);
+    setProcessingMessage(esPixelPay
+      ? 'Estamos enviando el pago a PixelPay. Esto puede tardar unos segundos.'
+      : 'Estamos verificando stock y creando tu pedido.'
+    );
     setErrorMsg('');
 
+    setProcessingMessage(esPixelPay
+      ? 'Procesando tu pago con tarjeta de forma segura.'
+      : 'Registrando tu compra y reservando la prenda.'
+    );
     const res = await crearCheckoutPublico({
       tiendaId: tienda.id,
       dropId,
@@ -222,6 +242,17 @@ export function usePrendaCheckout({
       metodoEnvioId: boxfulData.isBoxful ? null : metodoEnvioId,
       metodoPagoId,
       comprobanteUrl,
+      pixelPayCard: esPixelPay ? {
+        number: cardData.number.replace(/\s/g, ''),
+        holder: cardData.holder,
+        expireMonth: cardData.expireMonth,
+        expireYear: cardData.expireYear.length === 2 ? `20${cardData.expireYear}` : cardData.expireYear,
+        cvv: cardData.cvv,
+        billingAddress: cardData.billingAddress || direccion,
+        billingCity: cardData.billingCity || ciudad,
+        billingState: cardData.billingState,
+        billingPhone: cardData.billingPhone || whatsapp,
+      } : undefined,
       envioBoxful: boxfulData.isBoxful && boxfulData.quote && boxfulData.destination ? {
         mode: boxfulData.mode,
         quote: boxfulData.quote,
@@ -233,6 +264,7 @@ export function usePrendaCheckout({
     if (res.error || !res.pedido) {
       setErrorMsg(res.error ?? 'Error al crear el pedido. Intentá de nuevo.');
       setLoadingPedido(false);
+      setProcessingMessage('');
       return;
     }
 
@@ -249,8 +281,10 @@ export function usePrendaCheckout({
     setPrendaEstado(siguienteCantidad > 0 ? 'disponible' : 'vendida');
     setPedidoNumero(res.pedido.numero);
     setPedidoTrackingUrl(res.pedido.trackingUrl);
+    setProcessingMessage('Compra confirmada. Preparando el resumen del pedido.');
     setCheckoutStep('confirmado');
     setLoadingPedido(false);
+    setProcessingMessage('');
   }
 
   return {
@@ -266,10 +300,12 @@ export function usePrendaCheckout({
     metodoEnvioId, setMetodoEnvioId,
     boxfulData, setBoxfulData,
     metodoPagoId, setMetodoPagoId,
+    cardData, setCardData,
     uploading,
     comprobanteUrl,
     errorMsg, setErrorMsg,
     loadingPedido,
+    processingMessage,
     pedidoNumero,
     pedidoTrackingUrl,
     tallaSeleccionada, setTallaSeleccionada,

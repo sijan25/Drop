@@ -8,6 +8,7 @@ import { guardServerMutation } from '@/lib/security/request'
 import { restaurarInventarioPedido } from '@/lib/orders/restore-stock'
 import { createBoxfulShipment } from '@/lib/boxful/client'
 import type { BoxfulShippingMode } from '@/lib/boxful/types'
+import { anularPagoPixelPay } from '@/lib/pixelpay/client'
 
 const TRANSITIONS: Record<string, { siguiente: string; campo: string }> = {
   pagado:   { siguiente: 'empacado',  campo: 'empacado_at' },
@@ -24,7 +25,7 @@ async function getTiendaDelUsuario(supabase: Awaited<ReturnType<typeof createCli
   if (userError || !user) return { error: 'No autorizado.' as const }
   const { data: tienda } = await supabase.from('tiendas').select('id').eq('user_id', user.id).single()
   if (!tienda) return { error: 'Tienda no encontrada.' as const }
-  return { tiendaId: tienda.id }
+  return { tiendaId: tienda.id, userEmail: user.email ?? null }
 }
 
 // ── Helper: contexto mínimo para email de estado ──
@@ -118,10 +119,72 @@ export async function cancelarPedido(pedidoId: string) {
 
   const now = new Date().toISOString()
 
-  const { error: cancelError } = await supabase.from('pedidos').update({
+  const { data: pedido, error: pedidoError } = await supabase
+    .from('pedidos')
+    .select('numero, estado, pixelpay_payment_uuid')
+    .eq('id', pedidoId)
+    .eq('tienda_id', auth.tiendaId)
+    .single()
+
+  if (pedidoError || !pedido) return { error: pedidoError?.message ?? 'Pedido no encontrado.' }
+
+  if (pedido.pixelpay_payment_uuid && pedido.estado !== 'cancelado') {
+    const { data: pixelPedido, error: pixelPedidoError } = await supabase
+      .from('pedidos')
+      .select('pixelpay_order_id')
+      .eq('id', pedidoId)
+      .eq('tienda_id', auth.tiendaId)
+      .single()
+
+    if (pixelPedidoError) {
+      return { error: 'No se puede anular en PixelPay porque falta aplicar la migración de metadata del pago.' }
+    }
+
+    if (!pixelPedido?.pixelpay_order_id) {
+      return { error: 'No se puede anular en PixelPay porque falta el order_id del pago.' }
+    }
+
+    const { data: tiendaCredenciales, error: tiendaError } = await supabase
+      .from('tiendas')
+      .select('pixelpay_endpoint, pixelpay_key_id, pixelpay_secret_key, pixelpay_sandbox')
+      .eq('id', auth.tiendaId)
+      .single()
+
+    if (tiendaError || !tiendaCredenciales) {
+      return { error: tiendaError?.message ?? 'No pudimos leer las credenciales de PixelPay.' }
+    }
+
+    const isSandbox = tiendaCredenciales.pixelpay_sandbox ?? true
+    if (!isSandbox && !auth.userEmail) {
+      return { error: 'No se puede anular en PixelPay porque falta el correo del usuario autorizado.' }
+    }
+
+    const voidResult = await anularPagoPixelPay(
+      {
+        sandbox: isSandbox,
+        endpoint: tiendaCredenciales.pixelpay_endpoint,
+        keyId: tiendaCredenciales.pixelpay_key_id,
+        secretKey: tiendaCredenciales.pixelpay_secret_key,
+      },
+      {
+        paymentUuid: pedido.pixelpay_payment_uuid,
+        orderId: pixelPedido.pixelpay_order_id,
+        authUserEmail: isSandbox ? 'sandbox@pixel.hn' : auth.userEmail ?? '',
+        reason: `Cancelación del pedido ${pedido.numero}`,
+      },
+    )
+
+    if (!voidResult.success) {
+      return { error: `PixelPay no anuló el cobro: ${voidResult.message}` }
+    }
+  }
+
+  const update: Record<string, unknown> = {
     estado: 'cancelado',
     cancelado_at: now,
-  }).eq('id', pedidoId).eq('tienda_id', auth.tiendaId)
+  }
+
+  const { error: cancelError } = await supabase.from('pedidos').update(update).eq('id', pedidoId).eq('tienda_id', auth.tiendaId)
 
   if (cancelError) return { error: cancelError.message }
 

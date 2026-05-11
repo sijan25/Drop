@@ -155,8 +155,8 @@ function buildTallaStats(pedidos: Pedido[]): TallaStats[] {
 function MiniBar({ value, max, color = 'var(--accent)' }: { value: number; max: number; color?: string }) {
   const pct = max > 0 ? (value / max) * 100 : 0;
   return (
-    <div style={{ height: 4, borderRadius: 2, background: 'var(--line)', overflow: 'hidden' }}>
-      <div style={{ height: '100%', width: `${pct}%`, background: color, borderRadius: 2, transition: 'width .3s' }} />
+    <div className="h-1 rounded-sm bg-[var(--line)] overflow-hidden">
+      <div className="h-full rounded-sm transition-[width] duration-300" style={{ width: `${pct}%`, background: color }} />
     </div>
   );
 }
@@ -168,14 +168,14 @@ function BarChart({ data, selectedDate, onSelect }: { data: DayPoint[]; selected
 
   if (!hasData) {
     return (
-      <div style={{ height: 120, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--ink-3)', fontSize: 13 }}>
+      <div className="h-[120px] flex items-center justify-center text-[var(--ink-3)] text-[13px]">
         Sin ventas en este período
       </div>
     );
   }
 
   return (
-    <div style={{ display: 'flex', alignItems: 'flex-end', gap: data.length > 60 ? 1 : 3, height: 100, paddingBottom: showLabels ? 20 : 0, position: 'relative' }}>
+    <div className="relative flex items-end h-[100px]" style={{ gap: data.length > 60 ? 1 : 3, paddingBottom: showLabels ? 20 : 0 }}>
       {data.map((d, i) => {
         const h = max > 0 ? Math.max((d.total / max) * 82, d.total > 0 ? 3 : 0) : 0;
         const selected = selectedDate === d.date;
@@ -184,12 +184,22 @@ function BarChart({ data, selectedDate, onSelect }: { data: DayPoint[]; selected
             key={i}
             type="button"
             onClick={() => d.total > 0 && onSelect(d.date)}
-            style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'flex-end', gap: 0, position: 'relative', minWidth: 0, height: '100%', cursor: d.total > 0 ? 'pointer' : 'default', padding: 0, background: 'transparent' }}
+            className="flex-1 flex flex-col items-center justify-end relative min-w-0 h-full p-0 bg-transparent"
+            style={{ cursor: d.total > 0 ? 'pointer' : 'default' }}
             title={`${d.label}: ${fmtL(d.total)}`}
           >
-            <div style={{ width: '100%', height: h, background: d.total > 0 ? (selected ? 'var(--accent-3)' : 'var(--accent)') : 'var(--line)', borderRadius: '3px 3px 0 0', opacity: d.total > 0 ? 1 : 0.4, transition: 'height .3s, background .15s', outline: selected ? '2px solid rgba(201,100,66,0.28)' : 'none', outlineOffset: 2 }} />
+            <div
+              className="w-full rounded-t-[3px] transition-[height,background] duration-300"
+              style={{
+                height: h,
+                background: d.total > 0 ? (selected ? 'var(--accent-3)' : 'var(--accent)') : 'var(--line)',
+                opacity: d.total > 0 ? 1 : 0.4,
+                outline: selected ? '2px solid rgba(201,100,66,0.28)' : 'none',
+                outlineOffset: 2,
+              }}
+            />
             {showLabels && i % Math.ceil(data.length / 8) === 0 && (
-              <div style={{ position: 'absolute', bottom: -18, fontSize: 9, color: 'var(--ink-3)', whiteSpace: 'nowrap', transform: 'translateX(-50%)', left: '50%' }}>{d.label}</div>
+              <div className="absolute bottom-[-18px] text-[9px] text-[var(--ink-3)] whitespace-nowrap -translate-x-1/2 left-1/2">{d.label}</div>
             )}
           </button>
         );
@@ -306,38 +316,24 @@ export default function AnaliticasClient() {
   const todayStr = new Date().toISOString().slice(0, 10);
 
   return (
-    <div ref={shellRef} className="analytics-shell" style={{ height: '100%', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+    <div ref={shellRef} className="analytics-shell h-full flex flex-col overflow-hidden">
       {/* Header */}
-      <div className="analytics-header" style={{
-        padding: isCompact ? '18px 16px 14px' : '18px 28px 14px',
-        borderBottom: '1px solid var(--line)',
-        display: 'flex', alignItems: isCompact ? 'stretch' : 'center', justifyContent: 'space-between', gap: isCompact ? 12 : 20,
-        flexShrink: 0,
-        background: 'rgba(255,255,255,0.68)',
-        backdropFilter: 'blur(18px)',
-        flexWrap: 'wrap',
-        flexDirection: isCompact ? 'column' : undefined,
-      }}>
+      <div
+        className={`analytics-header border-b border-[var(--line)] shrink-0 bg-[rgba(255,255,255,0.68)] backdrop-blur-[18px] flex flex-wrap ${isCompact ? 'flex-col items-stretch px-4 pt-[18px] pb-[14px]' : 'items-center justify-between px-7 pt-[18px] pb-[14px]'}`}
+        style={{ gap: isCompact ? 12 : 20 }}
+      >
         <div>
-          <div style={{ fontSize: 20, fontWeight: 900, letterSpacing: '-0.025em' }}>Analíticas</div>
-          <div className="t-mute" style={{ fontSize: 13, marginTop: 2 }}>{label}</div>
+          <div className="text-[20px] font-black tracking-[-0.025em]">Analíticas</div>
+          <div className="t-mute text-[13px] mt-[2px]">{label}</div>
         </div>
 
-        <div className="analytics-header-actions" style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-          <div className="analytics-period-tabs" style={{ display: 'flex', gap: 4, background: 'var(--surface-2)', borderRadius: 10, padding: 3, width: isCompact ? '100%' : undefined }}>
+        <div className="analytics-header-actions flex items-center gap-2 flex-wrap">
+          <div className={`analytics-period-tabs flex gap-1 bg-[var(--surface-2)] rounded-[10px] p-[3px] ${isCompact ? 'w-full' : ''}`}>
             {PRESETS.map(pr => (
               <button
                 key={pr.id}
                 onClick={() => handlePreset(pr.id)}
-                style={{
-                  padding: '5px 12px', borderRadius: 7, fontSize: 12, fontWeight: 600,
-                  background: preset === pr.id ? '#fff' : 'transparent',
-                  color: preset === pr.id ? 'var(--accent-3)' : 'var(--ink-3)',
-                  boxShadow: preset === pr.id ? '0 1px 4px rgba(0,0,0,0.08)' : 'none',
-                  transition: 'all .12s',
-                  display: 'flex', alignItems: 'center', justifyContent: isCompact ? 'center' : undefined, gap: 5,
-                  flex: isCompact ? 1 : undefined,
-                }}
+                className={`px-3 py-[5px] rounded-[7px] text-[12px] font-semibold flex items-center gap-[5px] transition-all duration-[120ms] ${isCompact ? 'flex-1 justify-center' : ''} ${preset === pr.id ? 'bg-white text-[var(--accent-3)] shadow-[0_1px_4px_rgba(0,0,0,0.08)]' : 'bg-transparent text-[var(--ink-3)]'}`}
               >
                 {pr.id === 'custom' && <Icons.filter width={11} height={11} />}
                 {pr.label}
@@ -347,32 +343,27 @@ export default function AnaliticasClient() {
 
           {/* Custom date range inputs */}
           {showCustom && (
-            <div className="analytics-custom-range" style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'var(--surface-2)', borderRadius: 10, padding: '5px 10px', border: '1.5px solid rgba(201,100,66,0.25)', width: isCompact ? '100%' : undefined, flexWrap: isCompact ? 'wrap' : undefined }}>
+            <div className={`analytics-custom-range flex items-center gap-[6px] bg-[var(--surface-2)] rounded-[10px] px-[10px] py-[5px] border-[1.5px] border-[rgba(201,100,66,0.25)] ${isCompact ? 'w-full flex-wrap' : ''}`}>
               <input
                 type="date"
                 value={customDesde}
                 max={customHasta || todayStr}
                 onChange={e => setCustomDesde(e.target.value)}
-                style={{ fontSize: 12, background: 'transparent', border: 'none', outline: 'none', color: 'var(--ink)', fontFamily: 'inherit', cursor: 'pointer' }}
+                className="text-[12px] bg-transparent border-none outline-none text-[var(--ink)] font-[inherit] cursor-pointer"
               />
-              <span style={{ color: 'var(--ink-3)', fontSize: 11 }}>→</span>
+              <span className="text-[var(--ink-3)] text-[11px]">→</span>
               <input
                 type="date"
                 value={customHasta}
                 min={customDesde || undefined}
                 max={todayStr}
                 onChange={e => setCustomHasta(e.target.value)}
-                style={{ fontSize: 12, background: 'transparent', border: 'none', outline: 'none', color: 'var(--ink)', fontFamily: 'inherit', cursor: 'pointer' }}
+                className="text-[12px] bg-transparent border-none outline-none text-[var(--ink)] font-[inherit] cursor-pointer"
               />
               <button
                 onClick={handleApplyCustom}
                 disabled={!customDesde || !customHasta}
-                style={{
-                  padding: '3px 10px', borderRadius: 6, fontSize: 11, fontWeight: 700,
-                  background: customDesde && customHasta ? 'var(--accent)' : 'var(--line)',
-                  color: customDesde && customHasta ? '#fff' : 'var(--ink-3)',
-                  transition: 'all .12s',
-                }}
+                className={`px-[10px] py-[3px] rounded-[6px] text-[11px] font-bold transition-all duration-[120ms] ${customDesde && customHasta ? 'bg-[var(--accent)] text-white' : 'bg-[var(--line)] text-[var(--ink-3)]'}`}
               >
                 Aplicar
               </button>
@@ -381,53 +372,57 @@ export default function AnaliticasClient() {
         </div>
       </div>
 
-      <div className="analytics-content" style={{ flex: 1, overflowY: 'auto', padding: isCompact ? '14px 14px 120px' : '20px 28px 28px' }}>
+      <div className="analytics-content flex-1 overflow-y-auto" style={{ padding: isCompact ? '14px 14px 120px' : '20px 28px 28px' }}>
         {/* KPIs */}
-        <div className="analytics-kpi-grid" style={{ display: 'grid', gridTemplateColumns: isNarrow ? '1fr' : isCompact ? 'repeat(2, minmax(0, 1fr))' : 'repeat(4, 1fr)', gap: isCompact ? 10 : 12, marginBottom: isCompact ? 16 : 24 }}>
+        <div
+          className="analytics-kpi-grid grid"
+          style={{
+            gridTemplateColumns: isNarrow ? '1fr' : isCompact ? 'repeat(2, minmax(0, 1fr))' : 'repeat(4, 1fr)',
+            gap: isCompact ? 10 : 12,
+            marginBottom: isCompact ? 16 : 24,
+          }}
+        >
           {[
             { label: 'Ingresos totales', value: loading ? '…' : fmtL(totalVentas), sub: 'pedidos cobrados', accent: true },
             { label: 'Pedidos', value: loading ? '…' : String(totalPedidos), sub: 'confirmados en el período', accent: false },
             { label: 'Ticket promedio', value: loading ? '…' : fmtL(ticketPromedio), sub: 'por pedido', accent: false },
             { label: 'Prendas vendidas', value: loading ? '…' : String(totalItems), sub: 'unidades en el período', accent: false },
           ].map(k => (
-            <div key={k.label} className="card analytics-kpi-card" style={{
-              padding: isCompact ? '16px 16px' : '18px 20px',
-              ...(k.accent ? {
-                background: 'linear-gradient(135deg, #E78C61 0%, #C96442 100%)',
-                border: 'none',
-                boxShadow: '0 8px 24px rgba(201,100,66,0.22)',
-              } : {}),
-            }}>
-              <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.06, color: k.accent ? 'rgba(255,255,255,0.75)' : 'var(--ink-3)', marginBottom: 8 }}>
+            <div
+              key={k.label}
+              className={`card analytics-kpi-card ${k.accent ? 'bg-[linear-gradient(135deg,#E78C61_0%,#C96442_100%)] border-0 shadow-[0_8px_24px_rgba(201,100,66,0.22)]' : ''}`}
+              style={{ padding: isCompact ? '16px' : '18px 20px' }}
+            >
+              <div className={`text-[11px] font-bold uppercase tracking-[0.06em] mb-2 ${k.accent ? 'text-[rgba(255,255,255,0.75)]' : 'text-[var(--ink-3)]'}`}>
                 {k.label}
               </div>
-              <div className="tnum" style={{ fontSize: isCompact ? 22 : 26, fontWeight: 900, letterSpacing: '-0.03em', color: k.accent ? '#fff' : 'var(--ink)' }}>
+              <div className={`tnum font-black tracking-[-0.03em] ${k.accent ? 'text-white' : 'text-[var(--ink)]'}`} style={{ fontSize: isCompact ? 22 : 26 }}>
                 {k.value}
               </div>
-              <div style={{ fontSize: 11, marginTop: 4, color: k.accent ? 'rgba(255,255,255,0.7)' : 'var(--ink-3)' }}>{k.sub}</div>
+              <div className={`text-[11px] mt-1 ${k.accent ? 'text-[rgba(255,255,255,0.7)]' : 'text-[var(--ink-3)]'}`}>{k.sub}</div>
             </div>
           ))}
         </div>
 
         {/* Ventas por día */}
         <div className="card analytics-chart-card" style={{ padding: isCompact ? '16px 14px' : '20px 22px', marginBottom: isCompact ? 14 : 20 }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
-            <div style={{ fontSize: 14, fontWeight: 800 }}>Ventas por día</div>
+          <div className="flex items-center justify-between mb-4">
+            <div className="text-[14px] font-extrabold">Ventas por día</div>
             {!loading && totalVentas > 0 && (
-              <div className="mono t-mute" style={{ fontSize: 12 }}>
+              <div className="mono t-mute text-[12px]">
                 pico: {fmtL(Math.max(...chartData.map(d => d.total)))}
               </div>
             )}
           </div>
           {loading ? (
-            <div style={{ height: 100, background: 'var(--surface-2)', borderRadius: 8, animation: 'pulse 1.5s infinite' }} />
+            <div className="h-[100px] bg-[var(--surface-2)] rounded-lg animate-pulse" />
           ) : (
             <BarChart data={chartData} selectedDate={selectedDate} onSelect={setSelectedDate} />
           )}
           {!loading && totalVentas > 0 && (
-            <div style={{ marginTop: 16, borderTop: '1px solid var(--line)', paddingTop: 14 }}>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, marginBottom: 10 }}>
-                <div style={{ fontSize: 13, fontWeight: 800 }}>
+            <div className="mt-4 border-t border-[var(--line)] pt-[14px]">
+              <div className="flex items-center justify-between gap-3 mb-[10px]">
+                <div className="text-[13px] font-extrabold">
                   {selectedPoint ? `Detalle · ${selectedPoint.label}` : 'Detalle de barra'}
                 </div>
                 {selectedPoint && (
@@ -437,23 +432,23 @@ export default function AnaliticasClient() {
                 )}
               </div>
               {!selectedPoint ? (
-                <div className="t-mute" style={{ fontSize: 12, padding: '10px 0' }}>Seleccioná una barrita para ver solo sus pedidos.</div>
+                <div className="t-mute text-[12px] py-[10px]">Seleccioná una barrita para ver solo sus pedidos.</div>
               ) : selectedPedidos.length === 0 ? (
-                <div className="t-mute" style={{ fontSize: 12, padding: '10px 0' }}>No hay pedidos en esta barra.</div>
+                <div className="t-mute text-[12px] py-[10px]">No hay pedidos en esta barra.</div>
               ) : (
-                <div style={{ maxHeight: 240, overflowY: 'auto', border: '1px solid var(--line)', borderRadius: 8 }}>
-                  <div className="mono" style={{ display: 'grid', gridTemplateColumns: '100px 1fr 1fr 110px 110px', gap: 10, padding: '9px 12px', borderBottom: '1px solid var(--line)', fontSize: 10, color: 'var(--ink-3)', textTransform: 'uppercase', position: 'sticky', top: 0, background: '#fff', zIndex: 1 }}>
+                <div className="max-h-[240px] overflow-y-auto border border-[var(--line)] rounded-lg">
+                  <div className="mono grid grid-cols-[100px_1fr_1fr_110px_110px] gap-[10px] px-3 py-[9px] border-b border-[var(--line)] text-[10px] text-[var(--ink-3)] uppercase sticky top-0 bg-white z-[1]">
                     <div>Pedido</div><div>Comprador</div><div>Prenda</div><div>Monto</div><div>Fecha</div>
                   </div>
                   {selectedPedidos.map(p => {
                     const item = p.pedido_items[0];
                     const prenda = item?.prendas ? [item.prendas.marca, item.prendas.nombre].filter(Boolean).join(' ') : '—';
                     return (
-                      <div key={p.id} style={{ display: 'grid', gridTemplateColumns: '100px 1fr 1fr 110px 110px', gap: 10, padding: '10px 12px', borderBottom: '1px solid var(--line-2)', alignItems: 'center', fontSize: 12 }}>
-                        <div className="mono tnum" style={{ fontWeight: 800 }}>{p.numero}</div>
-                        <div style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{p.comprador_nombre}</div>
-                        <div className="t-mute" style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{prenda}</div>
-                        <div className="mono tnum" style={{ fontWeight: 800 }}>{fmtL(p.monto_total)}</div>
+                      <div key={p.id} className="grid grid-cols-[100px_1fr_1fr_110px_110px] gap-[10px] px-3 py-[10px] border-b border-[var(--line-2)] items-center text-[12px]">
+                        <div className="mono tnum font-extrabold">{p.numero}</div>
+                        <div className="whitespace-nowrap overflow-hidden text-ellipsis">{p.comprador_nombre}</div>
+                        <div className="t-mute whitespace-nowrap overflow-hidden text-ellipsis">{prenda}</div>
+                        <div className="mono tnum font-extrabold">{fmtL(p.monto_total)}</div>
                         <div className="t-mute">{fmtFecha(p.created_at)}</div>
                       </div>
                     );
@@ -465,37 +460,35 @@ export default function AnaliticasClient() {
         </div>
 
         {/* Bottom grid */}
-        <div className="analytics-bottom-grid" style={{ display: 'grid', gridTemplateColumns: isCompact ? '1fr' : '1fr 1fr', gap: isCompact ? 14 : 20, marginBottom: isCompact ? 14 : 20 }}>
+        <div
+          className="analytics-bottom-grid grid"
+          style={{ gridTemplateColumns: isCompact ? '1fr' : '1fr 1fr', gap: isCompact ? 14 : 20, marginBottom: isCompact ? 14 : 20 }}
+        >
           {/* Top clientes */}
-          <div className="card analytics-list-card" style={{ overflow: 'hidden' }}>
-            <div style={{ padding: '16px 18px 12px', borderBottom: '1px solid var(--line)', display: 'flex', alignItems: 'center', gap: 8 }}>
-              <Icons.user width={14} height={14} style={{ color: 'var(--accent)' }} />
-              <div style={{ fontSize: 14, fontWeight: 800 }}>Mejores clientes</div>
+          <div className="card analytics-list-card overflow-hidden">
+            <div className="px-[18px] pt-4 pb-3 border-b border-[var(--line)] flex items-center gap-2">
+              <Icons.user width={14} height={14} className="text-[var(--accent)]" />
+              <div className="text-[14px] font-extrabold">Mejores clientes</div>
             </div>
             {loading ? (
-              <div style={{ padding: 28, textAlign: 'center', color: 'var(--ink-3)', fontSize: 13 }}>Cargando...</div>
+              <div className="p-7 text-center text-[var(--ink-3)] text-[13px]">Cargando...</div>
             ) : topClientes.length === 0 ? (
-              <div style={{ padding: 28, textAlign: 'center', color: 'var(--ink-3)', fontSize: 13 }}>Sin datos en este período</div>
-            ) : <div style={{ maxHeight: 320, overflowY: 'auto' }}>{topClientes.map((c, i) => (
-              <div key={i} style={{ padding: '10px 18px', borderBottom: i < topClientes.length - 1 ? '1px solid var(--line-2)' : 'none' }}>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 5 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0 }}>
-                    <div style={{
-                      width: 22, height: 22, borderRadius: 11, flexShrink: 0,
-                      background: i === 0 ? 'linear-gradient(135deg,var(--accent),var(--accent-3))' : 'var(--surface-2)',
-                      display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      fontSize: 9, fontWeight: 900, color: i === 0 ? '#fff' : 'var(--ink-3)',
-                    }}>
+              <div className="p-7 text-center text-[var(--ink-3)] text-[13px]">Sin datos en este período</div>
+            ) : <div className="max-h-[320px] overflow-y-auto">{topClientes.map((c, i) => (
+              <div key={i} className={`px-[18px] py-[10px] ${i < topClientes.length - 1 ? 'border-b border-[var(--line-2)]' : ''}`}>
+                <div className="flex items-center justify-between mb-[5px]">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <div className={`w-[22px] h-[22px] rounded-full shrink-0 flex items-center justify-center text-[9px] font-black ${i === 0 ? 'bg-[linear-gradient(135deg,var(--accent),var(--accent-3))] text-white' : 'bg-[var(--surface-2)] text-[var(--ink-3)]'}`}>
                       {i + 1}
                     </div>
-                    <div style={{ minWidth: 0 }}>
-                      <div style={{ fontSize: 12, fontWeight: 700, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{c.nombre}</div>
-                      {c.email && <div className="t-mute" style={{ fontSize: 10, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{c.email}</div>}
+                    <div className="min-w-0">
+                      <div className="text-[12px] font-bold whitespace-nowrap overflow-hidden text-ellipsis">{c.nombre}</div>
+                      {c.email && <div className="t-mute text-[10px] whitespace-nowrap overflow-hidden text-ellipsis">{c.email}</div>}
                     </div>
                   </div>
-                  <div style={{ textAlign: 'right', flexShrink: 0, marginLeft: 8 }}>
-                    <div className="mono tnum" style={{ fontSize: 12, fontWeight: 700 }}>{fmtL(c.total)}</div>
-                    <div className="t-mute" style={{ fontSize: 10 }}>{c.pedidos} pedido{c.pedidos !== 1 ? 's' : ''}</div>
+                  <div className="text-right shrink-0 ml-2">
+                    <div className="mono tnum text-[12px] font-bold">{fmtL(c.total)}</div>
+                    <div className="t-mute text-[10px]">{c.pedidos} pedido{c.pedidos !== 1 ? 's' : ''}</div>
                   </div>
                 </div>
                 <MiniBar value={c.total} max={maxCliente} />
@@ -504,29 +497,25 @@ export default function AnaliticasClient() {
           </div>
 
           {/* Tallas */}
-          <div className="card analytics-list-card" style={{ overflow: 'hidden' }}>
-            <div style={{ padding: '16px 18px 12px', borderBottom: '1px solid var(--line)', display: 'flex', alignItems: 'center', gap: 8 }}>
-              <Icons.grid width={14} height={14} style={{ color: 'var(--accent)' }} />
-              <div style={{ fontSize: 14, fontWeight: 800 }}>Ventas por talla</div>
+          <div className="card analytics-list-card overflow-hidden">
+            <div className="px-[18px] pt-4 pb-3 border-b border-[var(--line)] flex items-center gap-2">
+              <Icons.grid width={14} height={14} className="text-[var(--accent)]" />
+              <div className="text-[14px] font-extrabold">Ventas por talla</div>
             </div>
             {loading ? (
-              <div style={{ padding: 28, textAlign: 'center', color: 'var(--ink-3)', fontSize: 13 }}>Cargando...</div>
+              <div className="p-7 text-center text-[var(--ink-3)] text-[13px]">Cargando...</div>
             ) : tallaStats.length === 0 ? (
-              <div style={{ padding: 28, textAlign: 'center', color: 'var(--ink-3)', fontSize: 13 }}>Sin datos en este período</div>
-            ) : <div style={{ maxHeight: 320, overflowY: 'auto' }}>{tallaStats.map((t, i) => (
-              <div key={i} style={{ padding: '10px 18px', borderBottom: i < tallaStats.length - 1 ? '1px solid var(--line-2)' : 'none' }}>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 5 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                    <div style={{
-                      minWidth: 32, height: 22, borderRadius: 5, padding: '0 6px',
-                      background: 'var(--surface-2)', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      fontSize: 10, fontWeight: 800, fontFamily: 'var(--font-mono)', color: 'var(--ink-2)',
-                    }}>
+              <div className="p-7 text-center text-[var(--ink-3)] text-[13px]">Sin datos en este período</div>
+            ) : <div className="max-h-[320px] overflow-y-auto">{tallaStats.map((t, i) => (
+              <div key={i} className={`px-[18px] py-[10px] ${i < tallaStats.length - 1 ? 'border-b border-[var(--line-2)]' : ''}`}>
+                <div className="flex items-center justify-between mb-[5px]">
+                  <div className="flex items-center gap-2">
+                    <div className="min-w-[32px] h-[22px] rounded-[5px] px-[6px] bg-[var(--surface-2)] flex items-center justify-center text-[10px] font-extrabold font-[var(--font-mono)] text-[var(--ink-2)]">
                       {t.talla}
                     </div>
-                    <div className="t-mute" style={{ fontSize: 12 }}>{t.unidades} unidad{t.unidades !== 1 ? 'es' : ''}</div>
+                    <div className="t-mute text-[12px]">{t.unidades} unidad{t.unidades !== 1 ? 'es' : ''}</div>
                   </div>
-                  <div className="mono tnum" style={{ fontSize: 12, fontWeight: 700 }}>{fmtL(t.total)}</div>
+                  <div className="mono tnum text-[12px] font-bold">{fmtL(t.total)}</div>
                 </div>
                 <MiniBar value={t.unidades} max={maxTalla} color="#7B6B8F" />
               </div>
@@ -535,33 +524,43 @@ export default function AnaliticasClient() {
         </div>
 
         {/* Top prendas */}
-        <div className="card analytics-top-products-card" style={{ overflow: 'hidden' }}>
-          <div style={{ padding: '16px 18px 12px', borderBottom: '1px solid var(--line)', display: 'flex', alignItems: 'center', gap: 8 }}>
-            <Icons.sparkle width={14} height={14} style={{ color: 'var(--accent)' }} />
-            <div style={{ fontSize: 14, fontWeight: 800 }}>Prendas más vendidas</div>
+        <div className="card analytics-top-products-card overflow-hidden">
+          <div className="px-[18px] pt-4 pb-3 border-b border-[var(--line)] flex items-center gap-2">
+            <Icons.sparkle width={14} height={14} className="text-[var(--accent)]" />
+            <div className="text-[14px] font-extrabold">Prendas más vendidas</div>
           </div>
           {loading ? (
-            <div style={{ padding: 28, textAlign: 'center', color: 'var(--ink-3)', fontSize: 13 }}>Cargando...</div>
+            <div className="p-7 text-center text-[var(--ink-3)] text-[13px]">Cargando...</div>
           ) : topPrendas.length === 0 ? (
-            <div style={{ padding: 28, textAlign: 'center', color: 'var(--ink-3)', fontSize: 13 }}>Sin datos en este período</div>
+            <div className="p-7 text-center text-[var(--ink-3)] text-[13px]">Sin datos en este período</div>
           ) : (
             <>
-              <div className="analytics-products-head mono" style={{ display: isCompact ? 'none' : 'grid', gridTemplateColumns: '28px 1fr 80px 80px 80px 120px', padding: '9px 18px', borderBottom: '1px solid var(--line-2)', fontSize: 10, color: 'var(--ink-3)', textTransform: 'uppercase', letterSpacing: 0.05 }}>
-                <div>#</div><div>Prenda</div><div>Talla</div><div style={{ textAlign: 'right' }}>Und.</div><div style={{ textAlign: 'right' }}>Total</div><div style={{ paddingLeft: 8 }}>Popularidad</div>
+              <div
+                className={`analytics-products-head mono border-b border-[var(--line-2)] px-[18px] py-[9px] text-[10px] text-[var(--ink-3)] uppercase tracking-[0.05em] grid-cols-[28px_1fr_80px_80px_80px_120px] ${isCompact ? 'hidden' : 'grid'}`}
+              >
+                <div>#</div><div>Prenda</div><div>Talla</div><div className="text-right">Und.</div><div className="text-right">Total</div><div className="pl-2">Popularidad</div>
               </div>
-              <div style={{ maxHeight: 360, overflowY: 'auto' }}>
+              <div className="max-h-[360px] overflow-y-auto">
               {topPrendas.map((p, i) => (
-                <div className="analytics-product-row" key={i} style={{ display: 'grid', gridTemplateColumns: isCompact ? '28px minmax(0, 1fr) auto' : '28px 1fr 80px 80px 80px 120px', gap: isCompact ? '6px 10px' : undefined, padding: isCompact ? '12px 14px' : '10px 18px', borderBottom: i < topPrendas.length - 1 ? '1px solid var(--line-2)' : 'none', alignItems: 'center' }}>
-                  <div className="mono t-mute" style={{ fontSize: 11 }}>{i + 1}</div>
-                  <div style={{ fontSize: 12, fontWeight: 600, whiteSpace: isCompact ? 'normal' : 'nowrap', overflow: 'hidden', textOverflow: isCompact ? undefined : 'ellipsis', paddingRight: isCompact ? 0 : 12 }}>{p.nombre}</div>
+                <div
+                  className={`analytics-product-row grid items-center ${i < topPrendas.length - 1 ? 'border-b border-[var(--line-2)]' : ''}`}
+                  key={i}
+                  style={{
+                    gridTemplateColumns: isCompact ? '28px minmax(0, 1fr) auto' : '28px 1fr 80px 80px 80px 120px',
+                    gap: isCompact ? '6px 10px' : undefined,
+                    padding: isCompact ? '12px 14px' : '10px 18px',
+                  }}
+                >
+                  <div className="mono t-mute text-[11px]">{i + 1}</div>
+                  <div className={`text-[12px] font-semibold overflow-hidden ${isCompact ? 'whitespace-normal' : 'whitespace-nowrap text-ellipsis pr-3'}`}>{p.nombre}</div>
                   <div>
-                    <span style={{ display: 'inline-block', padding: '2px 7px', borderRadius: 4, background: 'var(--surface-2)', fontSize: 10, fontWeight: 800, fontFamily: 'var(--font-mono)' }}>
+                    <span className="inline-block px-[7px] py-[2px] rounded-[4px] bg-[var(--surface-2)] text-[10px] font-extrabold font-[var(--font-mono)]">
                       {p.talla}
                     </span>
                   </div>
-                  <div className="mono tnum" style={{ fontSize: 12, fontWeight: 700, textAlign: 'right', gridColumn: isCompact ? '2 / 3' : undefined }}>{isCompact ? `${p.unidades} und.` : p.unidades}</div>
-                  <div className="mono tnum" style={{ fontSize: 12, fontWeight: 700, textAlign: 'right' }}>{fmtL(p.total)}</div>
-                  <div style={{ paddingLeft: isCompact ? 0 : 8, gridColumn: isCompact ? '2 / 4' : undefined, width: '100%' }}>
+                  <div className={`mono tnum text-[12px] font-bold text-right ${isCompact ? 'col-[2/3]' : ''}`}>{isCompact ? `${p.unidades} und.` : p.unidades}</div>
+                  <div className="mono tnum text-[12px] font-bold text-right">{fmtL(p.total)}</div>
+                  <div className={`w-full ${isCompact ? 'col-[2/4]' : 'pl-2'}`}>
                     <MiniBar value={p.unidades} max={maxPrenda} color="var(--accent)" />
                   </div>
                 </div>

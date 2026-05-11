@@ -14,30 +14,20 @@ export default function GlobalError({
   }, [error])
 
   return (
-    <div style={{
-      minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center',
-      background: '#FAF9F7', padding: 24,
-    }}>
-      <div style={{ textAlign: 'center', maxWidth: 400 }}>
-        <div style={{
-          width: 52, height: 52, borderRadius: 14, background: '#fef2f2',
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          margin: '0 auto 20px', fontSize: 22,
-        }}>
+    <div className="min-h-screen flex items-center justify-center bg-[#FAF9F7] p-[24px]">
+      <div className="text-center max-w-[400px]">
+        <div className="w-[52px] h-[52px] rounded-[14px] bg-[#fef2f2] flex items-center justify-center mx-auto mb-[20px] text-[22px]">
           ⚠️
         </div>
-        <div style={{ fontSize: 18, fontWeight: 700, letterSpacing: '-0.01em', marginBottom: 8 }}>
+        <div className="text-[18px] font-bold tracking-[-0.01em] mb-[8px]">
           Algo salió mal
         </div>
-        <div style={{ fontSize: 14, color: '#8A8380', lineHeight: 1.6, marginBottom: 28 }}>
+        <div className="text-[14px] text-[#8A8380] leading-[1.6] mb-[28px]">
           Ocurrió un error inesperado. Podés intentar de nuevo o volver más tarde.
         </div>
         <button
           onClick={reset}
-          style={{
-            background: '#1A1714', color: '#fff', border: 'none', cursor: 'pointer',
-            fontSize: 14, fontWeight: 600, padding: '11px 24px', borderRadius: 10,
-          }}
+          className="bg-[#1A1714] text-white border-none cursor-pointer text-[14px] font-semibold px-[24px] py-[11px] rounded-[10px]"
         >
           Intentar de nuevo
         </button>

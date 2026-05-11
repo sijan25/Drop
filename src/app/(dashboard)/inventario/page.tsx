@@ -43,17 +43,17 @@ interface Prenda {
 }
 
 const FILTROS = ['Todas', 'Disponibles', 'Apartadas', 'Vendidas', 'Remanentes'];
-const ESTADO_MAP: Record<EstadoPrenda, { label: string; style: React.CSSProperties }> = {
-  disponible: { label: 'Disponible', style: { color: '#065f46', background: '#ecfdf5', border: '1px solid #a7f3d0' } },
-  apartada: { label: 'Apartada', style: { color: '#92400e', background: '#fffbeb', border: '1px solid #fde68a' } },
-  vendida: { label: 'Vendida', style: { color: '#fff', background: '#111', border: 'none' } },
-  remanente: { label: 'Remanente 48h', style: { color: '#1d4ed8', background: '#eff6ff', border: '1px solid #bfdbfe' } },
+const ESTADO_MAP: Record<EstadoPrenda, { label: string; className: string }> = {
+  disponible: { label: 'Disponible', className: 'text-[#065f46] bg-[#ecfdf5] border border-[#a7f3d0]' },
+  apartada: { label: 'Apartada', className: 'text-[#92400e] bg-[#fffbeb] border border-[#fde68a]' },
+  vendida: { label: 'Vendida', className: 'text-white bg-[#111] border-0' },
+  remanente: { label: 'Remanente 48h', className: 'text-[#1d4ed8] bg-[#eff6ff] border border-[#bfdbfe]' },
 };
 
 function Badge({ estado }: { estado: EstadoPrenda }) {
-  const { label, style } = ESTADO_MAP[estado];
+  const { label, className } = ESTADO_MAP[estado];
   return (
-    <span style={{ ...style, padding: '3px 8px', borderRadius: 6, fontSize: 11, fontWeight: 500, whiteSpace: 'nowrap' }}>
+    <span className={`${className} py-[3px] px-2 rounded-md text-[11px] font-medium whitespace-nowrap`}>
       {label}
     </span>
   );
@@ -186,46 +186,46 @@ function ModalPrenda({ tiendaId, drops, prenda, onClose, onSaved }: ModalProps) 
   }
 
   return (
-    <div className="inventory-modal" style={{ position: 'fixed', inset: 0, zIndex: 50, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.4)' }}
+    <div className="inventory-modal fixed inset-0 z-50 flex items-center justify-center bg-black/40"
       onClick={e => { if (e.target === e.currentTarget) onClose(); }}>
-      <div className="inventory-modal-panel" style={{ background: '#fff', borderRadius: 16, width: '100%', maxWidth: 560, maxHeight: '90vh', overflowY: 'auto', boxShadow: '0 24px 64px rgba(0,0,0,0.18)' }}>
-        <div style={{ padding: '20px 24px 16px', borderBottom: '1px solid var(--line)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <div style={{ fontSize: 16, fontWeight: 600 }}>{editando ? 'Editar prenda' : 'Agregar prenda'}</div>
-          <button onClick={onClose} style={{ color: 'var(--ink-3)', display: 'flex' }}>
+      <div className="inventory-modal-panel bg-white rounded-2xl w-full max-w-[560px] max-h-[90vh] overflow-y-auto shadow-[0_24px_64px_rgba(0,0,0,0.18)]">
+        <div className="px-6 pt-5 pb-4 border-b border-[var(--line)] flex items-center justify-between">
+          <div className="text-[16px] font-semibold">{editando ? 'Editar prenda' : 'Agregar prenda'}</div>
+          <button onClick={onClose} className="text-[var(--ink-3)] flex">
             <Icons.close width={18} height={18} />
           </button>
         </div>
 
-        <div className="inventory-modal-body" style={{ padding: '20px 24px', display: 'grid', gap: 16 }}>
+        <div className="inventory-modal-body px-6 py-5 grid gap-4">
           {/* Fotos */}
           <div>
             <label className="label">Fotos</label>
-            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+            <div className="flex gap-2 flex-wrap">
               {fotos.map((url, i) => (
-                <div key={i} style={{ width: 72, height: 72, borderRadius: 8, overflow: 'hidden', border: '1px solid var(--line)', position: 'relative' }}>
+                <div key={i} className="w-[72px] h-[72px] rounded-lg overflow-hidden border border-[var(--line)] relative">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img loading="lazy" src={url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                  <img loading="lazy" src={url} alt="" className="w-full h-full object-cover" />
                   <button onClick={() => removeFoto(i)}
-                    style={{ position: 'absolute', top: 2, right: 2, background: 'rgba(0,0,0,0.55)', borderRadius: 4, color: '#fff', width: 18, height: 18, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, border: 'none', cursor: 'pointer' }}>
+                    className="absolute top-[2px] right-[2px] bg-[rgba(0,0,0,0.55)] rounded text-white w-[18px] h-[18px] flex items-center justify-center text-[10px] border-0 cursor-pointer">
                     ×
                   </button>
                 </div>
               ))}
               {fotos.length < 5 && (
                 <button onClick={() => fileRef.current?.click()} disabled={uploading}
-                  style={{ width: 72, height: 72, borderRadius: 8, border: '1.5px dashed var(--line)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 4, color: 'var(--ink-3)', fontSize: 10, background: 'var(--surface-2)', cursor: uploading ? 'default' : 'pointer', opacity: uploading ? 0.7 : 1 }}>
-                  {uploading ? <span style={{ fontSize: 10 }}>Subiendo…</span> : <><Icons.plus width={16} height={16} /><span>Foto</span></>}
+                  className={`w-[72px] h-[72px] rounded-lg border-[1.5px] border-dashed border-[var(--line)] flex flex-col items-center justify-center gap-1 text-[var(--ink-3)] text-[10px] bg-[var(--surface-2)] ${uploading ? 'cursor-default opacity-70' : 'cursor-pointer'}`}>
+                  {uploading ? <span className="text-[10px]">Subiendo…</span> : <><Icons.plus width={16} height={16} /><span>Foto</span></>}
                 </button>
               )}
             </div>
-            <input ref={fileRef} type="file" accept="image/jpeg,image/png,image/webp" style={{ display: 'none' }} onChange={handleFoto} />
-            <div className="t-mute" style={{ fontSize: 11, marginTop: 4 }}>{fotos.length}/5 fotos · Las fotos se suben a Cloudinary automáticamente</div>
+            <input ref={fileRef} type="file" accept="image/jpeg,image/png,image/webp" className="hidden" onChange={handleFoto} />
+            <div className="t-mute text-[11px] mt-1">{fotos.length}/5 fotos · Las fotos se suben a Cloudinary automáticamente</div>
           </div>
 
           {/* Nombre + Marca */}
-          <div className="inventory-modal-grid-2" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+          <div className="inventory-modal-grid-2 grid grid-cols-2 gap-3">
             <div>
-              <label className="label">Nombre <span style={{ color: 'var(--urgent)' }}>*</span></label>
+              <label className="label">Nombre <span className="text-[var(--urgent)]">*</span></label>
               <input className="input" placeholder="Ej. Blusa floral" value={nombre} onChange={e => setNombre(e.target.value)} />
             </div>
             <div>
@@ -237,21 +237,20 @@ function ModalPrenda({ tiendaId, drops, prenda, onClose, onSaved }: ModalProps) 
           {/* Descripción */}
           <div>
             <label className="label">Descripción</label>
-            <textarea className="input" rows={2} placeholder="Estado, detalles, material…" value={descripcion}
-              onChange={e => setDesc(e.target.value)}
-              style={{ resize: 'vertical', fontFamily: 'inherit', fontSize: 13 }} />
+            <textarea className="input resize-y font-[inherit] text-[13px]" rows={2} placeholder="Estado, detalles, material…" value={descripcion}
+              onChange={e => setDesc(e.target.value)} />
           </div>
 
           {/* Precio + cantidad */}
-          <div className="inventory-modal-price-grid" style={{ display: 'grid', gridTemplateColumns: tallasSeleccionadas.length > 0 ? '1fr' : '1fr 120px', gap: 12 }}>
+          <div className="inventory-modal-price-grid grid gap-3" style={{ gridTemplateColumns: tallasSeleccionadas.length > 0 ? '1fr' : '1fr 120px' }}>
             <div>
-              <label className="label">Precio (L) <span style={{ color: 'var(--urgent)' }}>*</span></label>
+              <label className="label">Precio (L) <span className="text-[var(--urgent)]">*</span></label>
               <input className="input" type="number" min="0" step="0.01" placeholder="0.00"
                 value={precio} onChange={e => setPrecio(e.target.value)} />
             </div>
             {tallasSeleccionadas.length === 0 && (
               <div>
-                <label className="label">Cantidad <span style={{ color: 'var(--urgent)' }}>*</span></label>
+                <label className="label">Cantidad <span className="text-[var(--urgent)]">*</span></label>
                 <input className="input mono tnum" type="number" min="1" step="1"
                   value={cantidadGeneral} onChange={e => setCantidadGeneral(e.target.value)} />
               </div>
@@ -269,7 +268,7 @@ function ModalPrenda({ tiendaId, drops, prenda, onClose, onSaved }: ModalProps) 
               tipoNegocio={tipoNegocio}
               allowEmpty
             />
-            <div className="t-mute" style={{ fontSize: 11, marginTop: 6 }}>
+            <div className="t-mute text-[11px] mt-[6px]">
               {tallasSeleccionadas.length > 0
                 ? `${tallaHint} Total actual: ${totalPorTallas} unidad${totalPorTallas === 1 ? '' : 'es'}.`
                 : tallaHint}
@@ -277,17 +276,17 @@ function ModalPrenda({ tiendaId, drops, prenda, onClose, onSaved }: ModalProps) 
           </div>
 
           {/* Categoría + Estado */}
-          <div className="inventory-modal-grid-2" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+          <div className="inventory-modal-grid-2 grid grid-cols-2 gap-3">
             <div>
               <label className="label">Categoría</label>
-              <select className="input" value={categoria} onChange={e => setCat(e.target.value)} style={{ cursor: 'pointer' }}>
+              <select className="input cursor-pointer" value={categoria} onChange={e => setCat(e.target.value)}>
                 <option value="">— Sin categoría —</option>
                 {categorias.map(c => <option key={c} value={c}>{c}</option>)}
               </select>
             </div>
             <div>
               <label className="label">Estado</label>
-              <select className="input" value={estado} onChange={e => setEstado(e.target.value as EstadoPrenda)} style={{ cursor: 'pointer' }}>
+              <select className="input cursor-pointer" value={estado} onChange={e => setEstado(e.target.value as EstadoPrenda)}>
                 <option value="disponible">Disponible</option>
                 <option value="apartada">Apartada</option>
                 <option value="vendida">Vendida</option>
@@ -299,18 +298,18 @@ function ModalPrenda({ tiendaId, drops, prenda, onClose, onSaved }: ModalProps) 
           {/* Drop */}
           <div>
             <label className="label">Asignar a Drop (opcional)</label>
-            <select className="input" value={dropId} onChange={e => setDropId(e.target.value)} style={{ cursor: 'pointer' }}>
+            <select className="input cursor-pointer" value={dropId} onChange={e => setDropId(e.target.value)}>
               <option value="">— Sin drop —</option>
               {drops.map(d => <option key={d.id} value={d.id}>{d.nombre}</option>)}
             </select>
           </div>
 
-          {error && <div style={{ fontSize: 13, color: 'var(--urgent)', padding: '8px 12px', background: '#fef2f2', borderRadius: 8 }}>{error}</div>}
+          {error && <div className="text-[13px] text-[var(--urgent)] px-3 py-2 bg-[#fef2f2] rounded-lg">{error}</div>}
         </div>
 
-        <div className="inventory-modal-footer" style={{ padding: '14px 24px', borderTop: '1px solid var(--line)', display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+        <div className="inventory-modal-footer px-6 py-[14px] border-t border-[var(--line)] flex gap-2 justify-end">
           <button onClick={onClose} className="btn btn-outline btn-sm">Cancelar</button>
-          <button onClick={handleGuardar} disabled={saving || uploading} className="btn btn-primary btn-sm" style={{ opacity: saving || uploading ? 0.6 : 1 }}>
+          <button onClick={handleGuardar} disabled={saving || uploading} className={`btn btn-primary btn-sm${saving || uploading ? ' opacity-60' : ''}`}>
             {saving ? 'Guardando…' : editando ? 'Guardar cambios' : 'Guardar prenda'}
           </button>
         </div>
@@ -409,16 +408,16 @@ export default function InventarioPage() {
     .reduce((sum, p) => sum + getProductTotalQuantity(p), 0);
 
   return (
-    <div className="inventory-shell" style={{ height: '100%', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+    <div className="inventory-shell h-full flex flex-col overflow-hidden">
       {/* Header */}
-      <div className="inventory-header" style={{ padding: '20px 28px 16px', borderBottom: '1px solid var(--line)', display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: 20, flexShrink: 0 }}>
+      <div className="inventory-header px-7 pt-5 pb-4 border-b border-[var(--line)] flex items-end justify-between gap-5 shrink-0">
         <div>
-          <div style={{ fontSize: 20, fontWeight: 600, letterSpacing: '-0.015em' }}>Inventario</div>
-          <div className="t-mute" style={{ fontSize: 13, marginTop: 3 }}>
+          <div className="text-[20px] font-semibold tracking-[-0.015em]">Inventario</div>
+          <div className="t-mute text-[13px] mt-[3px]">
             {loading ? 'Cargando…' : `${prendas.length} prendas · ${unidadesDisponibles} unidades disponibles`}
           </div>
         </div>
-        <div className="inventory-header-actions" style={{ display: 'flex', gap: 8 }}>
+        <div className="inventory-header-actions flex gap-2">
           <button className="btn btn-primary btn-sm" onClick={() => setModal(true)}>
             <Icons.plus width={13} height={13} /> Agregar prenda
           </button>
@@ -426,55 +425,48 @@ export default function InventarioPage() {
       </div>
 
       {/* Toolbar */}
-      <div className="inventory-toolbar" style={{ padding: '12px 28px', borderBottom: '1px solid var(--line)', background: '#fff', display: 'flex', gap: 8, alignItems: 'center', flexShrink: 0, position: 'relative', zIndex: 10 }}>
-        <div className="inventory-search" style={{ position: 'relative', flex: 1, maxWidth: 320 }}>
-          <Icons.search width={14} height={14} style={{ position: 'absolute', left: 12, top: 11, color: 'var(--ink-3)' }} />
-          <input className="input" style={{ paddingLeft: 34, height: 36 }} placeholder="Buscar por nombre, categoría, talla…"
+      <div className="inventory-toolbar px-7 py-3 border-b border-[var(--line)] bg-white flex gap-2 items-center shrink-0 relative z-10">
+        <div className="inventory-search relative flex-1 max-w-[320px]">
+          <Icons.search width={14} height={14} className="absolute left-3 top-[11px] text-[var(--ink-3)]" />
+          <input className="input pl-[34px] h-9" placeholder="Buscar por nombre, categoría, talla…"
             value={busqueda} onChange={e => setBusqueda(e.target.value)} />
         </div>
-        <div className="inventory-filter-row" style={{ display: 'flex', gap: 4 }}>
+        <div className="inventory-filter-row flex gap-1">
           {FILTROS.map(f => {
             if (f !== 'Todas') {
               return (
-                <button key={f} onClick={() => { setFiltro(f); setFiltroCat(null); }} style={{
-                  padding: '6px 12px', borderRadius: 8, fontSize: 12,
-                  fontWeight: filtro === f ? 500 : 400,
-                  background: filtro === f ? 'var(--surface-2)' : 'transparent',
-                  color: filtro === f ? 'var(--ink)' : 'var(--ink-3)',
-                }}>{f}</button>
+                <button key={f} onClick={() => { setFiltro(f); setFiltroCat(null); }}
+                  className={`py-[6px] px-3 rounded-lg text-[12px] ${filtro === f ? 'font-medium bg-[var(--surface-2)] text-[var(--ink)]' : 'font-normal bg-transparent text-[var(--ink-3)]'}`}>
+                  {f}
+                </button>
               );
             }
             const isTodasActive = filtro === 'Todas';
             return (
-              <div key={f} style={{ position: 'relative' }}
+              <div key={f} className="relative"
                 onMouseEnter={() => setFlyoutOpen(true)}
                 onMouseLeave={() => setFlyoutOpen(false)}>
-                <button onClick={() => { setFiltro('Todas'); setFiltroCat(null); }} style={{
-                  padding: '6px 12px', borderRadius: 8, fontSize: 12,
-                  fontWeight: isTodasActive ? 500 : 400,
-                  background: isTodasActive ? 'var(--surface-2)' : 'transparent',
-                  color: isTodasActive ? 'var(--ink)' : 'var(--ink-3)',
-                  display: 'flex', alignItems: 'center', gap: 4,
-                }}>
+                <button onClick={() => { setFiltro('Todas'); setFiltroCat(null); }}
+                  className={`py-[6px] px-3 rounded-lg text-[12px] flex items-center gap-1 ${isTodasActive ? 'font-medium bg-[var(--surface-2)] text-[var(--ink)]' : 'font-normal bg-transparent text-[var(--ink-3)]'}`}>
                   {filtroCategoria ? filtroCategoria : 'Todas'}
                   {filtroCategoria && (
                     <span onClick={e => { e.stopPropagation(); setFiltroCat(null); }}
-                      style={{ marginLeft: 2, opacity: 0.5, lineHeight: 1, fontSize: 13 }}>×</span>
+                      className="ml-[2px] opacity-50 leading-none text-[13px]">×</span>
                   )}
                 </button>
                 {flyoutOpen && categoriasDisponibles.length > 0 && (
-                  <div style={{ position: 'absolute', top: 'calc(100% + 6px)', left: 0, zIndex: 50, background: '#fff', border: '1px solid rgba(26,23,20,0.1)', borderRadius: 12, boxShadow: '0 8px 32px rgba(26,23,20,0.12)', minWidth: 180, padding: '8px 0' }}>
-                    <div style={{ padding: '4px 14px 8px', fontSize: 10, fontWeight: 700, color: 'var(--ink-3)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Categorías</div>
+                  <div className="absolute top-[calc(100%+6px)] left-0 z-50 bg-white border border-[rgba(26,23,20,0.1)] rounded-xl shadow-[0_8px_32px_rgba(26,23,20,0.12)] min-w-[180px] py-2">
+                    <div className="px-[14px] pt-1 pb-2 text-[10px] font-bold text-[var(--ink-3)] uppercase tracking-[0.06em]">Categorías</div>
                     {categoriasDisponibles.map(cat => (
                       <button key={cat} onClick={() => { setFiltro('Todas'); setFiltroCat(cat); setFlyoutOpen(false); }}
-                        style={{ display: 'block', width: '100%', textAlign: 'left', padding: '7px 14px', fontSize: 13, fontWeight: filtroCategoria === cat ? 600 : 400, color: filtroCategoria === cat ? 'var(--accent-3)' : 'var(--ink)', background: filtroCategoria === cat ? 'rgba(201,100,66,0.07)' : 'transparent', borderLeft: `2px solid ${filtroCategoria === cat ? 'var(--accent)' : 'transparent'}` }}>
+                        className={`block w-full text-left px-[14px] py-[7px] text-[13px] border-l-2 ${filtroCategoria === cat ? 'font-semibold text-[var(--accent-3)] bg-[rgba(201,100,66,0.07)] border-[var(--accent)]' : 'font-normal text-[var(--ink)] bg-transparent border-transparent'}`}>
                         {cat}
                       </button>
                     ))}
                     {filtroCategoria && (
                       <>
-                        <div style={{ height: 1, background: 'var(--line)', margin: '6px 0' }} />
-                        <button onClick={() => { setFiltroCat(null); setFlyoutOpen(false); }} style={{ display: 'block', width: '100%', textAlign: 'left', padding: '7px 14px', fontSize: 12, color: 'var(--ink-3)' }}>Ver todas</button>
+                        <div className="h-px bg-[var(--line)] my-[6px]" />
+                        <button onClick={() => { setFiltroCat(null); setFlyoutOpen(false); }} className="block w-full text-left px-[14px] py-[7px] text-[12px] text-[var(--ink-3)]">Ver todas</button>
                       </>
                     )}
                   </div>
@@ -486,51 +478,51 @@ export default function InventarioPage() {
       </div>
 
       {/* Tabla */}
-      <div className="inventory-content" style={{ flex: 1, overflowY: 'auto', padding: '0 28px 28px' }}>
-        <div className="card inventory-table-card" style={{ marginTop: 20, overflow: 'hidden' }}>
-          <div style={{ display: 'grid', gridTemplateColumns: '40px 56px 1.5fr 1fr 100px 70px 80px 130px 28px', padding: '10px 16px', borderBottom: '1px solid var(--line)', fontSize: 11, color: 'var(--ink-3)', textTransform: 'uppercase', letterSpacing: 0.04 }} className="mono inventory-table-head">
+      <div className="inventory-content flex-1 overflow-y-auto px-7 pb-7">
+        <div className="card inventory-table-card mt-5 overflow-hidden">
+          <div className="mono inventory-table-head grid grid-cols-[40px_56px_1.5fr_1fr_100px_70px_80px_130px_28px] px-4 py-[10px] border-b border-[var(--line)] text-[11px] text-[var(--ink-3)] uppercase tracking-[0.04em]">
             <div/><div/><div>Prenda</div><div>Drop</div><div>Precio</div><div>Cant.</div><div>Talla</div><div>Estado</div><div/>
           </div>
           {loading ? (
-            <div style={{ padding: '40px 16px', textAlign: 'center', color: 'var(--ink-3)', fontSize: 13 }}>Cargando inventario…</div>
+            <div className="px-4 py-10 text-center text-[var(--ink-3)] text-[13px]">Cargando inventario…</div>
           ) : filtradas.length === 0 ? (
-            <div style={{ padding: '48px 16px', textAlign: 'center' }}>
-              <div style={{ fontSize: 13, fontWeight: 500, marginBottom: 6 }}>{busqueda ? 'Sin resultados para esa búsqueda' : 'No hay prendas aún'}</div>
-              <div className="t-mute" style={{ fontSize: 12, marginBottom: 16 }}>{busqueda ? 'Intentá con otro término' : 'Agregá tu primera prenda para empezar'}</div>
+            <div className="px-4 py-12 text-center">
+              <div className="text-[13px] font-medium mb-[6px]">{busqueda ? 'Sin resultados para esa búsqueda' : 'No hay prendas aún'}</div>
+              <div className="t-mute text-[12px] mb-4">{busqueda ? 'Intentá con otro término' : 'Agregá tu primera prenda para empezar'}</div>
               {!busqueda && <button onClick={() => setModal(true)} className="btn btn-primary btn-sm"><Icons.plus width={13} height={13} /> Agregar prenda</button>}
             </div>
           ) : (
             filtradas.map((p, i) => (
-              <div className="inventory-row" key={p.id} style={{ display: 'grid', gridTemplateColumns: '40px 56px 1.5fr 1fr 100px 70px 80px 130px 28px', padding: '10px 16px', borderBottom: i < filtradas.length - 1 ? '1px solid var(--line-2)' : 'none', alignItems: 'center', fontSize: 12 }}>
-                <input className="inventory-row-check" type="checkbox" style={{ cursor: 'pointer' }} />
-                <div className="inventory-thumb" style={{ width: 40, height: 40, borderRadius: 6, overflow: 'hidden', background: 'var(--surface-2)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <div className={`inventory-row grid grid-cols-[40px_56px_1.5fr_1fr_100px_70px_80px_130px_28px] px-4 py-[10px] items-center text-[12px]${i < filtradas.length - 1 ? ' border-b border-[var(--line-2)]' : ''}`} key={p.id}>
+                <input className="inventory-row-check cursor-pointer" type="checkbox" />
+                <div className="inventory-thumb w-10 h-10 rounded-md overflow-hidden bg-[var(--surface-2)] flex items-center justify-center">
                   {p.fotos?.[0]
                     // eslint-disable-next-line @next/next/no-img-element
-                    ? <img loading="lazy" src={p.fotos[0]} alt="" style={{ width: 40, height: 40, objectFit: 'cover', display: 'block' }} />
-                    : <Icons.grid width={14} height={14} style={{ color: 'var(--ink-3)' }} />}
+                    ? <img loading="lazy" src={p.fotos[0]} alt="" className="w-10 h-10 object-cover block" />
+                    : <Icons.grid width={14} height={14} className="text-[var(--ink-3)]" />}
                 </div>
                 <div className="inventory-product-main">
-                  <div style={{ fontWeight: 500 }}>{p.nombre}</div>
-                  <div className="t-mute" style={{ fontSize: 11 }}>{p.categoria ?? '—'}</div>
+                  <div className="font-medium">{p.nombre}</div>
+                  <div className="t-mute text-[11px]">{p.categoria ?? '—'}</div>
                 </div>
                 <div className="t-mute inventory-drop">{p.drops?.nombre ?? '—'}</div>
-                <div className="mono tnum inventory-price" style={{ fontWeight: 500 }}>L {p.precio.toLocaleString()}</div>
-                <div className="mono tnum inventory-qty" style={{ fontWeight: 600 }}>{getProductTotalQuantity(p)}</div>
-                <div className="mono inventory-size" style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{formatProductSizes(p)?.replace('Tallas ', '').replace('Talla ', '') ?? '—'}</div>
+                <div className="mono tnum inventory-price font-medium">L {p.precio.toLocaleString()}</div>
+                <div className="mono tnum inventory-qty font-semibold">{getProductTotalQuantity(p)}</div>
+                <div className="mono inventory-size whitespace-nowrap overflow-hidden text-ellipsis">{formatProductSizes(p)?.replace('Tallas ', '').replace('Talla ', '') ?? '—'}</div>
                 <div className="inventory-status"><Badge estado={p.estado} /></div>
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <button className="btn-ghost inventory-menu"><Icons.more width={13} height={13} style={{ color: 'var(--ink-3)' }} /></button>
+                    <button className="btn-ghost inventory-menu"><Icons.more width={13} height={13} className="text-[var(--ink-3)]" /></button>
                   </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end" style={{ minWidth: 180 }}>
-                    <DropdownMenuItem onClick={() => setEditando(p)}><Icons.edit width={14} height={14} style={{ marginRight: 8 }} />Editar prenda</DropdownMenuItem>
+                  <DropdownMenuContent align="end" className="min-w-[180px]">
+                    <DropdownMenuItem onClick={() => setEditando(p)}><Icons.edit width={14} height={14} className="mr-2" />Editar prenda</DropdownMenuItem>
                     <DropdownMenuSeparator />
-                    {p.estado !== 'disponible' && p.estado !== 'vendida' && <DropdownMenuItem onClick={() => cambiarEstado(p.id, 'disponible')}><Icons.check width={14} height={14} style={{ marginRight: 8 }} />Marcar disponible</DropdownMenuItem>}
-                    {p.estado === 'vendida' && <DropdownMenuItem disabled style={{ opacity: 0.45, cursor: 'not-allowed' }}><Icons.check width={14} height={14} style={{ marginRight: 8 }} />Vendida · no modificable</DropdownMenuItem>}
-                    {p.estado !== 'vendida' && <DropdownMenuItem onClick={() => cambiarEstado(p.id, 'vendida')}><Icons.bag width={14} height={14} style={{ marginRight: 8 }} />Marcar vendida</DropdownMenuItem>}
-                    {p.estado !== 'remanente' && <DropdownMenuItem onClick={() => cambiarEstado(p.id, 'remanente')}><Icons.clock width={14} height={14} style={{ marginRight: 8 }} />Marcar remanente 48h</DropdownMenuItem>}
+                    {p.estado !== 'disponible' && p.estado !== 'vendida' && <DropdownMenuItem onClick={() => cambiarEstado(p.id, 'disponible')}><Icons.check width={14} height={14} className="mr-2" />Marcar disponible</DropdownMenuItem>}
+                    {p.estado === 'vendida' && <DropdownMenuItem disabled className="opacity-45 cursor-not-allowed"><Icons.check width={14} height={14} className="mr-2" />Vendida · no modificable</DropdownMenuItem>}
+                    {p.estado !== 'vendida' && <DropdownMenuItem onClick={() => cambiarEstado(p.id, 'vendida')}><Icons.bag width={14} height={14} className="mr-2" />Marcar vendida</DropdownMenuItem>}
+                    {p.estado !== 'remanente' && <DropdownMenuItem onClick={() => cambiarEstado(p.id, 'remanente')}><Icons.clock width={14} height={14} className="mr-2" />Marcar remanente 48h</DropdownMenuItem>}
                     <DropdownMenuSeparator />
-                    <DropdownMenuItem onClick={() => setConfirmDelete(p.id)} style={{ color: 'var(--urgent)' }}><Icons.trash width={14} height={14} style={{ marginRight: 8 }} />Eliminar prenda</DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => setConfirmDelete(p.id)} className="text-[var(--urgent)]"><Icons.trash width={14} height={14} className="mr-2" />Eliminar prenda</DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
               </div>

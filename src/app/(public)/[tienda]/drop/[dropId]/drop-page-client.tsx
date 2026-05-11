@@ -43,7 +43,7 @@ function formatDropDate(value: string | null) {
 function CountdownInline({ target }: { target: number; urgent: boolean }) {
   const { d, h, m, s, ready } = useCountdown(target);
   return (
-    <span className="mono tnum" style={{ fontWeight: 700, letterSpacing: 0 }}>
+    <span className="mono tnum font-bold tracking-[0]">
       {ready ? `${d > 0 ? `${d}d ` : ''}${pad(h)}:${pad(m)}:${pad(s)}` : '--:--:--'}
     </span>
   );
@@ -141,45 +141,32 @@ export function DropPageClient({
   };
 
   return (
-    <div style={{ minHeight: '100vh', background: '#f5f4f2' }}>
+    <div className="min-h-screen bg-[#f5f4f2]">
 
       {/* ── STICKY HEADER ── */}
-      <nav style={{
-        position: 'sticky', top: 0, zIndex: 50,
-        background: 'rgba(255,255,255,0.96)',
-        backdropFilter: 'blur(16px)',
-        WebkitBackdropFilter: 'blur(16px)',
-        borderBottom: '1px solid rgba(0,0,0,0.08)',
-        padding: '0 16px', height: 52,
-        display: 'flex', alignItems: 'center', gap: 10,
-      }}>
+      <nav className="sticky top-0 z-50 bg-[rgba(255,255,255,0.96)] backdrop-blur-[16px] border-b border-[rgba(0,0,0,0.08)] px-4 h-[52px] flex items-center gap-[10px]">
         <button
           onClick={() => router.push(`/${tienda.username}`)}
-          style={{ width: 32, height: 32, borderRadius: 16, background: '#f0efed', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}
+          className="w-8 h-8 rounded-full bg-[#f0efed] border-none cursor-pointer flex items-center justify-center shrink-0"
         >
           <Icons.back width={15} height={15} />
         </button>
 
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-[6px]">
             {esActivo && (
-              <span style={{
-                display: 'inline-flex', alignItems: 'center', gap: 4,
-                background: '#ef4444', borderRadius: 20, padding: '1px 7px',
-                fontSize: 9, fontWeight: 700, color: '#fff', letterSpacing: '0.08em',
-                flexShrink: 0,
-              }}>
-                <span style={{ width: 4, height: 4, borderRadius: 2, background: '#fff', animation: 'pulse 1.4s ease-in-out infinite', display: 'inline-block' }} />
+              <span className="inline-flex items-center gap-1 bg-[#ef4444] rounded-[20px] px-[7px] py-[1px] text-[9px] font-bold text-white tracking-[0.08em] shrink-0">
+                <span className="w-1 h-1 rounded-full bg-white [animation:pulse_1.4s_ease-in-out_infinite] inline-block" />
                 EN VIVO
               </span>
             )}
-            <span style={{ fontSize: 13, fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+            <span className="text-[13px] font-semibold whitespace-nowrap overflow-hidden text-ellipsis">
               {drop.nombre}
             </span>
           </div>
-          <div style={{ fontSize: 11, color: '#888', display: 'flex', alignItems: 'center', gap: 4 }}>
+          <div className="text-[11px] text-[#888] flex items-center gap-1">
             {esActivo ? 'Cierra en' : 'Abre en'}
-            <span style={{ color: esActivo ? '#ef4444' : '#666' }}>
+            <span className={esActivo ? 'text-[#ef4444]' : 'text-[#666]'}>
               <CountdownInline target={dropTarget} urgent={esActivo} />
             </span>
           </div>
@@ -187,7 +174,7 @@ export function DropPageClient({
 
         <button
           onClick={handleShare}
-          style={{ width: 32, height: 32, borderRadius: 16, background: '#f0efed', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}
+          className="w-8 h-8 rounded-full bg-[#f0efed] border-none cursor-pointer flex items-center justify-center shrink-0"
           title="Compartir drop"
         >
           <Icons.share width={15} height={15} />
@@ -195,40 +182,12 @@ export function DropPageClient({
 
         <button
           onClick={abrirDrawer}
-          style={{
-            position: 'relative',
-            width: 32,
-            height: 32,
-            borderRadius: 16,
-            background: carritoCount > 0 ? 'var(--accent-3)' : '#f0efed',
-            color: carritoCount > 0 ? '#fff' : 'var(--accent-3)',
-            border: 'none',
-            cursor: 'pointer',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            flexShrink: 0,
-          }}
+          className={`relative w-8 h-8 rounded-full border-none cursor-pointer flex items-center justify-center shrink-0 ${carritoCount > 0 ? 'bg-[var(--accent-3)] text-white' : 'bg-[#f0efed] text-[var(--accent-3)]'}`}
           title="Ver carrito"
         >
           <Icons.bag width={15} height={15} />
           {carritoCount > 0 && (
-            <span style={{
-              position: 'absolute',
-              top: -4,
-              right: -4,
-              width: 18,
-              height: 18,
-              borderRadius: 9,
-              background: '#111',
-              color: '#fff',
-              fontSize: 10,
-              fontWeight: 800,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              border: '2px solid #fff',
-            }}>
+            <span className="absolute top-[-4px] right-[-4px] w-[18px] h-[18px] rounded-[9px] bg-[#111] text-white text-[10px] font-extrabold flex items-center justify-center border-2 border-white">
               {carritoCount}
             </span>
           )}
@@ -236,74 +195,53 @@ export function DropPageClient({
       </nav>
 
       {/* ── DROP SUMMARY ── */}
-      <section style={{ padding: '18px 14px 0' }}>
-        <div style={{
-          maxWidth: 1100,
-          margin: '0 auto',
-          background: 'var(--dark)',
-          border: '1px solid rgba(255,255,255,0.10)',
-          borderRadius: 8,
-          overflow: 'hidden',
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
-          boxShadow: '0 22px 60px rgba(26,23,20,0.22)',
-        }}>
-          <div style={{
-            position: 'relative',
-            minHeight: 240,
-            maxHeight: 360,
-            aspectRatio: '16/10',
-            background: 'var(--dark-2)',
-            overflow: 'hidden',
-          }}>
+      <section className="px-[14px] pt-[18px]">
+        <div className="max-w-[1100px] mx-auto bg-[var(--dark)] border border-[rgba(255,255,255,0.10)] rounded-[8px] overflow-hidden grid shadow-[0_22px_60px_rgba(26,23,20,0.22)] grid-cols-1 md:grid-cols-[repeat(auto-fit,minmax(300px,1fr))]">
+          <div className="relative min-h-[240px] max-h-[360px] bg-[var(--dark-2)] overflow-hidden">
             {showHeroImage ? (
               <Image
                 src={cld(drop.foto_portada_url, 'cover')}
                 alt={drop.nombre}
                 fill
                 sizes="(max-width: 768px) 100vw, 50vw"
-                style={{ objectFit: 'cover', display: 'block' }}
+                className="object-cover block"
                 onError={() => setHeroImageFailedFor(drop.foto_portada_url)}
               />
             ) : (
-              <div style={{
-                position: 'absolute',
-                inset: 0,
-                backgroundImage: 'linear-gradient(145deg, var(--dark-2) 0%, var(--dark-3) 55%, var(--dark) 100%), repeating-linear-gradient(-45deg, transparent, transparent 18px, rgba(255,255,255,0.035) 18px, rgba(255,255,255,0.035) 19px)',
-              }} />
+              <div className="absolute inset-0 bg-[linear-gradient(145deg,var(--dark-2)_0%,var(--dark-3)_55%,var(--dark)_100%),repeating-linear-gradient(-45deg,transparent,transparent_18px,rgba(255,255,255,0.035)_18px,rgba(255,255,255,0.035)_19px)]" />
             )}
-            <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to bottom, rgba(0,0,0,0.04), rgba(0,0,0,0.74))' }} />
-            <div style={{ position: 'absolute', left: 18, right: 18, bottom: 18, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
-              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: esActivo ? '#ef4444' : 'rgba(255,255,255,0.14)', border: '1px solid rgba(255,255,255,0.18)', color: '#fff', borderRadius: 20, padding: '6px 12px', fontSize: 10, fontWeight: 800, letterSpacing: '0.08em' }}>
-                {esActivo && <span style={{ width: 5, height: 5, borderRadius: 3, background: '#fff', animation: 'pulse 1.4s ease-in-out infinite', display: 'inline-block' }} />}
+            <div className="absolute inset-0 bg-[linear-gradient(to_bottom,rgba(0,0,0,0.04),rgba(0,0,0,0.74))]" />
+            <div className="absolute left-[18px] right-[18px] bottom-[18px] flex items-center justify-between gap-3">
+              <span className={`inline-flex items-center gap-[6px] border border-[rgba(255,255,255,0.18)] text-white rounded-[20px] px-3 py-[6px] text-[10px] font-extrabold tracking-[0.08em] ${esActivo ? 'bg-[#ef4444]' : 'bg-[rgba(255,255,255,0.14)]'}`}>
+                {esActivo && <span className="w-[5px] h-[5px] rounded-full bg-white [animation:pulse_1.4s_ease-in-out_infinite] inline-block" />}
                 {esActivo ? 'EN VIVO' : 'PROGRAMADO'}
               </span>
-              <span style={{ color: 'rgba(255,255,255,0.76)', fontSize: 12, fontWeight: 700 }}>
+              <span className="text-[rgba(255,255,255,0.76)] text-[12px] font-bold">
                 {formatDropDate(drop.inicia_at)}
               </span>
             </div>
           </div>
 
-          <div style={{ padding: '24px 24px 22px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', gap: 22 }}>
+          <div className="px-6 pt-6 pb-[22px] flex flex-col justify-between gap-[22px]">
             <div>
-              <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.48)', fontWeight: 800, letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 8 }}>
+              <div className="text-[11px] text-[rgba(255,255,255,0.48)] font-extrabold tracking-[0.1em] uppercase mb-2">
                 {tienda.nombre}
               </div>
-              <h1 style={{ fontSize: 34, lineHeight: 1.02, fontWeight: 900, color: '#fff', letterSpacing: 0, margin: '0 0 12px', overflowWrap: 'anywhere' }}>
+              <h1 className="text-[34px] leading-[1.02] font-black text-white tracking-[0] m-0 mb-3 break-words">
                 {drop.nombre}
               </h1>
 
-              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.12)', color: 'rgba(255,255,255,0.78)', borderRadius: 20, padding: '6px 11px', fontSize: 12, fontWeight: 700 }}>
+              <div className="flex gap-2 flex-wrap">
+                <span className="inline-flex items-center gap-[6px] bg-[rgba(255,255,255,0.08)] border border-[rgba(255,255,255,0.12)] text-[rgba(255,255,255,0.78)] rounded-[20px] px-[11px] py-[6px] text-[12px] font-bold">
                   <Icons.box width={13} height={13} />
                   {prendasTotales} unidades
                 </span>
-                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.12)', color: 'rgba(255,255,255,0.78)', borderRadius: 20, padding: '6px 11px', fontSize: 12, fontWeight: 700 }}>
+                <span className="inline-flex items-center gap-[6px] bg-[rgba(255,255,255,0.08)] border border-[rgba(255,255,255,0.12)] text-[rgba(255,255,255,0.78)] rounded-[20px] px-[11px] py-[6px] text-[12px] font-bold">
                   <Icons.eye width={13} height={13} />
                   {viewers} viendo
                 </span>
                 {anotadasCount > 0 && (
-                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.12)', color: 'rgba(255,255,255,0.78)', borderRadius: 20, padding: '6px 11px', fontSize: 12, fontWeight: 700 }}>
+                  <span className="inline-flex items-center gap-[6px] bg-[rgba(255,255,255,0.08)] border border-[rgba(255,255,255,0.12)] text-[rgba(255,255,255,0.78)] rounded-[20px] px-[11px] py-[6px] text-[12px] font-bold">
                     <Icons.bell width={13} height={13} />
                     {anotadasCount} anotadas
                   </span>
@@ -311,12 +249,12 @@ export function DropPageClient({
               </div>
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr auto', gap: 16, alignItems: 'end' }}>
+            <div className="grid gap-4 items-end grid-cols-[1fr_auto]">
               <div>
-                <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.46)', textTransform: 'uppercase', letterSpacing: '0.1em', fontFamily: 'var(--font-mono)', marginBottom: 5 }}>
+                <div className="text-[10px] text-[rgba(255,255,255,0.46)] uppercase tracking-[0.1em] font-[var(--font-mono)] mb-[5px]">
                   {esActivo ? 'Cierra en' : 'Abre en'}
                 </div>
-                <div style={{ color: '#fff', fontSize: 28, letterSpacing: 0 }}>
+                <div className="text-white text-[28px] tracking-[0]">
                   <CountdownInline target={dropTarget} urgent={esActivo} />
                 </div>
               </div>
@@ -326,7 +264,7 @@ export function DropPageClient({
                   else if (esProgramado) document.getElementById('drop-aviso')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
                   else irCatalogo();
                 }}
-                style={{ height: 44, borderRadius: 8, border: '1px solid rgba(255,255,255,0.22)', background: esActivo ? '#fff' : 'rgba(255,255,255,0.1)', color: esActivo ? '#111' : '#fff', padding: '0 15px', fontSize: 13, fontWeight: 800, cursor: 'pointer', whiteSpace: 'nowrap' }}
+                className={`h-11 rounded-[8px] border border-[rgba(255,255,255,0.22)] px-[15px] text-[13px] font-extrabold cursor-pointer whitespace-nowrap ${esActivo ? 'bg-white text-[#111]' : 'bg-[rgba(255,255,255,0.1)] text-white'}`}
               >
                 {esActivo ? 'Ver prendas' : esProgramado ? 'Avisarme' : 'Ver catálogo'}
               </button>
@@ -337,14 +275,14 @@ export function DropPageClient({
 
 
       {/* ── MAIN ── */}
-      <div id="drop-prendas" style={{ maxWidth: 1100, margin: '0 auto', padding: '18px 14px 80px' }}>
+      <div id="drop-prendas" className="max-w-[1100px] mx-auto px-[14px] pt-[18px] pb-[80px]">
 
         {/* Stats bar */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
-          <div style={{ fontSize: 13, color: '#666' }}>
+        <div className="flex items-center justify-between mb-[14px]">
+          <div className="text-[13px] text-[#666]">
             {prendasDisponibles > 0
-              ? <><span style={{ color: '#16a34a', fontWeight: 700 }}>{prendasDisponibles}</span> disponibles de {prendasTotales}</>
-              : <span style={{ color: '#888' }}>Sin prendas disponibles</span>}
+              ? <><span className="text-[#16a34a] font-bold">{prendasDisponibles}</span> disponibles de {prendasTotales}</>
+              : <span className="text-[#888]">Sin prendas disponibles</span>}
           </div>
         </div>
 
@@ -353,12 +291,12 @@ export function DropPageClient({
           {/* ── GRID PRENDAS ── */}
           <div>
             {prendas.length === 0 ? (
-              <div style={{ textAlign: 'center', padding: '42px 16px', color: '#999', fontSize: 14, background: '#fff', border: '1px solid rgba(0,0,0,0.07)', borderRadius: 8 }}>
-                <div style={{ fontSize: 15, fontWeight: 800, color: '#222', marginBottom: 4 }}>Todavía no hay prendas publicadas</div>
+              <div className="text-center px-[16px] py-[42px] text-[#999] text-[14px] bg-white border border-[rgba(0,0,0,0.07)] rounded-[8px]">
+                <div className="text-[15px] font-extrabold text-[#222] mb-[4px]">Todavía no hay prendas publicadas</div>
                 <div>Cuando la tienda agregue prendas, aparecerán aquí.</div>
               </div>
             ) : (
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))', gap: 12 }}>
+              <div className="grid grid-cols-[repeat(auto-fill,minmax(160px,1fr))] gap-[12px]">
                 {prendas.map((p, i) => {
                   const disponible = p.estado === 'disponible';
                   const availableSizes = getAvailableProductSizes(p);
@@ -414,33 +352,29 @@ export function DropPageClient({
 
           {/* ── ACTIVIDAD EN VIVO ── */}
           {esActivo && (
-            <div className="drop-activity-sidebar" style={{ position: 'sticky', top: 68, maxHeight: 'calc(100vh - 84px)', minHeight: 0 }}>
-              <div style={{ background: '#fff', borderRadius: 14, border: '1px solid rgba(0,0,0,0.07)', overflow: 'hidden', maxHeight: 'calc(100vh - 84px)', display: 'flex', flexDirection: 'column' }}>
-                <div style={{
-                  padding: '12px 14px', borderBottom: '1px solid rgba(0,0,0,0.07)',
-                  display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                  flexShrink: 0,
-                }}>
-                  <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#999', display: 'flex', alignItems: 'center', gap: 6 }}>
-                    <span style={{ width: 6, height: 6, borderRadius: 3, background: '#ef4444', display: 'inline-block', animation: 'pulse 1.4s ease-in-out infinite' }} />
+            <div className="drop-activity-sidebar sticky top-[68px] max-h-[calc(100vh-84px)] min-h-0">
+              <div className="bg-white rounded-[14px] border border-[rgba(0,0,0,0.07)] overflow-hidden max-h-[calc(100vh-84px)] flex flex-col">
+                <div className="px-[14px] py-[12px] border-b border-[rgba(0,0,0,0.07)] flex items-center justify-between shrink-0">
+                  <div className="text-[11px] font-bold uppercase tracking-[0.08em] text-[#999] flex items-center gap-[6px]">
+                    <span className="w-[6px] h-[6px] rounded-[3px] bg-[#ef4444] inline-block [animation:pulse_1.4s_ease-in-out_infinite]" />
                     Actividad en vivo
                   </div>
-                  <span style={{ fontSize: 11, color: '#aaa', display: 'flex', alignItems: 'center', gap: 4 }}>
+                  <span className="text-[11px] text-[#aaa] flex items-center gap-[4px]">
                     <Icons.eye width={11} height={11} />
                     {viewers}
                   </span>
                 </div>
 
                 {actividadLive.length === 0 ? (
-                  <div style={{ padding: '28px 16px', textAlign: 'center' }}>
-                    <div style={{ width: 36, height: 36, borderRadius: 18, background: '#f5f5f5', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 10px' }}>
-                      <Icons.eye width={16} height={16} style={{ color: '#bbb' }} />
+                  <div className="px-[16px] py-[28px] text-center">
+                    <div className="w-[36px] h-[36px] rounded-[18px] bg-[#f5f5f5] flex items-center justify-center mx-auto mb-[10px]">
+                      <Icons.eye width={16} height={16} className="text-[#bbb]" />
                     </div>
-                    <div style={{ fontSize: 12, fontWeight: 600, color: '#333', marginBottom: 4 }}>Esperando actividad</div>
-                    <div style={{ fontSize: 11, color: '#bbb', lineHeight: 1.5 }}>Las compras y apartados aparecerán aquí en tiempo real.</div>
+                    <div className="text-[12px] font-semibold text-[#333] mb-[4px]">Esperando actividad</div>
+                    <div className="text-[11px] text-[#bbb] leading-[1.5]">Las compras y apartados aparecerán aquí en tiempo real.</div>
                   </div>
                 ) : (
-                  <div style={{ padding: '10px 14px 14px', display: 'grid', gap: 14, overflowY: 'auto', minHeight: 0 }}>
+                  <div className="px-[14px] pt-[10px] pb-[14px] grid gap-[14px] overflow-y-auto min-h-0">
                     {actividadLive.map(a => {
                       const partes = a.texto.split('·').map(s => s.trim());
                       const nombre = partes[0] ?? '';
@@ -451,28 +385,28 @@ export function DropPageClient({
                       const letraAvatar = nombre.charAt(0).toUpperCase();
 
                       return (
-                        <div key={a.id} style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
-                          <div style={{
-                            width: 36, height: 36, borderRadius: 18, flexShrink: 0,
-                            background: esCompra ? '#0a0a0a' : esApartado ? '#fef3c7' : '#f0efed',
-                            color: esCompra ? '#fff' : esApartado ? '#92400e' : '#888',
-                            display: 'flex', alignItems: 'center', justifyContent: 'center',
-                            fontSize: 13, fontWeight: 700,
-                          }}>
+                        <div key={a.id} className="flex gap-[12px] items-start">
+                          <div
+                            className="w-[36px] h-[36px] rounded-[18px] shrink-0 flex items-center justify-center text-[13px] font-bold"
+                            style={{
+                              background: esCompra ? '#0a0a0a' : esApartado ? '#fef3c7' : '#f0efed',
+                              color: esCompra ? '#fff' : esApartado ? '#92400e' : '#888',
+                            }}
+                          >
                             {letraAvatar}
                           </div>
-                          <div style={{ flex: 1, minWidth: 0 }}>
-                            <div style={{ fontSize: 14, lineHeight: 1.4 }}>
-                              <span style={{ fontWeight: 700 }}>{nombre}</span>
-                              {esApartado && <span style={{ color: '#d97706', fontWeight: 500 }}> apartó</span>}
-                              {esCompra && <span style={{ color: '#555', fontWeight: 500 }}> compró</span>}
+                          <div className="flex-1 min-w-0">
+                            <div className="text-[14px] leading-[1.4]">
+                              <span className="font-bold">{nombre}</span>
+                              {esApartado && <span className="text-[#d97706] font-medium"> apartó</span>}
+                              {esCompra && <span className="text-[#555] font-medium"> compró</span>}
                             </div>
                             {prenda && (
-                              <div style={{ fontSize: 13, fontWeight: 600, color: '#222', marginTop: 2 }}>
-                                {prenda}{talla && <span style={{ color: '#999', fontWeight: 400 }}> · {talla}</span>}
+                              <div className="text-[13px] font-semibold text-[#222] mt-[2px]">
+                                {prenda}{talla && <span className="text-[#999] font-normal"> · {talla}</span>}
                               </div>
                             )}
-                            <div className="mono" style={{ fontSize: 10, color: '#bbb', marginTop: 3 }}>{formatRelativo(a.created_at)}</div>
+                            <div className="mono text-[10px] text-[#bbb] mt-[3px]">{formatRelativo(a.created_at)}</div>
                           </div>
                         </div>
                       );
@@ -506,31 +440,31 @@ function PreviewDropNotice({ dropName, onClose, onAviso, onCatalogo }: {
   return (
     <div
       onClick={onClose}
-      style={{ position: 'fixed', inset: 0, zIndex: 120, background: 'rgba(0,0,0,0.42)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 18, backdropFilter: 'blur(6px)', WebkitBackdropFilter: 'blur(6px)' }}
+      className="fixed inset-0 z-[120] bg-[rgba(0,0,0,0.42)] flex items-center justify-center p-[18px] backdrop-blur-[6px]"
     >
       <div
         onClick={e => e.stopPropagation()}
-        style={{ width: 'min(430px, 100%)', background: '#fff', borderRadius: 12, border: '1px solid rgba(0,0,0,0.08)', boxShadow: '0 24px 80px rgba(0,0,0,0.22)', padding: 22 }}
+        className="w-[min(430px,100%)] bg-white rounded-[12px] border border-[rgba(0,0,0,0.08)] shadow-[0_24px_80px_rgba(0,0,0,0.22)] p-[22px]"
       >
-        <div style={{ display: 'flex', justifyContent: 'space-between', gap: 14, alignItems: 'flex-start', marginBottom: 12 }}>
+        <div className="flex justify-between gap-[14px] items-start mb-[12px]">
           <div>
-            <div style={{ fontSize: 12, fontWeight: 800, letterSpacing: '0.08em', textTransform: 'uppercase', color: '#999', marginBottom: 7 }}>Preview del drop</div>
-            <div style={{ fontSize: 22, lineHeight: 1.08, fontWeight: 900, color: '#111', letterSpacing: 0 }}>
+            <div className="text-[12px] font-extrabold tracking-[0.08em] uppercase text-[#999] mb-[7px]">Preview del drop</div>
+            <div className="text-[22px] leading-[1.08] font-black text-[#111]">
               {dropName} todavía no abre
             </div>
           </div>
-          <button onClick={onClose} aria-label="Cerrar" style={{ width: 32, height: 32, borderRadius: 16, border: '1px solid rgba(0,0,0,0.08)', background: '#f5f5f5', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', flexShrink: 0 }}>
+          <button onClick={onClose} aria-label="Cerrar" className="w-[32px] h-[32px] rounded-[16px] border border-[rgba(0,0,0,0.08)] bg-[#f5f5f5] flex items-center justify-center cursor-pointer shrink-0">
             <Icons.close width={16} height={16} />
           </button>
         </div>
-        <p style={{ margin: '0 0 18px', fontSize: 14, color: '#666', lineHeight: 1.55 }}>
+        <p className="m-0 mb-[18px] text-[14px] text-[#666] leading-[1.55]">
           Estas prendas se pueden ver, pero la compra se activa hasta que el drop esté en vivo.
         </p>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
-          <button onClick={onCatalogo} className="btn btn-outline" style={{ height: 44, borderRadius: 8 }}>
+        <div className="grid grid-cols-2 gap-[8px]">
+          <button onClick={onCatalogo} className="btn btn-outline h-[44px] rounded-[8px]">
             Ver catálogo
           </button>
-          <button onClick={onAviso} className="btn btn-primary" style={{ height: 44, borderRadius: 8 }}>
+          <button onClick={onAviso} className="btn btn-primary h-[44px] rounded-[8px]">
             Avisarme
           </button>
         </div>
@@ -562,10 +496,10 @@ function AnotarseSection({ dropId }: { dropId: string }) {
 
   if (done) {
     return (
-      <div id="drop-aviso" style={{ marginTop: 20, marginBottom: 16, background: '#fff', borderRadius: 8, border: '1px solid rgba(0,0,0,0.07)', padding: '28px 20px', textAlign: 'center' }}>
-        <div style={{ width: 52, height: 52, borderRadius: 26, background: '#ecfdf5', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22, margin: '0 auto 14px' }}>✓</div>
-        <div style={{ fontSize: 16, fontWeight: 700, letterSpacing: 0, marginBottom: 6 }}>¡Listo, te anotaste!</div>
-        <div style={{ fontSize: 13, color: '#888', lineHeight: 1.6 }}>
+      <div id="drop-aviso" className="mt-[20px] mb-[16px] bg-white rounded-[8px] border border-[rgba(0,0,0,0.07)] px-[20px] py-[28px] text-center">
+        <div className="w-[52px] h-[52px] rounded-[26px] bg-[#ecfdf5] flex items-center justify-center text-[22px] mx-auto mb-[14px]">✓</div>
+        <div className="text-[16px] font-bold mb-[6px]">¡Listo, te anotaste!</div>
+        <div className="text-[13px] text-[#888] leading-[1.6]">
           Te avisamos por WhatsApp 15 min antes de que abra el drop.
         </div>
       </div>
@@ -573,20 +507,20 @@ function AnotarseSection({ dropId }: { dropId: string }) {
   }
 
   return (
-    <div id="drop-aviso" style={{ marginTop: 20, marginBottom: 16, background: '#fff', borderRadius: 8, border: '1px solid rgba(0,0,0,0.07)', padding: '22px 20px' }}>
-      <div style={{ fontSize: 16, fontWeight: 700, letterSpacing: 0, marginBottom: 4 }}>
+    <div id="drop-aviso" className="mt-[20px] mb-[16px] bg-white rounded-[8px] border border-[rgba(0,0,0,0.07)] px-[20px] py-[22px]">
+      <div className="text-[16px] font-bold mb-[4px]">
         ¿Querés que te avisemos?
       </div>
-      <div style={{ fontSize: 13, color: '#888', marginBottom: 20, lineHeight: 1.55 }}>
+      <div className="text-[13px] text-[#888] mb-[20px] leading-[1.55]">
         Te mandamos un WhatsApp 15 min antes de que abra el drop.
       </div>
-      <div style={{ marginBottom: 10 }}>
+      <div className="mb-[10px]">
         <label className="label">WhatsApp</label>
         <PhoneInput value={telefono} onChange={v => { setTelefono(v); setError(''); }} />
       </div>
-      <div style={{ marginBottom: 18 }}>
+      <div className="mb-[18px]">
         <label className="label">
-          Email <span style={{ fontWeight: 400, color: '#bbb' }}>(opcional)</span>
+          Email <span className="font-normal text-[#bbb]">(opcional)</span>
         </label>
         <input
           className="input"
@@ -596,8 +530,8 @@ function AnotarseSection({ dropId }: { dropId: string }) {
           onChange={e => { setEmail(e.target.value); setError(''); }}
         />
       </div>
-      {error && <div style={{ fontSize: 13, color: '#dc2626', marginBottom: 12, padding: '10px 14px', background: '#fef2f2', borderRadius: 8 }}>{error}</div>}
-      <button className="btn btn-primary btn-block" style={{ height: 48 }} onClick={handleAnotarse} disabled={loading}>
+      {error && <div className="text-[13px] text-[#dc2626] mb-[12px] px-[14px] py-[10px] bg-[#fef2f2] rounded-[8px]">{error}</div>}
+      <button className="btn btn-primary btn-block h-[48px]" onClick={handleAnotarse} disabled={loading}>
         {loading ? 'Registrando...' : 'Anotarme'}
       </button>
     </div>

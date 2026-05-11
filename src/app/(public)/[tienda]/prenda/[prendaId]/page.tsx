@@ -1,7 +1,7 @@
 import { notFound } from 'next/navigation';
 import { createClient, createServiceClient } from '@/lib/supabase/server';
 import { getPublicTiendaOrRedirect } from '@/lib/stores/public-store';
-import { PrendaCatalogoClient } from './prenda-catalogo-client';
+import { PrendaPageClient } from '@/components/public/prenda-page-client';
 
 export const dynamic = 'force-dynamic';
 
@@ -57,7 +57,7 @@ export default async function PrendaCatalogoPage({
     .limit(4);
 
   return (
-    <PrendaCatalogoClient
+    <PrendaPageClient
       tienda={tienda}
       prenda={prenda}
       metodosPago={metodosPago ?? []}

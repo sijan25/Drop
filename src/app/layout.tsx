@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { Toaster } from "@/components/ui/sonner";
+import { headers } from "next/headers";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -23,11 +24,12 @@ export const viewport: Viewport = {
   initialScale: 1,
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const nonce = (await headers()).get('x-nonce') ?? '';
   return (
     <html
       lang="es"
@@ -36,7 +38,7 @@ export default function RootLayout({
       <head>
         <link rel="preconnect" href="https://res.cloudinary.com" />
         <link rel="dns-prefetch" href="https://res.cloudinary.com" />
-        <style dangerouslySetInnerHTML={{ __html: `html,body{background:#FAF9F7}` }} />
+        <style nonce={nonce} dangerouslySetInnerHTML={{ __html: `html,body{background:#FAF9F7}` }} />
       </head>
       <body className="min-h-full flex flex-col">
         {children}

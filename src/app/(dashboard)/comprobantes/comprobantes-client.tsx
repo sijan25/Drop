@@ -133,25 +133,18 @@ export default function ComprobantesClient({ comprobantes, historial }: { compro
   ] as const
 
   const tabBar = (
-    <div style={{ display: 'flex', gap: 4, padding: '0 28px', borderBottom: '1px solid var(--line)', flexShrink: 0 }}>
+    <div className="flex gap-1 px-7 border-b border-[var(--line)] shrink-0">
       {TABS.map(t => (
-        <button key={t.id} onClick={() => setTab(t.id)} style={{
-          padding: '12px 14px 10px',
-          fontSize: 13, fontWeight: tab === t.id ? 700 : 500,
-          color: tab === t.id ? 'var(--accent-3)' : 'var(--ink-3)',
-          borderBottom: `2px solid ${tab === t.id ? 'var(--accent)' : 'transparent'}`,
-          display: 'flex', alignItems: 'center', gap: 6,
-          background: 'none', lineHeight: 1,
-        }}>
+        <button
+          key={t.id}
+          onClick={() => setTab(t.id)}
+          className={`px-[14px] pt-3 pb-[10px] text-[13px] flex items-center gap-[6px] bg-none leading-none border-b-2 ${tab === t.id ? 'font-bold text-[var(--accent-3)] border-[var(--accent)]' : 'font-medium text-[var(--ink-3)] border-transparent'}`}
+        >
           {t.label}
           {t.count > 0 && (
-            <span style={{
-              minWidth: 17, height: 17, borderRadius: 5, padding: '0 4px',
-              background: t.id === 'pendientes' ? 'var(--urgent)' : 'var(--line)',
-              color: t.id === 'pendientes' ? '#fff' : 'var(--ink-3)',
-              fontSize: 10, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center',
-              fontFamily: 'var(--font-mono)',
-            }}>{t.count}</span>
+            <span className={`min-w-[17px] h-[17px] rounded-[5px] px-1 text-[10px] font-bold flex items-center justify-center font-[var(--font-mono)] ${t.id === 'pendientes' ? 'bg-[var(--urgent)] text-white' : 'bg-[var(--line)] text-[var(--ink-3)]'}`}>
+              {t.count}
+            </span>
           )}
         </button>
       ))}
@@ -160,56 +153,51 @@ export default function ComprobantesClient({ comprobantes, historial }: { compro
 
   if (tab === 'historial') {
     return (
-      <div style={{ height: '100%', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-        <div className="comprobantes-title-bar" style={{ padding: '20px 28px 0', flexShrink: 0 }}>
-          <div style={{ fontSize: 20, fontWeight: 600, letterSpacing: '-0.015em' }}>Comprobantes</div>
+      <div className="h-full flex flex-col overflow-hidden">
+        <div className="comprobantes-title-bar px-7 pt-5 shrink-0">
+          <div className="text-[20px] font-semibold tracking-[-0.015em]">Comprobantes</div>
         </div>
         {tabBar}
-        <div className="comprobantes-historial-content" style={{ flex: 1, overflowY: 'auto', overflowX: 'hidden', padding: '0 28px 28px' }}>
+        <div className="comprobantes-historial-content flex-1 overflow-y-auto overflow-x-hidden px-7 pb-7">
           {historial.length === 0 ? (
-            <div style={{ paddingTop: 60, textAlign: 'center', color: 'var(--ink-3)' }}>
-              <Icons.inbox width={28} height={28} style={{ margin: '0 auto 10px', opacity: 0.4 }}/>
-              <div style={{ fontSize: 13 }}>Sin historial todavía</div>
+            <div className="pt-[60px] text-center text-[var(--ink-3)]">
+              <Icons.inbox width={28} height={28} className="mx-auto mb-[10px] opacity-40"/>
+              <div className="text-[13px]">Sin historial todavía</div>
             </div>
           ) : (
-            <table className="comprobantes-historial-table" style={{ width: '100%', borderCollapse: 'collapse', marginTop: 20, fontSize: 13 }}>
+            <table className="comprobantes-historial-table w-full border-collapse mt-5 text-[13px]">
               <thead className="comprobantes-historial-head">
-                <tr style={{ borderBottom: '1px solid var(--line)' }}>
+                <tr className="border-b border-[var(--line)]">
                   {['# Pedido', 'Comprador', 'Total', 'Estado', 'Comprobante', 'Fecha'].map(h => (
-                    <th key={h} style={{ textAlign: 'left', padding: '0 12px 10px 0', fontWeight: 600, fontSize: 11, color: 'var(--ink-3)', textTransform: 'uppercase', letterSpacing: 0.05 }}>{h}</th>
+                    <th key={h} className="text-left pr-3 pb-[10px] font-semibold text-[11px] text-[var(--ink-3)] uppercase tracking-[0.05em]">{h}</th>
                   ))}
                 </tr>
               </thead>
               <tbody>
                 {historial.map(c => (
-                  <tr key={c.id} className="comprobantes-historial-row" style={{ borderBottom: '1px solid var(--line)' }}>
-                    <td className="ch-numero" style={{ padding: '12px 12px 12px 0' }}>
-                      <span className="mono tnum" style={{ fontWeight: 600 }}>{c.pedido?.numero ?? '—'}</span>
+                  <tr key={c.id} className="comprobantes-historial-row border-b border-[var(--line)]">
+                    <td className="ch-numero py-3 pr-3">
+                      <span className="mono tnum font-semibold">{c.pedido?.numero ?? '—'}</span>
                     </td>
-                    <td className="ch-comprador" style={{ padding: '12px 12px 12px 0', maxWidth: 160, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    <td className="ch-comprador py-3 pr-3 max-w-[160px] overflow-hidden text-ellipsis whitespace-nowrap">
                       {c.pedido?.comprador_nombre ?? '—'}
                     </td>
-                    <td className="ch-total" style={{ padding: '12px 12px 12px 0' }}>
-                      <span className="mono tnum" style={{ fontWeight: 600 }}>L {(c.pedido?.monto_total ?? 0).toLocaleString()}</span>
+                    <td className="ch-total py-3 pr-3">
+                      <span className="mono tnum font-semibold">L {(c.pedido?.monto_total ?? 0).toLocaleString()}</span>
                     </td>
-                    <td className="ch-estado" style={{ padding: '12px 12px 12px 0' }}>
-                      <span style={{
-                        display: 'inline-flex', alignItems: 'center', gap: 4,
-                        padding: '3px 8px', borderRadius: 6, fontSize: 11, fontWeight: 700,
-                        background: c.estado === 'verificado' ? '#ecfdf5' : '#fef2f2',
-                        color: c.estado === 'verificado' ? '#065f46' : '#991b1b',
-                      }}>
+                    <td className="ch-estado py-3 pr-3">
+                      <span className={`inline-flex items-center gap-1 px-2 py-[3px] rounded-[6px] text-[11px] font-bold ${c.estado === 'verificado' ? 'bg-[#ecfdf5] text-[#065f46]' : 'bg-[#fef2f2] text-[#991b1b]'}`}>
                         {c.estado === 'verificado' ? 'Aprobado' : 'Rechazado'}
                       </span>
                     </td>
-                    <td className="ch-imagen" style={{ padding: '12px 12px 12px 0' }}>
+                    <td className="ch-imagen py-3 pr-3">
                       {c.imagen_url ? (
-                        <a href={c.imagen_url} target="_blank" rel="noreferrer" style={{ display: 'inline-flex', alignItems: 'center', gap: 5, color: 'var(--accent)', fontWeight: 600, fontSize: 12, textDecoration: 'none' }}>
+                        <a href={c.imagen_url} target="_blank" rel="noreferrer" className="inline-flex items-center gap-[5px] text-[var(--accent)] font-semibold text-[12px] no-underline">
                           <Icons.eye width={13} height={13}/> Ver
                         </a>
-                      ) : <span style={{ color: 'var(--ink-3)' }}>—</span>}
+                      ) : <span className="text-[var(--ink-3)]">—</span>}
                     </td>
-                    <td className="ch-fecha" style={{ padding: '12px 0', color: 'var(--ink-3)', whiteSpace: 'nowrap' }}>
+                    <td className="ch-fecha py-3 text-[var(--ink-3)] whitespace-nowrap">
                       {fmt(c.created_at)}
                     </td>
                   </tr>
@@ -223,27 +211,27 @@ export default function ComprobantesClient({ comprobantes, historial }: { compro
   }
 
   return (
-    <div style={{ height: '100%', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-      <div className="comprobantes-title-bar" style={{ padding: '20px 28px 0', flexShrink: 0 }}>
-        <div style={{ fontSize: 20, fontWeight: 600, letterSpacing: '-0.015em' }}>Comprobantes</div>
+    <div className="h-full flex flex-col overflow-hidden">
+      <div className="comprobantes-title-bar px-7 pt-5 shrink-0">
+        <div className="text-[20px] font-semibold tracking-[-0.015em]">Comprobantes</div>
       </div>
       {tabBar}
       {comprobantes.length === 0 ? (
-        <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <div style={{ textAlign: 'center', color: 'var(--ink-3)' }}>
-            <Icons.inbox width={32} height={32} style={{ margin: '0 auto 12px' }}/>
-            <div style={{ fontSize: 14, fontWeight: 500 }}>Todo al día</div>
-            <div style={{ fontSize: 12, marginTop: 4 }}>No hay comprobantes esperando verificación</div>
+        <div className="flex-1 flex items-center justify-center">
+          <div className="text-center text-[var(--ink-3)]">
+            <Icons.inbox width={32} height={32} className="mx-auto mb-3"/>
+            <div className="text-[14px] font-medium">Todo al día</div>
+            <div className="text-[12px] mt-1">No hay comprobantes esperando verificación</div>
           </div>
         </div>
       ) : (<>
-      <div className="comprobantes-nav-bar" style={{ padding: '12px 28px 12px', borderBottom: '1px solid var(--line)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 20, flexShrink: 0 }}>
-        <div className="t-mute" style={{ fontSize: 13 }}>
+      <div className="comprobantes-nav-bar px-7 py-3 border-b border-[var(--line)] flex items-center justify-between gap-5 shrink-0">
+        <div className="t-mute text-[13px]">
           {comprobantes.length} pendientes · {pedido?.comprador_nombre} · {pedido?.numero}
         </div>
-        <div style={{ display: 'flex', gap: 8 }}>
+        <div className="flex gap-2">
           <button className="btn btn-outline btn-sm" onClick={navAnterior} disabled={safeIdx === 0}>
-            <Icons.arrow width={13} height={13} style={{ transform: 'rotate(180deg)' }} />
+            <Icons.arrow width={13} height={13} className="rotate-180" />
             Anterior
           </button>
           <button className="btn btn-outline btn-sm" onClick={navSiguiente} disabled={safeIdx === comprobantes.length - 1}>
@@ -253,34 +241,34 @@ export default function ComprobantesClient({ comprobantes, historial }: { compro
         </div>
       </div>
 
-      <div className="comprobantes-detail-grid" style={{ flex: 1, display: 'grid', gridTemplateColumns: '1.2fr 1fr', overflow: 'hidden' }}>
+      <div className="comprobantes-detail-grid flex-1 grid overflow-hidden grid-cols-[1.2fr_1fr]">
         {/* Imagen del comprobante */}
-        <div style={{ background: '#2a2e35', padding: 28, display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'auto' }}>
+        <div className="bg-[#2a2e35] p-7 flex items-center justify-center overflow-auto">
           {current.imagen_url ? (
             <img
               src={current.imagen_url}
               alt="Comprobante"
-              style={{ maxWidth: '100%', maxHeight: '100%', borderRadius: 8, boxShadow: '0 20px 60px rgba(0,0,0,0.3)' }}
+              className="max-w-full max-h-full rounded-lg shadow-[0_20px_60px_rgba(0,0,0,0.3)]"
             />
           ) : (
-            <div style={{ width: 360, background: '#fff', borderRadius: 8, padding: 24, boxShadow: '0 20px 60px rgba(0,0,0,0.3)' }}>
-              <div style={{ textAlign: 'center', paddingBottom: 16, borderBottom: '1px dashed #d4d4d4', marginBottom: 14 }}>
-                <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: 0.1, color: '#666' }}>{current.banco ?? 'BANCO'}</div>
-                <div style={{ fontSize: 10, color: '#999', marginTop: 2 }}>Comprobante de transferencia</div>
+            <div className="w-[360px] bg-white rounded-lg p-6 shadow-[0_20px_60px_rgba(0,0,0,0.3)]">
+              <div className="text-center pb-4 border-b border-dashed border-[#d4d4d4] mb-[14px]">
+                <div className="text-[11px] font-semibold tracking-[0.1em] text-[#666]">{current.banco ?? 'BANCO'}</div>
+                <div className="text-[10px] text-[#999] mt-[2px]">Comprobante de transferencia</div>
               </div>
-              <div style={{ display: 'grid', gap: 9, fontSize: 11 }}>
+              <div className="grid gap-[9px] text-[11px]">
                 {[
                   ['Fecha', fmt(current.fecha_transferencia ?? current.created_at)],
                   ['De', pedido?.comprador_nombre ?? '—'],
                   ['Cta destino', current.cuenta_destino ?? '—'],
                   ['Referencia', current.referencia ?? '—'],
                 ].map(([k, v]) => (
-                  <div key={k} style={{ display: 'flex', justifyContent: 'space-between' }}>
-                    <span style={{ color: '#999' }}>{k}</span>
+                  <div key={k} className="flex justify-between">
+                    <span className="text-[#999]">{k}</span>
                     <span className="mono">{v}</span>
                   </div>
                 ))}
-                <div style={{ display: 'flex', justifyContent: 'space-between', paddingTop: 10, marginTop: 6, borderTop: '1px dashed #d4d4d4', fontSize: 14, fontWeight: 600 }}>
+                <div className="flex justify-between pt-[10px] mt-[6px] border-t border-dashed border-[#d4d4d4] text-[14px] font-semibold">
                   <span>Monto</span>
                   <span className="mono">L {(current.monto_declarado ?? 0).toLocaleString()}.00</span>
                 </div>
@@ -290,74 +278,74 @@ export default function ComprobantesClient({ comprobantes, historial }: { compro
         </div>
 
         {/* Detalles del pedido */}
-        <div style={{ background: '#fff', padding: 24, overflowY: 'auto', borderLeft: '1px solid var(--line)' }}>
-          <div style={{ marginBottom: 16 }}>
-            <div className="mono t-mute" style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: 0.06 }}>Pedido</div>
-            <div className="mono tnum" style={{ fontSize: 22, fontWeight: 600 }}>{pedido?.numero}</div>
+        <div className="bg-white p-6 overflow-y-auto border-l border-[var(--line)]">
+          <div className="mb-4">
+            <div className="mono t-mute text-[11px] uppercase tracking-[0.06em]">Pedido</div>
+            <div className="mono tnum text-[22px] font-semibold">{pedido?.numero}</div>
           </div>
 
           {/* Prendas del pedido */}
           {(pedido?.pedido_items ?? []).length > 0 && (
-            <div style={{ marginBottom: 16 }}>
+            <div className="mb-4">
               {(pedido?.pedido_items ?? []).map(item => (
-                <div key={item.id} style={{ display: 'flex', gap: 12, alignItems: 'center', padding: '10px 0', borderBottom: '1px solid var(--line)' }}>
-                  <div style={{ width: 48, height: 60, borderRadius: 6, overflow: 'hidden', flexShrink: 0, background: 'var(--surface-2)' }}>
+                <div key={item.id} className="flex gap-3 items-center py-[10px] border-b border-[var(--line)]">
+                  <div className="w-12 h-[60px] rounded-[6px] overflow-hidden shrink-0 bg-[var(--surface-2)]">
                     {item.prenda?.fotos?.[0]
-                      ? <img loading="lazy" src={item.prenda.fotos[0]} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                      ? <img loading="lazy" src={item.prenda.fotos[0]} alt="" className="w-full h-full object-cover" />
                       : <Ph tone="sand" aspect="4/5" radius={0} />}
                   </div>
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontSize: 13, fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{item.prenda?.nombre ?? '—'}</div>
-                    <div style={{ fontSize: 11, color: 'var(--ink-3)' }}>
+                  <div className="flex-1 min-w-0">
+                    <div className="text-[13px] font-semibold whitespace-nowrap overflow-hidden text-ellipsis">{item.prenda?.nombre ?? '—'}</div>
+                    <div className="text-[11px] text-[var(--ink-3)]">
                       {[item.prenda?.marca, (item.talla_seleccionada ?? item.prenda?.talla) && `Talla ${item.talla_seleccionada ?? item.prenda?.talla}`].filter(Boolean).join(' · ')}
                     </div>
                   </div>
-                  <div className="mono tnum" style={{ fontSize: 14, fontWeight: 700, flexShrink: 0 }}>L {item.precio.toLocaleString()}</div>
+                  <div className="mono tnum text-[14px] font-bold shrink-0">L {item.precio.toLocaleString()}</div>
                 </div>
               ))}
             </div>
           )}
 
           {autoOk && (
-            <div style={{ padding: '12px 14px', background: '#ecfdf5', borderRadius: 10, border: '1px solid #a7f3d0', marginBottom: 16, display: 'flex', gap: 10 }}>
-              <Icons.check width={16} height={16} style={{ color: '#065f46', flexShrink: 0, marginTop: 1 }}/>
+            <div className="px-[14px] py-3 bg-[#ecfdf5] rounded-[10px] border border-[#a7f3d0] mb-4 flex gap-[10px]">
+              <Icons.check width={16} height={16} className="text-[#065f46] shrink-0 mt-[1px]"/>
               <div>
-                <div style={{ fontSize: 13, fontWeight: 500, color: '#065f46' }}>Verificación automática OK</div>
-                <div style={{ fontSize: 12, color: '#047857', marginTop: 2 }}>Monto, cuenta destino y referencia coinciden.</div>
+                <div className="text-[13px] font-medium text-[#065f46]">Verificación automática OK</div>
+                <div className="text-[12px] text-[#047857] mt-[2px]">Monto, cuenta destino y referencia coinciden.</div>
               </div>
             </div>
           )}
 
-          <div style={{ display: 'grid', gap: 12 }}>
+          <div className="grid gap-3">
             <div>
-              <div className="mono t-mute" style={{ fontSize: 10, textTransform: 'uppercase' }}>Comprador</div>
-              <div style={{ fontSize: 14, fontWeight: 500, marginTop: 3 }}>{pedido?.comprador_nombre}</div>
-              <div className="t-mute" style={{ fontSize: 12 }}>{pedido?.comprador_telefono}</div>
+              <div className="mono t-mute text-[10px] uppercase">Comprador</div>
+              <div className="text-[14px] font-medium mt-[3px]">{pedido?.comprador_nombre}</div>
+              <div className="t-mute text-[12px]">{pedido?.comprador_telefono}</div>
             </div>
             <hr className="hr"/>
-            <div style={{ display: 'grid', gap: 6 }}>
+            <div className="grid gap-[6px]">
               {[
                 ['Esperado',    formatCurrency(pedido?.monto_total ?? 0), ''],
                 ['Comprobante', current.monto_declarado != null ? `${formatCurrency(current.monto_declarado)}${current.coincide_monto ? ' ✓' : ''}` : '—', current.coincide_monto ? '#065f46' : ''],
                 ['Cuenta',      current.cuenta_destino ? `${current.banco ?? ''} ${current.cuenta_destino}${current.coincide_cuenta ? ' ✓' : ''}` : '—', current.coincide_cuenta ? '#065f46' : ''],
                 ['Referencia',  current.referencia ? `${current.referencia}${current.coincide_referencia ? ' ✓' : ''}` : '—', current.coincide_referencia ? '#065f46' : ''],
               ].map(([k, v, c]) => (
-                <div key={k} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13 }}>
+                <div key={k} className="flex justify-between text-[13px]">
                   <span className="t-mute">{k}</span>
-                  <span className="mono tnum" style={{ fontWeight: 500, color: c || 'inherit' }}>{v}</span>
+                  <span className="mono tnum font-medium" style={{ color: c || 'inherit' }}>{v}</span>
                 </div>
               ))}
             </div>
           </div>
 
-          <div style={{ marginTop: 20, display: 'grid', gap: 8 }}>
+          <div className="mt-5 grid gap-2">
             {currentError && (
-              <div style={{ padding: '10px 12px', borderRadius: 8, background: '#fef2f2', border: '1px solid #fecaca', color: '#991b1b', fontSize: 12, lineHeight: 1.45 }}>
+              <div className="px-3 py-[10px] rounded-lg bg-[#fef2f2] border border-[#fecaca] text-[#991b1b] text-[12px] leading-[1.45]">
                 {currentError}
               </div>
             )}
             {currentNotice && (
-              <div style={{ padding: '10px 12px', borderRadius: 8, background: '#ecfdf5', border: '1px solid #a7f3d0', color: '#065f46', fontSize: 12, lineHeight: 1.45 }}>
+              <div className="px-3 py-[10px] rounded-lg bg-[#ecfdf5] border border-[#a7f3d0] text-[#065f46] text-[12px] leading-[1.45]">
                 {currentNotice}
               </div>
             )}
@@ -368,33 +356,32 @@ export default function ComprobantesClient({ comprobantes, historial }: { compro
                 href={current.imagen_url}
                 target="_blank"
                 rel="noreferrer"
-                className="btn btn-outline btn-lg btn-block"
-                style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, textDecoration: 'none' }}
+                className="btn btn-outline btn-lg btn-block flex items-center justify-center gap-[6px] no-underline"
               >
                 <Icons.eye width={15} height={15} /> Ver comprobante
               </a>
             )}
 
             {currentDecision === 'ok' ? (
-              <div style={{ padding: '14px 16px', background: '#ecfdf5', border: '1px solid #a7f3d0', borderRadius: 10, display: 'flex', alignItems: 'center', gap: 10 }}>
-                <Icons.check width={18} height={18} style={{ color: '#065f46', flexShrink: 0 }} />
+              <div className="px-4 py-[14px] bg-[#ecfdf5] border border-[#a7f3d0] rounded-[10px] flex items-center gap-[10px]">
+                <Icons.check width={18} height={18} className="text-[#065f46] shrink-0" />
                 <div>
-                  <div style={{ fontSize: 14, fontWeight: 600, color: '#065f46' }}>Pago confirmado</div>
-                  <div style={{ fontSize: 12, color: '#047857', marginTop: 2 }}>
+                  <div className="text-[14px] font-semibold text-[#065f46]">Pago confirmado</div>
+                  <div className="text-[12px] text-[#047857] mt-[2px]">
                     {comprobantes.length > safeIdx + 1 ? 'Actualizando pendientes...' : 'Todo al día por ahora.'}
                   </div>
                 </div>
               </div>
             ) : currentDecision === 'no' ? (
-              <div style={{ padding: '14px 16px', background: '#fef2f2', border: '1px solid #fecaca', borderRadius: 10, display: 'flex', alignItems: 'center', gap: 10 }}>
-                <div style={{ fontSize: 14, fontWeight: 600, color: '#991b1b' }}>Comprobante rechazado</div>
+              <div className="px-4 py-[14px] bg-[#fef2f2] border border-[#fecaca] rounded-[10px] flex items-center gap-[10px]">
+                <div className="text-[14px] font-semibold text-[#991b1b]">Comprobante rechazado</div>
               </div>
             ) : (
               <>
-                <button onClick={handleConfirmar} disabled={pending} className="btn btn-primary btn-lg btn-block" style={{ opacity: pending ? 0.7 : 1 }}>
+                <button onClick={handleConfirmar} disabled={pending} className={`btn btn-primary btn-lg btn-block ${pending ? 'opacity-70' : ''}`}>
                   <Icons.check width={16} height={16}/> {pending ? 'Procesando…' : 'Confirmar pago'}
                 </button>
-                <button onClick={handleRechazar} disabled={pending} className="btn btn-outline btn-lg btn-block" style={{ color: 'var(--urgent)', borderColor: '#fecaca', opacity: pending ? 0.5 : 1 }}>
+                <button onClick={handleRechazar} disabled={pending} className={`btn btn-outline btn-lg btn-block text-[var(--urgent)] border-[#fecaca] ${pending ? 'opacity-50' : ''}`}>
                   {pending ? 'Procesando…' : 'Rechazar'}
                 </button>
               </>

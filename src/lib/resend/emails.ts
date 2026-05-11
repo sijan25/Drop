@@ -100,6 +100,7 @@ export async function notificarPedidoCreado(opts: {
   metodoEnvio: string
   direccion?: string | null
   comprobanteUrl?: string | null
+  pagoConfirmado?: boolean
 }) {
   const comprobanteSubido = !!opts.comprobanteUrl
   const trackingUrl = buildOrderTrackingUrl({ id: opts.pedidoId, numero: opts.numeroPedido })
@@ -119,6 +120,7 @@ export async function notificarPedidoCreado(opts: {
       metodoEnvio: opts.metodoEnvio,
       direccion: opts.direccion,
       comprobanteSubido,
+      pagoConfirmado: opts.pagoConfirmado,
       trackingUrl,
     })
     await enviarEmail({

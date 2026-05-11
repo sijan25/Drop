@@ -812,6 +812,11 @@ export type Database = {
           monto_total: number
           numero: string
           pagado_at: string | null
+          pixelpay_order_id: string | null
+          pixelpay_payment_hash: string | null
+          pixelpay_payment_uuid: string | null
+          pixelpay_response: Json
+          pixelpay_transaction_id: string | null
           tienda_id: string
           tracking_numero: string | null
           tracking_url: string | null
@@ -848,6 +853,11 @@ export type Database = {
           monto_total: number
           numero: string
           pagado_at?: string | null
+          pixelpay_order_id?: string | null
+          pixelpay_payment_hash?: string | null
+          pixelpay_payment_uuid?: string | null
+          pixelpay_response?: Json
+          pixelpay_transaction_id?: string | null
           tienda_id: string
           tracking_numero?: string | null
           tracking_url?: string | null
@@ -884,6 +894,11 @@ export type Database = {
           monto_total?: number
           numero?: string
           pagado_at?: string | null
+          pixelpay_order_id?: string | null
+          pixelpay_payment_hash?: string | null
+          pixelpay_payment_uuid?: string | null
+          pixelpay_response?: Json
+          pixelpay_transaction_id?: string | null
           tienda_id?: string
           tracking_numero?: string | null
           tracking_url?: string | null
@@ -898,6 +913,81 @@ export type Database = {
           },
           {
             foreignKeyName: "pedidos_tienda_id_fkey"
+            columns: ["tienda_id"]
+            isOneToOne: false
+            referencedRelation: "tiendas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      payment_attempts: {
+        Row: {
+          amount: number
+          created_at: string
+          currency: string
+          error_message: string | null
+          id: string
+          idempotency_key: string
+          order_id: string
+          payment_uuid: string | null
+          pedido_id: string
+          provider: string
+          request_payload: Json
+          response_payload: Json
+          sandbox: boolean
+          status: string
+          tienda_id: string
+          transaction_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          currency?: string
+          error_message?: string | null
+          id?: string
+          idempotency_key: string
+          order_id: string
+          payment_uuid?: string | null
+          pedido_id: string
+          provider: string
+          request_payload?: Json
+          response_payload?: Json
+          sandbox?: boolean
+          status?: string
+          tienda_id: string
+          transaction_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          currency?: string
+          error_message?: string | null
+          id?: string
+          idempotency_key?: string
+          order_id?: string
+          payment_uuid?: string | null
+          pedido_id?: string
+          provider?: string
+          request_payload?: Json
+          response_payload?: Json
+          sandbox?: boolean
+          status?: string
+          tienda_id?: string
+          transaction_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payment_attempts_pedido_id_fkey"
+            columns: ["pedido_id"]
+            isOneToOne: false
+            referencedRelation: "pedidos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payment_attempts_tienda_id_fkey"
             columns: ["tienda_id"]
             isOneToOne: false
             referencedRelation: "tiendas"
@@ -1133,6 +1223,11 @@ export type Database = {
           order_prefix: string
           paypal_plan_id: string | null
           paypal_sub_id: string | null
+          pixelpay_enabled: boolean
+          pixelpay_endpoint: string | null
+          pixelpay_key_id: string | null
+          pixelpay_sandbox: boolean
+          pixelpay_secret_key: string | null
           plan: string | null
           plan_status: string | null
           plan_vence_at: string | null
@@ -1164,6 +1259,11 @@ export type Database = {
           order_prefix: string
           paypal_plan_id?: string | null
           paypal_sub_id?: string | null
+          pixelpay_enabled?: boolean
+          pixelpay_endpoint?: string | null
+          pixelpay_key_id?: string | null
+          pixelpay_sandbox?: boolean
+          pixelpay_secret_key?: string | null
           plan?: string | null
           plan_status?: string | null
           plan_vence_at?: string | null
@@ -1195,6 +1295,11 @@ export type Database = {
           order_prefix?: string
           paypal_plan_id?: string | null
           paypal_sub_id?: string | null
+          pixelpay_enabled?: boolean
+          pixelpay_endpoint?: string | null
+          pixelpay_key_id?: string | null
+          pixelpay_sandbox?: boolean
+          pixelpay_secret_key?: string | null
           plan?: string | null
           plan_status?: string | null
           plan_vence_at?: string | null

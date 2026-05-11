@@ -10,7 +10,10 @@ import { guardServerMutation } from '@/lib/security/request';
 import { createBuyerClient, createServiceClient, getServiceRoleConfigError } from '@/lib/supabase/server';
 import { formatCurrencyFree } from '@/lib/config/platform';
 import { quoteBoxful } from '@/lib/boxful/client';
+import { procesarVentaPixelPay } from '@/lib/pixelpay/client';
+import { restaurarInventarioPedido } from '@/lib/orders/restore-stock';
 import type { BoxfulQuote, BoxfulShippingMode } from '@/lib/boxful/types';
+import type { Json } from '@/types/database';
 import type { MetodoPago } from '@/types/envio';
 
 const boxfulQuoteSchema = z.object({
@@ -26,6 +29,18 @@ const boxfulQuoteSchema = z.object({
   note: z.string().trim().max(240).nullable(),
 });
 
+const pixelPayCardSchema = z.object({
+  number: z.string().trim().min(15).max(19),
+  holder: z.string().trim().min(3).max(120),
+  expireMonth: z.string().trim().min(1).max(2),
+  expireYear: z.string().trim().min(2).max(4),
+  cvv: z.string().trim().min(3).max(4),
+  billingAddress: z.string().trim().max(200).default(''),
+  billingCity: z.string().trim().max(80).default(''),
+  billingState: z.string().trim().max(20).default('HN-CR'),
+  billingPhone: z.string().trim().min(7).max(20),
+});
+
 const checkoutSchema = z.object({
   tiendaId: z.uuid(),
   dropId: z.uuid().nullable().optional(),
@@ -36,11 +51,12 @@ const checkoutSchema = z.object({
   nombre: z.string().trim().min(2).max(120),
   email: z.string().trim().email().max(180).nullable().optional().or(z.literal('')),
   whatsapp: z.string().trim().min(7).max(40),
-  direccion: z.string().trim().min(4).max(240),
+  direccion: z.string().trim().min(2).max(240),
   ciudad: z.string().trim().min(2).max(90),
   metodoEnvioId: z.uuid().nullable().optional(),
   metodoPagoId: z.uuid(),
   comprobanteUrl: z.string().trim().url().max(600).nullable().optional(),
+  pixelPayCard: pixelPayCardSchema.nullable().optional(),
   envioBoxful: z.object({
     mode: z.enum(['boxful_dropoff', 'boxful_recoleccion']),
     quote: boxfulQuoteSchema,
@@ -127,6 +143,134 @@ function mensajeRpc(error: { message: string; code?: string }) {
   return error.message || 'No pudimos procesar la compra. Intentá de nuevo.';
 }
 
+function wait(ms: number) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+function sanitizePixelPayCard(card: z.infer<typeof pixelPayCardSchema>) {
+  const digits = card.number.replace(/\D/g, '');
+  return {
+    card_last4: digits.slice(-4),
+    cardholder_present: Boolean(card.holder),
+    billing_country: 'HN',
+    billing_state: card.billingState || 'HN-CR',
+  };
+}
+
+async function registrarIntentoPixelPay(
+  service: Awaited<ReturnType<typeof createServiceClient>>,
+  payload: {
+    pedidoId: string;
+    tiendaId: string;
+    orderId: string;
+    amount: number;
+    sandbox: boolean;
+    requestPayload: Json;
+  },
+) {
+  const idempotencyKey = `pixelpay:${payload.pedidoId}`;
+  const { data, error } = await service
+    .from('payment_attempts')
+    .upsert({
+      pedido_id: payload.pedidoId,
+      tienda_id: payload.tiendaId,
+      provider: 'pixelpay',
+      status: 'processing',
+      idempotency_key: idempotencyKey,
+      order_id: payload.orderId,
+      amount: payload.amount,
+      currency: 'HNL',
+      sandbox: payload.sandbox,
+      request_payload: payload.requestPayload,
+      response_payload: {},
+      error_message: null,
+    }, { onConflict: 'idempotency_key' })
+    .select('id')
+    .maybeSingle();
+
+  if (error) {
+    console.error('[checkout] Error registrando intento PixelPay:', error);
+    return null;
+  }
+
+  return (data as { id?: string } | null)?.id ?? null;
+}
+
+async function actualizarIntentoPixelPay(
+  service: Awaited<ReturnType<typeof createServiceClient>>,
+  attemptId: string | null,
+  payload: {
+    status: 'approved' | 'failed' | 'sync_pending' | 'synced';
+    paymentUuid?: string | null;
+    transactionId?: string | null;
+    responsePayload?: Json | null;
+    errorMessage?: string | null;
+  },
+) {
+  if (!attemptId) return;
+
+  const { error } = await service.from('payment_attempts').update({
+    status: payload.status,
+    payment_uuid: payload.paymentUuid,
+    transaction_id: payload.transactionId,
+    response_payload: payload.responsePayload ?? {},
+    error_message: payload.errorMessage ?? null,
+  }).eq('id', attemptId);
+
+  if (error) console.error('[checkout] Error actualizando intento PixelPay:', error);
+}
+
+async function marcarPedidoPixelPayPagado(
+  service: Awaited<ReturnType<typeof createServiceClient>>,
+  pedidoId: string,
+  payload: {
+    paymentUuid: string | null;
+    paymentHash: string | null;
+    orderId: string | null;
+    transactionId: string | null;
+    response: Json | null;
+  },
+) {
+  for (let attempt = 0; attempt < 3; attempt += 1) {
+    const { error } = await service.from('pedidos').update({
+      estado: 'pagado',
+      comprobante_estado: 'verificado',
+      pagado_at: new Date().toISOString(),
+      pixelpay_payment_uuid: payload.paymentUuid,
+      pixelpay_payment_hash: payload.paymentHash,
+    } as Record<string, unknown>).eq('id', pedidoId);
+
+    if (!error) {
+      await service.from('pedidos').update({
+        pixelpay_order_id: payload.orderId,
+        pixelpay_transaction_id: payload.transactionId,
+        pixelpay_response: payload.response ?? {},
+      } as Record<string, unknown>).eq('id', pedidoId);
+      return true;
+    }
+
+    console.error('[checkout] Error marcando pedido PixelPay pagado:', error);
+    await wait(250 * (attempt + 1));
+  }
+
+  return false;
+}
+
+async function cancelarPedidoPixelPayFallido(
+  service: Awaited<ReturnType<typeof createServiceClient>>,
+  pedidoId: string,
+  tiendaId: string,
+  reason: string,
+) {
+  await restaurarInventarioPedido(service, pedidoId, tiendaId);
+  await service.from('pedidos').update({
+    estado: 'cancelado',
+    cancelado_at: new Date().toISOString(),
+    comprobante_estado: 'rechazado',
+    pixelpay_response: { error: reason, cancelled_after_payment_failure: true },
+  } as Record<string, unknown>).eq('id', pedidoId);
+}
+
 export async function crearCheckoutPublico(input: CheckoutInput): Promise<{
   error?: string;
   pedido?: { id: string; numero: string; trackingUrl: string };
@@ -204,6 +348,48 @@ export async function crearCheckoutPublico(input: CheckoutInput): Promise<{
     });
   }
 
+  // ── PixelPay: preparar credenciales, pero cobrar después de crear el pedido local.
+  let pixelPaymentUuid: string | null = null;
+  let pixelPaymentHash: string | null = null;
+  let pixelOrderId: string | null = null;
+  let pixelTransactionId: string | null = null;
+  let pixelResponse: Json | null = null;
+  let pixelAttemptId: string | null = null;
+  let pixelPayCredentials: {
+    sandbox: boolean;
+    endpoint?: string | null;
+    keyId?: string | null;
+    secretKey?: string | null;
+  } | null = null;
+
+  const { data: metodoPagoDb } = await service
+    .from('metodos_pago')
+    .select('tipo, proveedor')
+    .eq('id', data.metodoPagoId)
+    .maybeSingle();
+
+  const isPixelPayCheckout = metodoPagoDb?.tipo === 'tarjeta' && metodoPagoDb?.proveedor?.toLowerCase().includes('pixelpay');
+
+  if (isPixelPayCheckout) {
+    if (!data.pixelPayCard) {
+      return { error: 'Ingresá los datos de tu tarjeta para continuar.' };
+    }
+
+    const { data: tiendaCredenciales } = await service
+      .from('tiendas')
+      .select('pixelpay_endpoint, pixelpay_key_id, pixelpay_secret_key, pixelpay_sandbox')
+      .eq('id', data.tiendaId)
+      .maybeSingle();
+
+    const isSandbox = (tiendaCredenciales as { pixelpay_sandbox?: boolean } | null)?.pixelpay_sandbox ?? true;
+    pixelPayCredentials = {
+      sandbox: isSandbox,
+      endpoint: (tiendaCredenciales as { pixelpay_endpoint?: string } | null)?.pixelpay_endpoint,
+      keyId: (tiendaCredenciales as { pixelpay_key_id?: string } | null)?.pixelpay_key_id,
+      secretKey: (tiendaCredenciales as { pixelpay_secret_key?: string } | null)?.pixelpay_secret_key,
+    };
+  }
+
   const buyer = await createBuyerClient();
   const { data: buyerAuth } = await buyer.auth.getUser();
   const compradorEmail = data.email || buyerAuth.user?.email || null;
@@ -259,6 +445,120 @@ export async function crearCheckoutPublico(input: CheckoutInput): Promise<{
   const checkout = checkoutRows?.[0];
   if (!checkout) return { error: 'No pudimos crear el pedido. Intentá de nuevo.' };
 
+  if (isPixelPayCheckout && data.pixelPayCard && pixelPayCredentials) {
+    pixelOrderId = checkout.numero;
+
+    await service.from('pedidos').update({
+      estado: 'procesando_pago',
+      pixelpay_order_id: pixelOrderId,
+      pixelpay_response: { status: 'payment_started', provider: 'pixelpay' },
+    } as Record<string, unknown>).eq('id', checkout.pedido_id);
+
+    const orderAmount = Number(checkout.monto_total);
+    pixelAttemptId = await registrarIntentoPixelPay(service, {
+      pedidoId: checkout.pedido_id,
+      tiendaId: data.tiendaId,
+      orderId: pixelOrderId,
+      amount: orderAmount,
+      sandbox: pixelPayCredentials.sandbox,
+      requestPayload: {
+        order_id: pixelOrderId,
+        amount: orderAmount,
+        currency: 'HNL',
+        customer_email_present: Boolean(data.email),
+        item_count: itemsNormalizados.length,
+        card: sanitizePixelPayCard(data.pixelPayCard),
+      },
+    });
+
+    const payResult = await procesarVentaPixelPay(
+      pixelPayCredentials,
+      {
+        number: data.pixelPayCard.number,
+        holder: data.pixelPayCard.holder,
+        expireMonth: data.pixelPayCard.expireMonth,
+        expireYear: data.pixelPayCard.expireYear,
+        cvv: data.pixelPayCard.cvv,
+        billingAddress: data.pixelPayCard.billingAddress || data.direccion || 'N/A',
+        billingCity: data.pixelPayCard.billingCity || data.ciudad || 'N/A',
+        billingState: data.pixelPayCard.billingState || 'HN-CR',
+        billingPhone: data.pixelPayCard.billingPhone,
+      },
+      {
+        id: pixelOrderId,
+        amount: orderAmount,
+        currency: 'HNL',
+        customerName: data.nombre,
+        customerEmail: data.email || 'checkout@droppi.app',
+        items: itemsNormalizados.map(item => {
+          const p = prendasPorId.get(item.prendaId);
+          return {
+            code: item.prendaId.slice(0, 8),
+            title: (p as { nombre?: string } | undefined)?.nombre ?? 'Prenda',
+            price: Number((p as { precio?: number } | undefined)?.precio ?? 0),
+            qty: 1,
+          };
+        }),
+      }
+    );
+
+    if (!payResult.success) {
+      await actualizarIntentoPixelPay(service, pixelAttemptId, {
+        status: 'failed',
+        responsePayload: payResult.metadata as Json | undefined,
+        errorMessage: payResult.message,
+      });
+      await cancelarPedidoPixelPayFallido(service, checkout.pedido_id, data.tiendaId, payResult.message);
+      return { error: payResult.message };
+    }
+
+    pixelPaymentUuid = payResult.payment_uuid;
+    pixelPaymentHash = payResult.payment_hash;
+    pixelTransactionId = payResult.transaction_id;
+    pixelResponse = payResult.metadata as Json;
+
+    await actualizarIntentoPixelPay(service, pixelAttemptId, {
+      status: 'approved',
+      paymentUuid: pixelPaymentUuid,
+      transactionId: pixelTransactionId,
+      responsePayload: pixelResponse,
+    });
+
+    const markedPaid = await marcarPedidoPixelPayPagado(service, checkout.pedido_id, {
+      paymentUuid: pixelPaymentUuid,
+      paymentHash: pixelPaymentHash,
+      orderId: pixelOrderId,
+      transactionId: pixelTransactionId,
+      response: pixelResponse,
+    });
+
+    if (!markedPaid) {
+      await actualizarIntentoPixelPay(service, pixelAttemptId, {
+        status: 'sync_pending',
+        paymentUuid: pixelPaymentUuid,
+        transactionId: pixelTransactionId,
+        responsePayload: pixelResponse,
+        errorMessage: 'Pago aprobado en PixelPay, pendiente de sincronizar pedido local.',
+      });
+
+      return {
+        error: 'El pago fue aprobado, pero estamos confirmando el pedido. Revisá el estado del pedido en unos segundos.',
+        pedido: {
+          id: checkout.pedido_id,
+          numero: checkout.numero,
+          trackingUrl: buildOrderTrackingUrl({ id: checkout.pedido_id, numero: checkout.numero }),
+        },
+      };
+    }
+
+    await actualizarIntentoPixelPay(service, pixelAttemptId, {
+      status: 'synced',
+      paymentUuid: pixelPaymentUuid,
+      transactionId: pixelTransactionId,
+      responsePayload: pixelResponse,
+    });
+  }
+
   if (buyerAuth.user) {
     await buyer.from('compradores').upsert({
       user_id: buyerAuth.user.id,
@@ -301,6 +601,7 @@ export async function crearCheckoutPublico(input: CheckoutInput): Promise<{
           : metodoEnvioLabelDesdeRpc(checkout),
         direccion: direccionCompleta,
         comprobanteUrl: data.comprobanteUrl ?? null,
+        pagoConfirmado: !!pixelPaymentUuid,
       });
     }
     const tiendaWa = await service.from('tiendas').select('whatsapp').eq('id', data.tiendaId).maybeSingle()

@@ -29,10 +29,10 @@ export function SizeSelector({
   }
 
   return (
-    <div style={{ border: '1px solid var(--line)', borderRadius: 12, overflow: 'hidden', background: '#fff' }}>
-      <div style={{ padding: '12px 14px', borderBottom: '1px solid var(--line)', display: 'flex', justifyContent: 'space-between', gap: 12, alignItems: 'center' }}>
-        <div style={{ minWidth: 0, flex: 1 }}>
-          <div style={{ fontSize: 12, color: 'var(--ink-3)' }}>
+    <div className="border border-[var(--line)] rounded-[12px] overflow-hidden bg-white">
+      <div className="px-[14px] py-[12px] border-b border-[var(--line)] flex justify-between gap-[12px] items-center">
+        <div className="min-w-0 flex-1">
+          <div className="text-[12px] text-[var(--ink-3)]">
             {selected.length > 0
               ? `${selected.length} seleccionada${selected.length === 1 ? '' : 's'}`
               : allowEmpty ? 'Sin talla seleccionada' : 'Seleccioná al menos una opción'}
@@ -42,7 +42,7 @@ export function SizeSelector({
           <button
             type="button"
             onClick={() => onChange([])}
-            style={{ height: 32, borderRadius: 8, padding: '0 10px', border: '1px solid var(--line)', background: '#fff', fontSize: 12, fontWeight: 700, color: 'var(--ink-2)', cursor: 'pointer', flexShrink: 0 }}
+            className="h-[32px] rounded-[8px] px-[10px] border border-[var(--line)] bg-white text-[12px] font-bold text-[var(--ink-2)] cursor-pointer shrink-0"
           >
             Sin talla
           </button>
@@ -50,30 +50,35 @@ export function SizeSelector({
       </div>
 
       {onQuantityChange && selected.length > 0 && (
-        <div style={{ padding: '0 12px 12px', borderBottom: '1px solid var(--line)', display: 'grid', gap: 8 }}>
+        <div className="px-[12px] pb-[12px] border-b border-[var(--line)] grid gap-[8px]">
           {selected.map(size => {
             const qty = quantities?.[size] ?? 0;
             return (
-              <div key={size} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, border: '1px solid var(--line)', borderRadius: 10, padding: '10px 12px', background: qty > 0 ? '#fff' : 'var(--surface-2)' }}>
+              <div
+                key={size}
+                className="flex items-center justify-between gap-[12px] border border-[var(--line)] rounded-[10px] px-[12px] py-[10px]"
+                style={{ background: qty > 0 ? '#fff' : 'var(--surface-2)' }}
+              >
                 <div>
-                  <div style={{ fontSize: 13, fontWeight: 700 }}>{size}</div>
-                  <div style={{ fontSize: 11, color: 'var(--ink-3)' }}>
+                  <div className="text-[13px] font-bold">{size}</div>
+                  <div className="text-[11px] text-[var(--ink-3)]">
                     {qty > 0 ? `${qty} disponible${qty === 1 ? '' : 's'}` : 'Sin stock en esta talla'}
                   </div>
                 </div>
-                <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
+                <div className="inline-flex items-center gap-[8px]">
                   <button
                     type="button"
                     onClick={() => qty > 0 && onQuantityChange(size, qty - 1)}
-                    style={{ width: 28, height: 28, borderRadius: 8, border: '1px solid var(--line)', background: '#fff', fontSize: 16, fontWeight: 700, cursor: qty > 0 ? 'pointer' : 'default', opacity: qty > 0 ? 1 : 0.45 }}
+                    className="w-[28px] h-[28px] rounded-[8px] border border-[var(--line)] bg-white text-[16px] font-bold"
+                    style={{ cursor: qty > 0 ? 'pointer' : 'default', opacity: qty > 0 ? 1 : 0.45 }}
                   >
                     −
                   </button>
-                  <div className="mono tnum" style={{ minWidth: 22, textAlign: 'center', fontSize: 14, fontWeight: 700 }}>{qty}</div>
+                  <div className="mono tnum min-w-[22px] text-center text-[14px] font-bold">{qty}</div>
                   <button
                     type="button"
                     onClick={() => onQuantityChange(size, qty + 1)}
-                    style={{ width: 28, height: 28, borderRadius: 8, border: '1px solid var(--line)', background: '#fff', fontSize: 16, fontWeight: 700, cursor: 'pointer' }}
+                    className="w-[28px] h-[28px] rounded-[8px] border border-[var(--line)] bg-white text-[16px] font-bold cursor-pointer"
                   >
                     +
                   </button>
@@ -84,7 +89,7 @@ export function SizeSelector({
         </div>
       )}
 
-      <div style={{ padding: 12, display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(58px, 1fr))', gap: 8 }}>
+      <div className="p-[12px] grid grid-cols-[repeat(auto-fill,minmax(58px,1fr))] gap-[8px]">
         {normalized.map(size => {
           const active = selectedSet.has(size);
           return (
@@ -92,15 +97,11 @@ export function SizeSelector({
               key={size}
               type="button"
               onClick={() => toggle(size)}
+              className="h-[38px] rounded-[8px] text-[13px] font-extrabold cursor-pointer"
               style={{
-                height: 38,
-                borderRadius: 8,
                 border: active ? '1.5px solid var(--ink)' : '1px solid var(--line)',
                 background: active ? 'var(--ink)' : '#fff',
                 color: active ? '#fff' : 'var(--ink)',
-                fontSize: 13,
-                fontWeight: 800,
-                cursor: 'pointer',
               }}
             >
               {size}

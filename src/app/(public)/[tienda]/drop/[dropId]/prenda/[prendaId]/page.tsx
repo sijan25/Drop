@@ -1,7 +1,7 @@
 import { notFound } from 'next/navigation';
 import { createClient, createServiceClient } from '@/lib/supabase/server';
 import { getPublicTiendaOrRedirect } from '@/lib/stores/public-store';
-import { PrendaPageClient } from './prenda-page-client';
+import { PrendaPageClient } from '@/components/public/prenda-page-client';
 
 export default async function PrendaPage({
   params,

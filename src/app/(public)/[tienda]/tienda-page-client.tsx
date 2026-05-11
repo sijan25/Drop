@@ -53,24 +53,24 @@ function CountdownBlocks({ target }: { target: number }) {
       { v: pad(s), l: 'SEG' },
     ];
   if (!ready) return (
-    <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+    <div className="flex gap-[6px] items-center">
       {blocks.map(b => (
-        <div key={b.l} style={{ textAlign: 'center' }}>
-          <div className="store-countdown-block" style={{ fontSize: 28, fontWeight: 900, fontFamily: 'var(--font-mono)', lineHeight: 1, color: '#fff', minWidth: 44, background: 'rgba(255,255,255,0.12)', borderRadius: 6, padding: '6px 10px' }}>--</div>
-          <div style={{ fontSize: 9, color: 'rgba(255,255,255,0.55)', marginTop: 4, letterSpacing: '0.08em', fontFamily: 'var(--font-mono)' }}>{b.l}</div>
+        <div key={b.l} className="text-center">
+          <div className="store-countdown-block text-[28px] font-black font-[var(--font-mono)] leading-none text-white min-w-[44px] bg-[rgba(255,255,255,0.12)] rounded-[6px] px-[10px] py-[6px]">--</div>
+          <div className="text-[9px] text-[rgba(255,255,255,0.55)] mt-1 tracking-[0.08em] font-[var(--font-mono)]">{b.l}</div>
         </div>
       ))}
     </div>
   );
   return (
-    <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+    <div className="flex gap-[6px] items-center">
       {blocks.map((b, i) => (
-        <div key={b.l} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-          <div style={{ textAlign: 'center' }}>
-            <div className="store-countdown-block" style={{ fontSize: 28, fontWeight: 900, fontFamily: 'var(--font-mono)', lineHeight: 1, color: '#fff', minWidth: 44, background: 'rgba(255,255,255,0.12)', borderRadius: 6, padding: '6px 10px' }}>{b.v}</div>
-            <div style={{ fontSize: 9, color: 'rgba(255,255,255,0.55)', marginTop: 4, letterSpacing: '0.08em', fontFamily: 'var(--font-mono)' }}>{b.l}</div>
+        <div key={b.l} className="flex items-center gap-[6px]">
+          <div className="text-center">
+            <div className="store-countdown-block text-[28px] font-black font-[var(--font-mono)] leading-none text-white min-w-[44px] bg-[rgba(255,255,255,0.12)] rounded-[6px] px-[10px] py-[6px]">{b.v}</div>
+            <div className="text-[9px] text-[rgba(255,255,255,0.55)] mt-1 tracking-[0.08em] font-[var(--font-mono)]">{b.l}</div>
           </div>
-          {i < blocks.length - 1 && <div className="store-countdown-sep" style={{ fontSize: 22, fontWeight: 900, color: 'rgba(255,255,255,0.5)', marginBottom: 14 }}>:</div>}
+          {i < blocks.length - 1 && <div className="store-countdown-sep text-[22px] font-black text-[rgba(255,255,255,0.5)] mb-[14px]">:</div>}
         </div>
       ))}
     </div>
@@ -80,7 +80,7 @@ function CountdownBlocks({ target }: { target: number }) {
 function CountdownInline({ target }: { target: number }) {
   const { d, h, m, s, ready } = useCountdown(target);
   return (
-    <span className="mono tnum" style={{ fontWeight: 700 }}>
+    <span className="mono tnum font-bold">
       {ready ? `${d > 0 ? `${d}d ` : ''}${pad(h)}:${pad(m)}:${pad(s)}` : '--:--:--'}
     </span>
   );
@@ -112,59 +112,60 @@ function LiveDropHero({
 
   return (
     <div
-      style={{ position: 'relative', overflow: 'hidden', background: 'var(--dark)', cursor: 'pointer' }}
+      className="relative overflow-hidden bg-[var(--dark)] cursor-pointer"
       onClick={onVerDrop}
     >
       {drop.foto_portada_url && (
-        <div style={{ position: 'absolute', inset: 0 }}>
-          <Image src={cld(drop.foto_portada_url, 'cover')} alt={drop.nombre} fill sizes="100vw" style={{ objectFit: 'cover', opacity: 0.12 }} />
+        <div className="absolute inset-0">
+          <Image src={cld(drop.foto_portada_url, 'cover')} alt={drop.nombre} fill sizes="100vw" className="object-cover opacity-[0.12]" />
         </div>
       )}
-      <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(135deg, rgba(42,28,22,0.96) 0%, rgba(58,39,32,0.80) 100%)' }} />
+      <div className="absolute inset-0 bg-[linear-gradient(135deg,rgba(42,28,22,0.96)_0%,rgba(58,39,32,0.80)_100%)]" />
 
-      <div style={{ position: 'relative', maxWidth: 1100, margin: '0 auto', padding: '0 20px' }}>
-        <div style={{ display: 'grid', gridTemplateColumns: featured ? '1fr auto' : '1fr', gap: 0, alignItems: 'stretch' }}>
+      <div className="relative max-w-[1100px] mx-auto px-5">
+        <div className="grid items-stretch" style={{ gridTemplateColumns: featured ? '1fr auto' : '1fr' }}>
 
           {/* LEFT: info */}
-          <div style={{ padding: '28px 0 24px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
-              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: 'var(--accent)', borderRadius: 20, padding: '4px 11px', fontSize: 10, fontWeight: 800, color: '#fff', letterSpacing: '0.1em', textTransform: 'uppercase' }}>
-                <span style={{ width: 5, height: 5, borderRadius: 3, background: '#fff', display: 'inline-block', animation: 'pulse 1.4s ease-in-out infinite' }} />
+          <div className="py-7 pb-6">
+            <div className="flex items-center gap-2 mb-3">
+              <span className="inline-flex items-center gap-[6px] bg-[var(--accent)] rounded-[20px] px-[11px] py-1 text-[10px] font-extrabold text-white tracking-[0.1em] uppercase">
+                <span className="w-[5px] h-[5px] rounded-full bg-white inline-block animate-pulse" />
                 EN VIVO
               </span>
             </div>
-            <div style={{ fontSize: 28, fontWeight: 900, color: '#fff', letterSpacing: '-0.01em', lineHeight: 1.08, marginBottom: 10 }}>
+            <div className="text-[28px] font-black text-white tracking-[-0.01em] leading-[1.08] mb-[10px]">
               {drop.nombre}
             </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginBottom: 20 }}>
-              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, borderRadius: 999, border: '1px solid rgba(255,255,255,0.14)', background: 'rgba(255,255,255,0.07)', color: 'rgba(255,255,255,0.80)', padding: '5px 11px', fontSize: 12, fontWeight: 600 }}>
+            <div className="flex items-center gap-2 flex-wrap mb-5">
+              <span className="inline-flex items-center gap-[5px] rounded-full border border-[rgba(255,255,255,0.14)] bg-[rgba(255,255,255,0.07)] text-[rgba(255,255,255,0.80)] px-[11px] py-[5px] text-[12px] font-semibold">
                 <Icons.box width={12} height={12} />{availableUnits} disponibles
               </span>
-              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, borderRadius: 999, border: '1px solid rgba(255,255,255,0.14)', background: 'rgba(255,255,255,0.07)', color: 'rgba(255,255,255,0.80)', padding: '5px 11px', fontSize: 12, fontWeight: 600 }}>
+              <span className="inline-flex items-center gap-[5px] rounded-full border border-[rgba(255,255,255,0.14)] bg-[rgba(255,255,255,0.07)] text-[rgba(255,255,255,0.80)] px-[11px] py-[5px] text-[12px] font-semibold">
                 <Icons.eye width={12} height={12} />{viewers} viendo
               </span>
             </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 20, flexWrap: 'wrap' }}>
+            <div className="flex items-center gap-5 flex-wrap">
               <div>
-                <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.44)', textTransform: 'uppercase', letterSpacing: '0.1em', fontFamily: 'var(--font-mono)', marginBottom: 6 }}>Cierra en</div>
+                <div className="text-[10px] text-[rgba(255,255,255,0.44)] uppercase tracking-[0.1em] font-[var(--font-mono)] mb-[6px]">Cierra en</div>
                 <CountdownBlocks target={closeTarget} />
               </div>
               <button
                 onClick={e => { e.stopPropagation(); onVerDrop(); }}
-                style={{ height: 46, borderRadius: 10, background: '#fff', color: 'var(--dark)', border: 'none', padding: '0 24px', fontSize: 14, fontWeight: 800, cursor: 'pointer', whiteSpace: 'nowrap', marginTop: 20 }}
+                className="h-[46px] rounded-[10px] bg-white text-[var(--dark)] border-none px-6 text-[14px] font-extrabold cursor-pointer whitespace-nowrap mt-5"
               >
-                Entrar al drop →
+                Entrar al drop
               </button>
             </div>
 
             {/* Indicator dots */}
             {disponibles.length > 1 && (
-              <div style={{ display: 'flex', gap: 5, marginTop: 22 }}>
+              <div className="flex gap-[5px] mt-[22px]">
                 {disponibles.slice(0, 8).map((_, i) => (
                   <button
                     key={i}
                     onClick={e => { e.stopPropagation(); setIdx(i); }}
-                    style={{ width: i === idx % Math.min(disponibles.length, 8) ? 18 : 6, height: 6, borderRadius: 3, background: i === idx % Math.min(disponibles.length, 8) ? '#fff' : 'rgba(255,255,255,0.22)', border: 'none', padding: 0, cursor: 'pointer', transition: 'all .25s' }}
+                    className="h-[6px] rounded-[3px] border-none p-0 cursor-pointer transition-all duration-[250ms]"
+                    style={{ width: i === idx % Math.min(disponibles.length, 8) ? 18 : 6, background: i === idx % Math.min(disponibles.length, 8) ? '#fff' : 'rgba(255,255,255,0.22)' }}
                   />
                 ))}
               </div>
@@ -174,29 +175,30 @@ function LiveDropHero({
           {/* RIGHT: featured product card cycling */}
           {featured && (
             <div
-              style={{ display: 'flex', alignItems: 'center', padding: '16px 0 16px 24px' }}
+              className="hidden sm:flex items-center pl-6 py-4"
               onClick={e => { e.stopPropagation(); onVerPrenda(featured.id); }}
             >
-              <div style={{ width: 160, background: 'rgba(255,255,255,0.05)', borderRadius: 14, overflow: 'hidden', border: '1px solid rgba(255,255,255,0.10)', cursor: 'pointer', transition: 'border-color .25s' }}
+              <div
+                className="w-[160px] bg-[rgba(255,255,255,0.05)] rounded-[14px] overflow-hidden border border-[rgba(255,255,255,0.10)] cursor-pointer transition-[border-color] duration-[250ms]"
                 onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = 'rgba(201,100,66,0.6)'; }}
                 onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,255,255,0.10)'; }}
               >
-                <div style={{ position: 'relative', aspectRatio: '3/4', background: 'var(--dark-2)' }}>
+                <div className="relative aspect-[3/4] bg-[var(--dark-2)]">
                   {featured.fotos?.[0]
-                    ? <Image src={cld(featured.fotos[0], 'thumb')} alt={featured.nombre ?? ''} fill sizes="160px" style={{ objectFit: 'cover' }} />
-                    : <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(135deg, var(--dark-3) 0%, var(--dark-2) 100%)' }} />
+                    ? <Image src={cld(featured.fotos[0], 'thumb')} alt={featured.nombre ?? ''} fill sizes="160px" className="object-cover" />
+                    : <div className="absolute inset-0 bg-[linear-gradient(135deg,var(--dark-3)_0%,var(--dark-2)_100%)]" />
                   }
-                  <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top, rgba(30,18,13,0.7) 0%, transparent 50%)' }} />
-                  <div style={{ position: 'absolute', bottom: 10, left: 10, right: 10 }}>
-                    <div style={{ display: 'inline-flex', alignItems: 'center', gap: 4, background: 'rgba(201,100,66,0.9)', borderRadius: 6, padding: '3px 8px', fontSize: 10, fontWeight: 800, color: '#fff' }}>
+                  <div className="absolute inset-0 bg-[linear-gradient(to_top,rgba(30,18,13,0.7)_0%,transparent_50%)]" />
+                  <div className="absolute bottom-[10px] left-[10px] right-[10px]">
+                    <div className="inline-flex items-center gap-1 bg-[rgba(201,100,66,0.9)] rounded-[6px] px-2 py-[3px] text-[10px] font-extrabold text-white">
                       Disponible
                     </div>
                   </div>
                 </div>
-                <div style={{ padding: '10px 12px 12px' }}>
-                  {featured.marca && <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.45)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 3 }}>{featured.marca}</div>}
-                  <div style={{ fontSize: 13, fontWeight: 700, color: '#fff', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', marginBottom: 6 }}>{featured.nombre}</div>
-                  <div className="mono tnum" style={{ fontSize: 15, fontWeight: 900, color: '#fff', letterSpacing: 0 }}>L {featured.precio.toLocaleString()}</div>
+                <div className="px-3 pt-[10px] pb-3">
+                  {featured.marca && <div className="text-[10px] text-[rgba(255,255,255,0.45)] font-bold uppercase tracking-[0.06em] mb-[3px]">{featured.marca}</div>}
+                  <div className="text-[13px] font-bold text-white whitespace-nowrap overflow-hidden text-ellipsis mb-[6px]">{featured.nombre}</div>
+                  <div className="mono tnum text-[15px] font-black text-white">L {featured.precio.toLocaleString()}</div>
                 </div>
               </div>
             </div>
@@ -244,69 +246,73 @@ function SubscribeModal({ drop, tienda, onClose, onViewDrop }: { drop: Drop; tie
   }
 
   return (
-    <div style={{ position: 'fixed', inset: 0, zIndex: 320, background: 'rgba(42,28,22,0.52)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 18, backdropFilter: 'blur(10px)', WebkitBackdropFilter: 'blur(10px)' }}
-      onClick={e => { if (e.target === e.currentTarget) onClose(); }}>
-      <div style={{ width: 'min(920px, 100%)', maxHeight: 'calc(100vh - 36px)', overflowY: 'auto', background: '#fffaf5', border: '1px solid rgba(201,100,66,0.18)', borderRadius: 20, boxShadow: '0 34px 100px rgba(26,23,20,0.20)', position: 'relative' }}
-        onClick={e => e.stopPropagation()}>
-        <button onClick={onClose} aria-label="Cerrar" style={{ position: 'absolute', top: 14, right: 14, width: 34, height: 34, borderRadius: 17, border: '1px solid rgba(26,23,20,0.08)', background: 'rgba(255,255,255,0.74)', color: 'var(--ink)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', zIndex: 3 }}>
+    <div
+      className="fixed inset-0 z-[320] bg-[rgba(42,28,22,0.52)] flex items-center justify-center p-[18px] backdrop-blur-[10px]"
+      onClick={e => { if (e.target === e.currentTarget) onClose(); }}
+    >
+      <div
+        className="w-[min(920px,100%)] max-h-[calc(100vh-36px)] overflow-y-auto bg-[#fffaf5] border border-[rgba(201,100,66,0.18)] rounded-[20px] shadow-[0_34px_100px_rgba(26,23,20,0.20)] relative"
+        onClick={e => e.stopPropagation()}
+      >
+        <button onClick={onClose} aria-label="Cerrar" className="absolute top-[14px] right-[14px] w-[34px] h-[34px] rounded-[17px] border border-[rgba(26,23,20,0.08)] bg-[rgba(255,255,255,0.74)] text-[var(--ink)] flex items-center justify-center cursor-pointer z-[3]">
           <Icons.close width={18} height={18} />
         </button>
         {done ? (
-          <div style={{ textAlign: 'center', padding: '56px 24px 50px' }}>
-            <div style={{ width: 58, height: 58, borderRadius: 29, background: 'var(--accent)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 18px' }}>
+          <div className="text-center px-6 pt-[56px] pb-[50px]">
+            <div className="w-[58px] h-[58px] rounded-full bg-[var(--accent)] text-white flex items-center justify-center mx-auto mb-[18px]">
               <Icons.check width={28} height={28} />
             </div>
-            <h2 style={{ margin: '0 0 10px', fontWeight: 900, fontSize: 34, color: 'var(--ink)' }}>Ya estás en la lista</h2>
-            <p style={{ margin: '0 auto 24px', maxWidth: 420, fontSize: 15, color: 'var(--ink-2)', lineHeight: 1.55 }}>Te avisamos cuando {drop.nombre} esté por abrir.</p>
-            <button onClick={onViewDrop} className="btn btn-primary" style={{ height: 46, borderRadius: 10, padding: '0 18px', background: 'var(--accent)', color: '#fff' }}>Ver detalle del drop</button>
+            <h2 className="mt-0 mb-[10px] font-black text-[34px] text-[var(--ink)]">Ya estás en la lista</h2>
+            <p className="mt-0 mx-auto mb-6 max-w-[420px] text-[15px] text-[var(--ink-2)] leading-[1.55]">Te avisamos cuando {drop.nombre} esté por abrir.</p>
+            <button onClick={onViewDrop} className="btn btn-primary h-[46px] rounded-[10px] px-[18px] bg-[var(--accent)] text-white">Ver detalle del drop</button>
           </div>
         ) : (
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))' }}>
-            <div style={{ minHeight: 390, position: 'relative', background: 'linear-gradient(145deg, #6a4738 0%, #3f2a22 100%)', overflow: 'hidden' }}>
+          <div className="grid grid-cols-[repeat(auto-fit,minmax(280px,1fr))]">
+            <div className="min-h-[390px] relative bg-[linear-gradient(145deg,#6a4738_0%,#3f2a22_100%)] overflow-hidden">
               {drop.foto_portada_url
-                ? <Image src={cld(drop.foto_portada_url, 'card')} alt={drop.nombre} fill sizes="(max-width: 920px) 100vw, 460px" style={{ objectFit: 'cover' }} />
-                : <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(135deg, #181818 0%, #2a211f 100%)' }} />}
-              <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to bottom, rgba(35,22,17,0.08), rgba(35,22,17,0.72))' }} />
-              <div style={{ position: 'absolute', left: 22, right: 22, top: 22, display: 'flex', justifyContent: 'space-between', gap: 10, alignItems: 'center' }}>
-                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 7, borderRadius: 20, border: '1px solid rgba(255,255,255,0.22)', background: 'rgba(255,255,255,0.14)', color: '#fff', padding: '6px 12px', fontSize: 10, fontWeight: 900, letterSpacing: '0.08em' }}>
+                ? <Image src={cld(drop.foto_portada_url, 'card')} alt={drop.nombre} fill sizes="(max-width: 920px) 100vw, 460px" className="object-cover" />
+                : <div className="absolute inset-0 bg-[linear-gradient(135deg,#181818_0%,#2a211f_100%)]" />}
+              <div className="absolute inset-0 bg-[linear-gradient(to_bottom,rgba(35,22,17,0.08),rgba(35,22,17,0.72))]" />
+              <div className="absolute left-[22px] right-[22px] top-[22px] flex justify-between gap-[10px] items-center">
+                <span className="inline-flex items-center gap-[7px] rounded-[20px] border border-[rgba(255,255,255,0.22)] bg-[rgba(255,255,255,0.14)] text-white px-3 py-[6px] text-[10px] font-black tracking-[0.08em]">
                   <Icons.bell width={13} height={13} />PRÓXIMO DROP
                 </span>
-                <span style={{ color: 'rgba(255,255,255,0.82)', fontSize: 13, fontWeight: 700 }}>{formatDropDate(drop.inicia_at)}</span>
+                <span className="text-[rgba(255,255,255,0.82)] text-[13px] font-bold">{formatDropDate(drop.inicia_at)}</span>
               </div>
-              <div style={{ position: 'absolute', left: 22, right: 22, bottom: 22 }}>
-                <div style={{ fontSize: 38, lineHeight: 1, fontWeight: 900, color: '#fff', marginBottom: 14 }}>{drop.nombre}</div>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr auto', gap: 16, alignItems: 'end' }}>
+              <div className="absolute left-[22px] right-[22px] bottom-[22px]">
+                <div className="text-[38px] leading-none font-black text-white mb-[14px]">{drop.nombre}</div>
+                <div className="grid gap-4 items-end grid-cols-[1fr_auto]">
                   <div>
-                    <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.52)', textTransform: 'uppercase', letterSpacing: '0.1em', fontFamily: 'var(--font-mono)', marginBottom: 5 }}>Abre en</div>
-                    <div style={{ color: '#fff', fontSize: 20 }}><CountdownInline target={target} /></div>
+                    <div className="text-[10px] text-[rgba(255,255,255,0.52)] uppercase tracking-[0.1em] font-[var(--font-mono)] mb-[5px]">Abre en</div>
+                    <div className="text-white text-[20px]"><CountdownInline target={target} /></div>
                   </div>
-                  <button onClick={onViewDrop} style={{ height: 44, borderRadius: 8, border: '1px solid rgba(255,255,255,0.28)', background: 'rgba(255,255,255,0.12)', color: '#fff', padding: '0 15px', fontSize: 13, fontWeight: 800, cursor: 'pointer' }}>Ver detalle</button>
+                  <button onClick={onViewDrop} className="h-[44px] rounded-lg border border-[rgba(255,255,255,0.28)] bg-[rgba(255,255,255,0.12)] text-white px-[15px] text-[13px] font-extrabold cursor-pointer">Ver detalle</button>
                 </div>
               </div>
             </div>
-            <div style={{ padding: '42px 28px 30px', background: 'linear-gradient(180deg, #fffaf5 0%, #f4ece4 100%)' }}>
-              <div style={{ marginBottom: 22 }}>
-                <div style={{ fontSize: 12, textTransform: 'uppercase', letterSpacing: '0.12em', fontWeight: 900, color: 'var(--accent)', marginBottom: 10 }}>Aviso anticipado · {tienda.nombre}</div>
-                <h2 style={{ margin: '0 0 10px', fontSize: 28, lineHeight: 1.05, fontWeight: 900, color: 'var(--ink)' }}>Entrá al drop apenas abra</h2>
-                <p style={{ margin: 0, fontSize: 14, color: 'var(--ink-2)', lineHeight: 1.6 }}>{drop.descripcion || 'Dejá tus datos y te avisamos antes del lanzamiento.'}</p>
-                <div style={{ marginTop: 14, display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, color: 'var(--accent-3)', background: 'rgba(201,100,66,0.10)', border: '1px solid rgba(201,100,66,0.14)', borderRadius: 20, padding: '6px 10px', fontSize: 12, fontWeight: 700 }}>
+            <div className="px-7 pt-[42px] pb-[30px] bg-[linear-gradient(180deg,#fffaf5_0%,#f4ece4_100%)]">
+              <div className="mb-[22px]">
+                <div className="text-[12px] uppercase tracking-[0.12em] font-black text-[var(--accent)] mb-[10px]">Aviso anticipado · {tienda.nombre}</div>
+                <h2 className="mt-0 mb-[10px] text-[28px] leading-[1.05] font-black text-[var(--ink)]">Entrá al drop apenas abra</h2>
+                <p className="m-0 text-[14px] text-[var(--ink-2)] leading-[1.6]">{drop.descripcion || 'Dejá tus datos y te avisamos antes del lanzamiento.'}</p>
+                <div className="mt-[14px] flex gap-2 flex-wrap">
+                  <span className="inline-flex items-center gap-[6px] text-[var(--accent-3)] bg-[rgba(201,100,66,0.10)] border border-[rgba(201,100,66,0.14)] rounded-[20px] px-[10px] py-[6px] text-[12px] font-bold">
                     <Icons.clock width={13} height={13} />{drop.duracion_minutos} min de drop
                   </span>
-                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, color: 'var(--accent-3)', background: 'rgba(201,100,66,0.10)', border: '1px solid rgba(201,100,66,0.14)', borderRadius: 20, padding: '6px 10px', fontSize: 12, fontWeight: 700 }}>
+                  <span className="inline-flex items-center gap-[6px] text-[var(--accent-3)] bg-[rgba(201,100,66,0.10)] border border-[rgba(201,100,66,0.14)] rounded-[20px] px-[10px] py-[6px] text-[12px] font-bold">
                     <Icons.mail width={13} height={13} />Aviso por correo
                   </span>
                 </div>
               </div>
-              <form onSubmit={submit} style={{ display: 'grid', gap: 12 }}>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: 10 }}>
-                  <input placeholder="Nombre" value={nombre} onChange={e => setNombre(e.target.value)} style={{ height: 48, minWidth: 0, borderRadius: 10, border: '1px solid rgba(26,23,20,0.10)', background: 'rgba(255,255,255,0.82)', color: 'var(--ink)', padding: '0 13px', fontSize: 14, outline: 'none' }} />
-                  <input placeholder="Apellido" value={apellido} onChange={e => setApellido(e.target.value)} style={{ height: 48, minWidth: 0, borderRadius: 10, border: '1px solid rgba(26,23,20,0.10)', background: 'rgba(255,255,255,0.82)', color: 'var(--ink)', padding: '0 13px', fontSize: 14, outline: 'none' }} />
+              <form onSubmit={submit} className="grid gap-3">
+                <div className="grid gap-[10px] grid-cols-[repeat(auto-fit,minmax(130px,1fr))]">
+                  <input placeholder="Nombre" value={nombre} onChange={e => setNombre(e.target.value)} className="h-[48px] min-w-0 rounded-[10px] border border-[rgba(26,23,20,0.10)] bg-[rgba(255,255,255,0.82)] text-[var(--ink)] px-[13px] text-[14px] outline-none" />
+                  <input placeholder="Apellido" value={apellido} onChange={e => setApellido(e.target.value)} className="h-[48px] min-w-0 rounded-[10px] border border-[rgba(26,23,20,0.10)] bg-[rgba(255,255,255,0.82)] text-[var(--ink)] px-[13px] text-[14px] outline-none" />
                 </div>
-                <input type="email" placeholder="Correo electrónico*" value={email} onChange={e => setEmail(e.target.value)} style={{ height: 48, borderRadius: 10, border: '1px solid rgba(26,23,20,0.10)', background: 'rgba(255,255,255,0.82)', color: 'var(--ink)', padding: '0 13px', fontSize: 14, outline: 'none' }} />
+                <input type="email" placeholder="Correo electrónico*" value={email} onChange={e => setEmail(e.target.value)} className="h-[48px] rounded-[10px] border border-[rgba(26,23,20,0.10)] bg-[rgba(255,255,255,0.82)] text-[var(--ink)] px-[13px] text-[14px] outline-none" />
                 <PhoneInput size="lg" value={telefono} onChange={setTelefono} placeholder="WhatsApp opcional" inputStyle={{ height: 48, borderRadius: '0 10px 10px 0', border: '1px solid rgba(26,23,20,0.10)', background: 'rgba(255,255,255,0.82)', color: 'var(--ink)', padding: '0 13px', fontSize: 14, outline: 'none' }} selectStyle={{ height: 48, borderRadius: '10px 0 0 10px', border: '1px solid rgba(26,23,20,0.10)', background: 'rgba(255,255,255,0.82)' }} />
-                {error && <div style={{ color: '#b91c1c', background: '#fff1ee', border: '1px solid rgba(185,28,28,0.12)', borderRadius: 10, padding: '10px 12px', fontSize: 13 }}>{error}</div>}
-                <button className="btn btn-primary btn-block" disabled={loading} style={{ height: 50, borderRadius: 10, fontSize: 15, marginTop: 2, background: 'var(--accent)', color: '#fff' }}>
+                {error && <div className="text-[#b91c1c] bg-[#fff1ee] border border-[rgba(185,28,28,0.12)] rounded-[10px] px-3 py-[10px] text-[13px]">{error}</div>}
+                <button className="btn btn-primary btn-block h-[50px] rounded-[10px] text-[15px] mt-[2px] bg-[var(--accent)] text-white" disabled={loading}>
                   {loading ? 'Registrando...' : 'Avisarme del drop'}
                 </button>
               </form>
@@ -400,50 +406,54 @@ function BuyerProfileSheet({
   const initial = (comprador.nombre || comprador.email || 'C').charAt(0).toUpperCase();
 
   return (
-    <div style={{ position: 'fixed', inset: 0, zIndex: 300, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(8,8,8,0.62)', backdropFilter: 'blur(10px)', WebkitBackdropFilter: 'blur(10px)', padding: 18 }}
-      onClick={e => { if (e.target === e.currentTarget) onClose(); }}>
-      <div style={{ width: 'min(720px, calc(100vw - 32px))', maxHeight: 'calc(100vh - 36px)', overflow: 'hidden', background: '#fff', borderRadius: 18, boxShadow: '0 30px 90px rgba(0,0,0,0.28)', border: '1px solid rgba(255,255,255,0.7)', animation: 'slideUp .22s ease' }}
-        onClick={e => e.stopPropagation()}>
-        <div style={{ padding: '22px 24px 18px', borderBottom: '1px solid rgba(0,0,0,0.07)', background: 'linear-gradient(180deg, #fbfbfb 0%, #fff 100%)' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', gap: 16, alignItems: 'flex-start' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 15, minWidth: 0 }}>
-              <div style={{ width: 58, height: 58, borderRadius: 18, background: 'linear-gradient(135deg, var(--accent) 0%, var(--accent-3) 100%)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 24, fontWeight: 900, flexShrink: 0 }}>
+    <div
+      className="fixed inset-0 z-[300] flex items-center justify-center bg-[rgba(8,8,8,0.62)] backdrop-blur-[10px] p-[18px]"
+      onClick={e => { if (e.target === e.currentTarget) onClose(); }}
+    >
+      <div
+        className="w-[min(720px,calc(100vw-32px))] max-h-[calc(100vh-36px)] overflow-hidden bg-white rounded-[18px] shadow-[0_30px_90px_rgba(0,0,0,0.28)] border border-[rgba(255,255,255,0.7)] animate-[slideUp_.22s_ease]"
+        onClick={e => e.stopPropagation()}
+      >
+        <div className="px-6 pt-[22px] pb-[18px] border-b border-[rgba(0,0,0,0.07)] bg-[linear-gradient(180deg,#fbfbfb_0%,#fff_100%)]">
+          <div className="flex justify-between gap-4 items-start">
+            <div className="flex items-center gap-[15px] min-w-0">
+              <div className="w-[58px] h-[58px] rounded-[18px] bg-[linear-gradient(135deg,var(--accent)_0%,var(--accent-3)_100%)] text-white flex items-center justify-center text-[24px] font-black shrink-0">
                 {initial}
               </div>
-              <div style={{ minWidth: 0 }}>
-                <div className="mono" style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.1em', color: '#999', marginBottom: 5 }}>Cuenta de compradora</div>
-                <div style={{ fontSize: 22, fontWeight: 900, color: '#111', letterSpacing: '-0.03em', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{comprador.nombre}</div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 6, color: '#777', fontSize: 13, marginTop: 4, minWidth: 0 }}>
-                  <Icons.mail width={13} height={13} style={{ flexShrink: 0 }} />
-                  <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{comprador.email}</span>
+              <div className="min-w-0">
+                <div className="mono text-[10px] uppercase tracking-[0.1em] text-[#999] mb-[5px]">Cuenta de compradora</div>
+                <div className="text-[22px] font-black text-[#111] tracking-[-0.03em] whitespace-nowrap overflow-hidden text-ellipsis">{comprador.nombre}</div>
+                <div className="flex items-center gap-[6px] text-[#777] text-[13px] mt-1 min-w-0">
+                  <Icons.mail width={13} height={13} className="shrink-0" />
+                  <span className="whitespace-nowrap overflow-hidden text-ellipsis">{comprador.email}</span>
                 </div>
               </div>
             </div>
-            <button onClick={onClose} aria-label="Cerrar" style={{ width: 36, height: 36, borderRadius: 18, display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid rgba(0,0,0,0.08)', background: '#fff', color: '#555', cursor: 'pointer', flexShrink: 0 }}>
+            <button onClick={onClose} aria-label="Cerrar" className="w-9 h-9 rounded-[18px] flex items-center justify-center border border-[rgba(0,0,0,0.08)] bg-white text-[#555] cursor-pointer shrink-0">
               <Icons.close width={17} height={17} />
             </button>
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 10, marginTop: 18 }}>
-            <div style={{ border: '1px solid rgba(0,0,0,0.08)', borderRadius: 12, padding: '12px 13px', background: '#fff' }}>
-              <div style={{ fontSize: 11, color: '#999', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.07em' }}>Pedidos</div>
-              <div className="mono tnum" style={{ fontSize: 22, fontWeight: 900, color: '#111', marginTop: 5 }}>{loadingPedidos ? '--' : pedidos.length}</div>
+          <div className="grid gap-[10px] mt-[18px] grid-cols-[repeat(auto-fit,minmax(150px,1fr))]">
+            <div className="border border-[rgba(0,0,0,0.08)] rounded-[12px] px-[13px] py-3 bg-white">
+              <div className="text-[11px] text-[#999] font-extrabold uppercase tracking-[0.07em]">Pedidos</div>
+              <div className="mono tnum text-[22px] font-black text-[#111] mt-[5px]">{loadingPedidos ? '--' : pedidos.length}</div>
             </div>
-            <div style={{ border: '1px solid rgba(0,0,0,0.08)', borderRadius: 12, padding: '12px 13px', background: '#fff' }}>
-              <div style={{ fontSize: 11, color: '#999', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.07em' }}>Compras</div>
-              <div className="mono tnum" style={{ fontSize: 22, fontWeight: 900, color: '#111', marginTop: 5 }}>L {loadingPedidos ? '--' : totalGastado.toLocaleString()}</div>
+            <div className="border border-[rgba(0,0,0,0.08)] rounded-[12px] px-[13px] py-3 bg-white">
+              <div className="text-[11px] text-[#999] font-extrabold uppercase tracking-[0.07em]">Compras</div>
+              <div className="mono tnum text-[22px] font-black text-[#111] mt-[5px]">L {loadingPedidos ? '--' : totalGastado.toLocaleString()}</div>
             </div>
-            <div style={{ border: '1px solid rgba(0,0,0,0.08)', borderRadius: 12, padding: '12px 13px', background: '#fff' }}>
-              <div style={{ fontSize: 11, color: '#999', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.07em' }}>Perfil</div>
-              <div style={{ fontSize: 13, fontWeight: 800, color: datosGuardados >= 3 ? '#065f46' : '#92400e', marginTop: 9 }}>
+            <div className="border border-[rgba(0,0,0,0.08)] rounded-[12px] px-[13px] py-3 bg-white">
+              <div className="text-[11px] text-[#999] font-extrabold uppercase tracking-[0.07em]">Perfil</div>
+              <div className={`text-[13px] font-extrabold mt-[9px] ${datosGuardados >= 3 ? 'text-[#065f46]' : 'text-[#92400e]'}`}>
                 {datosGuardados >= 3 ? 'Completo' : 'Por completar'}
               </div>
             </div>
           </div>
         </div>
 
-        <div style={{ padding: '14px 24px 0' }}>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6, background: '#f3f3f3', borderRadius: 12, padding: 4 }}>
+        <div className="px-6 pt-[14px]">
+          <div className="grid grid-cols-2 gap-[6px] bg-[#f3f3f3] rounded-[12px] p-1">
             {[
               { id: 'orders' as const, label: 'Pedidos', icon: Icons.bag },
               { id: 'profile' as const, label: 'Perfil', icon: Icons.settings },
@@ -452,7 +462,7 @@ function BuyerProfileSheet({
               const selected = activeTab === tab.id;
               return (
                 <button key={tab.id} onClick={() => setActiveTab(tab.id)}
-                  style={{ height: 40, borderRadius: 9, border: selected ? '1px solid rgba(0,0,0,0.08)' : '1px solid transparent', background: selected ? '#fff' : 'transparent', boxShadow: selected ? '0 1px 5px rgba(0,0,0,0.06)' : 'none', color: selected ? '#111' : '#777', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7, fontSize: 13, fontWeight: 800, cursor: 'pointer' }}>
+                  className={`h-10 rounded-[9px] flex items-center justify-center gap-[7px] text-[13px] font-extrabold cursor-pointer ${selected ? 'border border-[rgba(0,0,0,0.08)] bg-white shadow-[0_1px_5px_rgba(0,0,0,0.06)] text-[#111]' : 'border border-transparent bg-transparent text-[#777]'}`}>
                   <Ic width={15} height={15} />
                   {tab.label}
                 </button>
@@ -461,60 +471,61 @@ function BuyerProfileSheet({
           </div>
         </div>
 
-        <div style={{ padding: 24, maxHeight: 'calc(100vh - 360px)', minHeight: 280, overflowY: 'auto' }}>
+        <div className="p-6 max-h-[calc(100vh-360px)] min-h-[280px] overflow-y-auto">
           {activeTab === 'orders' && (
             <div>
               {direccionCompleta && (
-                <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10, background: '#f7f7f7', borderRadius: 12, padding: '12px 14px', marginBottom: 14 }}>
-                  <Icons.pin width={16} height={16} style={{ color: '#777', flexShrink: 0, marginTop: 1 }} />
+                <div className="flex items-start gap-[10px] bg-[#f7f7f7] rounded-[12px] px-[14px] py-3 mb-[14px]">
+                  <Icons.pin width={16} height={16} className="text-[#777] shrink-0 mt-[1px]" />
                   <div>
-                    <div style={{ fontSize: 12, fontWeight: 800, color: '#333' }}>Dirección guardada</div>
-                    <div style={{ fontSize: 12, color: '#777', lineHeight: 1.45, marginTop: 2 }}>{direccionCompleta}</div>
+                    <div className="text-[12px] font-extrabold text-[#333]">Dirección guardada</div>
+                    <div className="text-[12px] text-[#777] leading-[1.45] mt-[2px]">{direccionCompleta}</div>
                   </div>
                 </div>
               )}
               {loadingPedidos ? (
-                <div style={{ border: '1px solid rgba(0,0,0,0.08)', borderRadius: 14, padding: 18, fontSize: 13, color: '#888', background: '#fff' }}>Cargando pedidos...</div>
+                <div className="border border-[rgba(0,0,0,0.08)] rounded-[14px] p-[18px] text-[13px] text-[#888] bg-white">Cargando pedidos...</div>
               ) : pedidos.length === 0 ? (
-                <div style={{ border: '1px dashed rgba(0,0,0,0.16)', borderRadius: 16, padding: '34px 22px', textAlign: 'center', background: '#fff' }}>
-                  <div style={{ width: 48, height: 48, borderRadius: 16, background: '#f4f4f4', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 14px', color: '#555' }}>
+                <div className="border border-dashed border-[rgba(0,0,0,0.16)] rounded-[16px] px-[22px] py-[34px] text-center bg-white">
+                  <div className="w-12 h-12 rounded-[16px] bg-[#f4f4f4] flex items-center justify-center mx-auto mb-[14px] text-[#555]">
                     <Icons.bag width={22} height={22} />
                   </div>
-                  <div style={{ fontSize: 16, fontWeight: 900, marginBottom: 6 }}>Aún no tenés pedidos con esta cuenta</div>
-                  <div style={{ fontSize: 13, color: '#777', lineHeight: 1.5, maxWidth: 380, margin: '0 auto 16px' }}>Cuando compres usando {comprador.email}, tu seguimiento aparecerá aquí.</div>
-                  <button onClick={onClose} className="btn btn-primary" style={{ height: 40, borderRadius: 10, padding: '0 15px' }}>Seguir comprando</button>
+                  <div className="text-[16px] font-black mb-[6px]">Aún no tenés pedidos con esta cuenta</div>
+                  <div className="text-[13px] text-[#777] leading-[1.5] max-w-[380px] mx-auto mb-4">Cuando compres usando {comprador.email}, tu seguimiento aparecerá aquí.</div>
+                  <button onClick={onClose} className="btn btn-primary h-[40px] rounded-[10px] px-[15px]">Seguir comprando</button>
                 </div>
               ) : (
-                <div style={{ display: 'grid', gap: 10 }}>
+                <div className="grid gap-[10px]">
                   {pedidos.map(pedido => {
                     const estado = PEDIDO_LABELS[pedido.estado ?? 'apartado'] ?? PEDIDO_LABELS.apartado;
                     const item = pedido.items?.[0];
                     const prenda = item?.prenda;
                     return (
                       <button key={pedido.id} onClick={() => { onClose(); router.push(`/pedido/${pedido.numero}`); }}
-                        style={{ width: '100%', border: '1px solid rgba(0,0,0,0.08)', borderRadius: 14, background: '#fff', padding: 12, display: 'grid', gridTemplateColumns: '58px 1fr auto', gap: 12, textAlign: 'left', cursor: 'pointer', alignItems: 'center', boxShadow: '0 1px 2px rgba(0,0,0,0.03)' }}>
-                        <div style={{ width: 58, height: 66, borderRadius: 10, overflow: 'hidden', background: '#f1f1f1', position: 'relative' }}>
+                        className="w-full border border-[rgba(0,0,0,0.08)] rounded-[14px] bg-white p-3 grid grid-cols-[58px_1fr_auto] gap-3 text-left cursor-pointer items-center shadow-[0_1px_2px_rgba(0,0,0,0.03)]"
+                      >
+                        <div className="w-[58px] h-[66px] rounded-[10px] overflow-hidden bg-[#f1f1f1] relative">
                           {prenda?.fotos?.[0]
-                            ? <Image src={cld(prenda.fotos[0], 'mini')} alt="" fill sizes="58px" style={{ objectFit: 'cover' }} />
-                            : <div style={{ width: '100%', height: '100%', background: 'linear-gradient(135deg, #eeeeee, #dddddd)' }} />}
+                            ? <Image src={cld(prenda.fotos[0], 'mini')} alt="" fill sizes="58px" className="object-cover" />
+                            : <div className="w-full h-full bg-[linear-gradient(135deg,#eeeeee,#dddddd)]" />}
                         </div>
-                        <div style={{ minWidth: 0 }}>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 4, flexWrap: 'wrap' }}>
-                            <span className="mono tnum" style={{ fontSize: 12, fontWeight: 900, color: '#111' }}>{pedido.numero}</span>
-                            <span style={{ fontSize: 10, fontWeight: 900, color: estado.tone, background: estado.bg, borderRadius: 20, padding: '3px 8px', whiteSpace: 'nowrap' }}>{estado.label}</span>
+                        <div className="min-w-0">
+                          <div className="flex items-center gap-[7px] mb-1 flex-wrap">
+                            <span className="mono tnum text-[12px] font-black text-[#111]">{pedido.numero}</span>
+                            <span className="text-[10px] font-black rounded-[20px] px-2 py-[3px] whitespace-nowrap" style={{ color: estado.tone, background: estado.bg }}>{estado.label}</span>
                           </div>
-                          <div style={{ fontSize: 14, fontWeight: 800, color: '#222', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{prenda?.nombre ?? pedido.drop?.nombre ?? 'Pedido'}</div>
-                          <div style={{ fontSize: 12, color: '#999', marginTop: 2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{[pedido.drop?.nombre, (item?.talla_seleccionada ?? prenda?.talla) && `T. ${item?.talla_seleccionada ?? prenda?.talla}`, formatShortDate(pedido.created_at)].filter(Boolean).join(' · ')}</div>
+                          <div className="text-[14px] font-extrabold text-[#222] whitespace-nowrap overflow-hidden text-ellipsis">{prenda?.nombre ?? pedido.drop?.nombre ?? 'Pedido'}</div>
+                          <div className="text-[12px] text-[#999] mt-[2px] whitespace-nowrap overflow-hidden text-ellipsis">{[pedido.drop?.nombre, (item?.talla_seleccionada ?? prenda?.talla) && `T. ${item?.talla_seleccionada ?? prenda?.talla}`, formatShortDate(pedido.created_at)].filter(Boolean).join(' · ')}</div>
                         </div>
-                        <div style={{ textAlign: 'right' }}>
-                          <div className="mono tnum" style={{ fontSize: 14, fontWeight: 900, color: '#111' }}>L {pedido.monto_total.toLocaleString()}</div>
-                          <Icons.arrow width={15} height={15} style={{ color: '#aaa', marginTop: 8 }} />
+                        <div className="text-right">
+                          <div className="mono tnum text-[14px] font-black text-[#111]">L {pedido.monto_total.toLocaleString()}</div>
+                          <Icons.arrow width={15} height={15} className="text-[#aaa] mt-2" />
                         </div>
                       </button>
                     );
                   })}
                   {hayMasPedidos && (
-                    <button onClick={cargarMasPedidos} disabled={loadingMasPedidos} style={{ width: '100%', marginTop: 10, height: 40, borderRadius: 10, border: '1px solid rgba(0,0,0,0.1)', background: '#fff', fontSize: 13, fontWeight: 700, cursor: 'pointer', color: '#555' }}>
+                    <button onClick={cargarMasPedidos} disabled={loadingMasPedidos} className="w-full mt-[10px] h-10 rounded-[10px] border border-[rgba(0,0,0,0.1)] bg-white text-[13px] font-bold cursor-pointer text-[#555]">
                       {loadingMasPedidos ? 'Cargando...' : 'Cargar más pedidos'}
                     </button>
                   )}
@@ -524,13 +535,13 @@ function BuyerProfileSheet({
           )}
 
           {activeTab === 'profile' && (
-            <form onSubmit={handleSaveProfile} style={{ display: 'grid', gap: 14 }}>
+            <form onSubmit={handleSaveProfile} className="grid gap-[14px]">
               <div>
-                <div style={{ fontSize: 16, fontWeight: 900, color: '#111', marginBottom: 3 }}>Datos de compra</div>
-                <div style={{ fontSize: 12, color: '#777', lineHeight: 1.45 }}>Guardamos estos datos para rellenar tus próximos checkouts.</div>
+                <div className="text-[16px] font-black text-[#111] mb-[3px]">Datos de compra</div>
+                <div className="text-[12px] text-[#777] leading-[1.45]">Guardamos estos datos para rellenar tus próximos checkouts.</div>
               </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(210px, 1fr))', gap: 12 }}>
+              <div className="grid gap-3 grid-cols-[repeat(auto-fit,minmax(210px,1fr))]">
                 <div>
                   <label className="label">Nombre completo</label>
                   <input className="input input-lg" value={profileForm.nombre} onChange={e => { setProfileForm(f => ({ ...f, nombre: e.target.value })); setProfileError(''); setProfileMsg(''); }} placeholder="Karla Morales" />
@@ -543,9 +554,9 @@ function BuyerProfileSheet({
 
               <div>
                 <label className="label">Correo de acceso</label>
-                <div style={{ position: 'relative' }}>
-                  <input className="input input-lg" value={comprador.email} readOnly style={{ background: '#f6f6f6', color: '#777', paddingLeft: 42 }} />
-                  <Icons.mail width={16} height={16} style={{ position: 'absolute', left: 15, top: 17, color: '#999' }} />
+                <div className="relative">
+                  <input className="input input-lg bg-[#f6f6f6] text-[#777] pl-[42px]" value={comprador.email} readOnly />
+                  <Icons.mail width={16} height={16} className="absolute left-[15px] top-[17px] text-[#999]" />
                 </div>
               </div>
 
@@ -559,18 +570,18 @@ function BuyerProfileSheet({
                 <input className="input input-lg" value={profileForm.ciudad} onChange={e => { setProfileForm(f => ({ ...f, ciudad: e.target.value })); setProfileError(''); setProfileMsg(''); }} placeholder={PLATFORM.cities[0]} />
               </div>
 
-              {profileError && <div style={{ fontSize: 13, color: '#b91c1c', background: '#fef2f2', borderRadius: 10, padding: '10px 12px' }}>{profileError}</div>}
-              {profileMsg && <div style={{ fontSize: 13, color: '#047857', background: '#ecfdf5', borderRadius: 10, padding: '10px 12px', display: 'flex', alignItems: 'center', gap: 7 }}><Icons.check width={15} height={15} />{profileMsg}</div>}
+              {profileError && <div className="text-[13px] text-[#b91c1c] bg-[#fef2f2] rounded-[10px] px-3 py-[10px]">{profileError}</div>}
+              {profileMsg && <div className="text-[13px] text-[#047857] bg-[#ecfdf5] rounded-[10px] px-3 py-[10px] flex items-center gap-[7px]"><Icons.check width={15} height={15} />{profileMsg}</div>}
 
-              <button className="btn btn-primary btn-block" disabled={savingProfile || !profileForm.nombre.trim()} style={{ height: 48, borderRadius: 12, fontSize: 14, fontWeight: 800 }}>
+              <button className="btn btn-primary btn-block h-[48px] rounded-[12px] text-[14px] font-extrabold" disabled={savingProfile || !profileForm.nombre.trim()}>
                 {savingProfile ? 'Guardando...' : 'Guardar perfil'}
               </button>
             </form>
           )}
         </div>
 
-        <div style={{ padding: '14px 24px 22px', borderTop: '1px solid rgba(0,0,0,0.07)', background: '#fafafa', display: 'flex', justifyContent: 'flex-end', gap: 10, alignItems: 'center' }}>
-          <button onClick={onLogout} style={{ height: 38, borderRadius: 10, border: '1px solid rgba(0,0,0,0.1)', background: '#fff', color: '#111', padding: '0 14px', fontSize: 13, fontWeight: 800, cursor: 'pointer' }}>
+        <div className="px-6 pt-[14px] pb-[22px] border-t border-[rgba(0,0,0,0.07)] bg-[#fafafa] flex justify-end gap-[10px] items-center">
+          <button onClick={onLogout} className="h-[38px] rounded-[10px] border border-[rgba(0,0,0,0.1)] bg-white text-[#111] px-[14px] text-[13px] font-extrabold cursor-pointer">
             Cerrar sesión
           </button>
         </div>
@@ -831,23 +842,13 @@ export function TiendaPageClient(props: {
   }, []).join(', ');
 
   return (
-    <div style={{
-      minHeight: '100vh',
-      background:
-        'radial-gradient(circle at top center, rgba(201,100,66,0.08) 0%, transparent 28%), linear-gradient(180deg, #fffdfa 0%, #faf7f1 48%, #f3eee7 100%)',
-      fontFamily: 'var(--font-sans)',
-    }}>
+    <div className="min-h-screen bg-[radial-gradient(circle_at_top_center,rgba(201,100,66,0.08)_0%,transparent_28%),linear-gradient(180deg,#fffdfa_0%,#faf7f1_48%,#f3eee7_100%)] font-[var(--font-sans)]">
       {isOwnerPreview && (
-        <div style={{
-          position: 'sticky', top: 0, zIndex: 999,
-          background: 'linear-gradient(135deg, #4a332a 0%, #2f211a 100%)', color: '#fff7f2',
-          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-          padding: '10px 20px', gap: 12, fontSize: 13,
-        }}>
-          <span style={{ opacity: 0.7 }}>Vista previa de tu tienda — los clientes no ven este aviso</span>
+        <div className="sticky top-0 z-[999] bg-[linear-gradient(135deg,#4a332a_0%,#2f211a_100%)] text-[#fff7f2] flex items-center justify-between px-5 py-[10px] gap-3 text-[13px]">
+          <span className="opacity-70">Vista previa de tu tienda — los clientes no ven este aviso</span>
           <button
             onClick={() => router.push('/dashboard')}
-            style={{ background: '#fff7f2', color: 'var(--accent-3)', border: 'none', borderRadius: 10, padding: '6px 14px', fontWeight: 700, fontSize: 12, cursor: 'pointer', flexShrink: 0 }}
+            className="bg-[#fff7f2] text-[var(--accent-3)] border-none rounded-[10px] px-[14px] py-[6px] font-bold text-[12px] cursor-pointer shrink-0"
           >
             ← Volver al dashboard
           </button>
@@ -855,23 +856,23 @@ export function TiendaPageClient(props: {
       )}
 
       {/* ── HEADER ── */}
-      <header style={{ background: 'rgba(255,253,250,0.82)', borderBottom: '1px solid var(--line)', position: 'sticky', top: 0, zIndex: 100, backdropFilter: 'blur(18px)' }}>
+      <header className="bg-[rgba(255,253,250,0.82)] border-b border-[var(--line)] sticky top-0 z-[100] backdrop-blur-[18px]">
         <div className="store-header-inner">
           {/* Avatar + info tienda */}
-          <div className="store-header-store" style={{ display: 'flex', alignItems: 'center', gap: 12, flex: 1, minWidth: 0 }}>
-            <div className="store-header-logo" style={{ position: 'relative', flexShrink: 0 }}>
+          <div className="store-header-store flex items-center gap-3 flex-1 min-w-0">
+            <div className="store-header-logo relative shrink-0">
               {tienda.logo_url
-                ? <Image src={cld(tienda.logo_url, 'logo')} alt={tienda.nombre} width={44} height={44} style={{ borderRadius: 22, objectFit: 'cover', border: '2px solid #eee' }} />
-                : <div style={{ width: 44, height: 44, borderRadius: 22, background: 'linear-gradient(135deg, var(--accent) 0%, var(--accent-3) 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14, fontWeight: 800, color: '#fff', border: '2px solid rgba(255,255,255,0.9)' }}>{initials}</div>}
+                ? <Image src={cld(tienda.logo_url, 'logo')} alt={tienda.nombre} width={44} height={44} className="rounded-[22px] object-cover border-2 border-[#eee]" />
+                : <div className="w-[44px] h-[44px] rounded-[22px] bg-[linear-gradient(135deg,var(--accent)_0%,var(--accent-3)_100%)] flex items-center justify-center text-[14px] font-extrabold text-white border-2 border-[rgba(255,255,255,0.9)]">{initials}</div>}
               {liveDrops.length > 0 && (
-                <div style={{ position: 'absolute', bottom: 0, right: 0, width: 12, height: 12, borderRadius: 6, background: '#C96442', border: '2px solid #fff', animation: 'pulse 1.4s ease-in-out infinite' }} />
+                <div className="absolute bottom-0 right-0 w-3 h-3 rounded-full bg-[#C96442] border-2 border-white [animation:pulse_1.4s_ease-in-out_infinite]" />
               )}
             </div>
-            <div className="store-header-info" style={{ minWidth: 0 }}>
-              <div style={{ fontSize: 15, fontWeight: 700, color: '#111', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{tienda.nombre}</div>
+            <div className="store-header-info min-w-0">
+              <div className="text-[15px] font-bold text-[#111] whitespace-nowrap overflow-hidden text-ellipsis">{tienda.nombre}</div>
               <div className="store-header-meta">
                 {(tienda.ciudad || tienda.ubicacion) && (
-                  <span style={{ fontSize: 12, color: '#888', display: 'flex', alignItems: 'center', gap: 3, flexShrink: 0 }}>
+                  <span className="text-[12px] text-[#888] flex items-center gap-[3px] shrink-0">
                     <Icons.pin width={11} height={11} />{tienda.ciudad ?? tienda.ubicacion}
                   </span>
                 )}
@@ -880,16 +881,15 @@ export function TiendaPageClient(props: {
                     href={`https://instagram.com/${tienda.instagram.replace('@', '')}`}
                     target="_blank" rel="noopener noreferrer"
                     onClick={e => e.stopPropagation()}
-                    style={{ fontSize: 12, color: '#888', display: 'flex', alignItems: 'center', gap: 3, textDecoration: 'none' }}>
+                    className="text-[12px] text-[#888] flex items-center gap-[3px] no-underline">
                     <Icons.ig width={11} height={11} />{tienda.instagram}
                   </a>
                 )}
                 {tiendaEmail && (
                   <a
-                    className="store-header-email"
+                    className="store-header-email text-[12px] text-[#888] flex items-center gap-[3px] no-underline"
                     href={`mailto:${tiendaEmail}`}
-                    onClick={e => e.stopPropagation()}
-                    style={{ fontSize: 12, color: '#888', display: 'flex', alignItems: 'center', gap: 3, textDecoration: 'none' }}>
+                    onClick={e => e.stopPropagation()}>
                     <Icons.mail width={11} height={11} />{tiendaEmail}
                   </a>
                 )}
@@ -898,7 +898,7 @@ export function TiendaPageClient(props: {
           </div>
 
           {/* Acciones */}
-          <div className="store-header-actions" style={{ display: 'flex', gap: 8, alignItems: 'center', flexShrink: 0 }}>
+          <div className="store-header-actions flex gap-2 items-center shrink-0">
             <button
               onClick={() => {
                 if (navigator.share) {
@@ -907,16 +907,14 @@ export function TiendaPageClient(props: {
                   navigator.clipboard?.writeText(window.location.href);
                 }
               }}
-              className="store-header-share"
-              style={{ display: 'flex', alignItems: 'center', gap: 6, height: 38, padding: '0 14px', borderRadius: 20, border: '1px solid var(--line)', background: 'rgba(255,255,255,0.78)', color: 'var(--ink)', fontSize: 13, fontWeight: 500, cursor: 'pointer' }}>
-              <Icons.arrow width={14} height={14} style={{ transform: 'rotate(-45deg)' }} />
+              className="store-header-share flex items-center gap-[6px] h-[38px] px-[14px] rounded-[20px] border border-[var(--line)] bg-[rgba(255,255,255,0.78)] text-[var(--ink)] text-[13px] font-medium cursor-pointer">
+              <Icons.arrow width={14} height={14} className="-rotate-45" />
               Compartir
             </button>
             {!isOwnerPreview && (
               <button
-                className="store-header-account"
-                onClick={() => setShowAuth(true)}
-                style={{ display: 'flex', alignItems: 'center', gap: 6, height: 38, padding: '0 14px', borderRadius: 20, background: 'var(--accent)', color: '#fff', fontSize: 13, fontWeight: 600, cursor: 'pointer', border: 'none', boxShadow: '0 10px 24px rgba(201,100,66,0.22)' }}>
+                className="store-header-account flex items-center gap-[6px] h-[38px] px-[14px] rounded-[20px] bg-[var(--accent)] text-white text-[13px] font-semibold cursor-pointer border-none shadow-[0_10px_24px_rgba(201,100,66,0.22)]"
+                onClick={() => setShowAuth(true)}>
                 <svg width="14" height="14" viewBox="0 0 20 20" fill="none">
                   <path d="M3 16a7 7 0 0 1 14 0" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
                   <circle cx="10" cy="7" r="3.5" stroke="currentColor" strokeWidth="1.5" />
@@ -925,21 +923,13 @@ export function TiendaPageClient(props: {
               </button>
             )}
             <button
-              className="store-header-cart"
+              className={`store-header-cart relative flex items-center justify-center w-[38px] h-[38px] rounded-[20px] border border-[var(--line)] cursor-pointer ${carritoCount > 0 ? 'bg-[var(--accent-3)] text-white' : 'bg-white text-[var(--accent-3)]'}`}
               onClick={abrirDrawer}
-              style={{ position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center', width: 38, height: 38, borderRadius: 20, background: carritoCount > 0 ? 'var(--accent-3)' : '#fff', color: carritoCount > 0 ? '#fff' : 'var(--accent-3)', border: '1px solid var(--line)', cursor: 'pointer' }}
               title="Ver carrito"
             >
               <Icons.bag width={16} height={16} />
               {carritoCount > 0 && (
-                <span style={{
-                  position: 'absolute', top: -4, right: -4,
-                  width: 18, height: 18, borderRadius: 9,
-                  background: '#C96442', color: '#fff',
-                  fontSize: 10, fontWeight: 800,
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  border: '2px solid #fff',
-                }}>
+                <span className="absolute top-[-4px] right-[-4px] w-[18px] h-[18px] rounded-[9px] bg-[#C96442] text-white text-[10px] font-extrabold flex items-center justify-center border-2 border-white">
                   {carritoCount}
                 </span>
               )}
@@ -963,24 +953,24 @@ export function TiendaPageClient(props: {
 
       {/* ── SECCIÓN DROPS EN VIVO (2+) ── */}
       {liveDrops.length > 1 && (
-        <div style={{ background: 'linear-gradient(135deg, #5b3d31 0%, #3c2720 55%, #2a1c16 100%)', padding: '16px 20px' }}>
-          <div style={{ maxWidth: 1100, margin: '0 auto' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
-              <span style={{ width: 8, height: 8, borderRadius: 4, background: '#C96442', display: 'inline-block', animation: 'pulse 1.4s ease-in-out infinite' }} />
-              <span style={{ fontSize: 11, fontWeight: 800, color: '#C96442', textTransform: 'uppercase', letterSpacing: '0.1em', fontFamily: 'var(--font-mono)' }}>DROPS EN VIVO</span>
+        <div className="bg-[linear-gradient(135deg,#5b3d31_0%,#3c2720_55%,#2a1c16_100%)] px-5 py-4">
+          <div className="max-w-[1100px] mx-auto">
+            <div className="flex items-center gap-2 mb-3">
+              <span className="w-2 h-2 rounded-full bg-[#C96442] inline-block [animation:pulse_1.4s_ease-in-out_infinite]" />
+              <span className="text-[11px] font-extrabold text-[#C96442] uppercase tracking-[0.1em] font-[var(--font-mono)]">DROPS EN VIVO</span>
             </div>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: 10 }}>
+            <div className="grid gap-[10px] grid-cols-[repeat(auto-fill,minmax(260px,1fr))]">
               {liveDrops.map(d => {
                 const target = new Date(d.cierra_at ?? d.inicia_at).getTime();
                 return (
                   <div key={d.id}
                     onClick={() => router.push(`/${tienda.username}/drop/${d.id}`)}
-                    style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 12, padding: '14px 16px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
-                    <div style={{ minWidth: 0 }}>
-                      <div style={{ fontSize: 13, fontWeight: 700, color: '#fff', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{d.nombre}</div>
-                      <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.5)', marginTop: 3, display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                    className="bg-[rgba(255,255,255,0.06)] border border-[rgba(255,255,255,0.1)] rounded-[12px] px-4 py-[14px] cursor-pointer flex items-center justify-between gap-3">
+                    <div className="min-w-0">
+                      <div className="text-[13px] font-bold text-white whitespace-nowrap overflow-hidden text-ellipsis">{d.nombre}</div>
+                      <div className="text-[12px] text-[rgba(255,255,255,0.5)] mt-[3px] flex items-center gap-2 flex-wrap">
                         <span>Cierra en <CountdownInline target={target} /></span>
-                        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                        <span className="inline-flex items-center gap-1">
                           <Icons.eye width={12} height={12} />
                           {d.viewers_count ?? 0} viendo
                         </span>
@@ -988,7 +978,7 @@ export function TiendaPageClient(props: {
                     </div>
                     <button
                       onClick={e => { e.stopPropagation(); router.push(`/${tienda.username}/drop/${d.id}`); }}
-                      style={{ height: 34, borderRadius: 8, background: '#ef4444', color: '#fff', border: 'none', padding: '0 14px', fontSize: 12, fontWeight: 700, cursor: 'pointer', flexShrink: 0 }}>
+                      className="h-[34px] rounded-[8px] bg-[#ef4444] text-white border-none px-[14px] text-[12px] font-bold cursor-pointer shrink-0">
                       Ver
                     </button>
                   </div>
@@ -1001,57 +991,58 @@ export function TiendaPageClient(props: {
 
       {/* ── CARRUSEL DROPS PROGRAMADOS ── */}
       {!liveDrop && liveDrops.length === 0 && scheduledDrops.length > 0 && (
-        <div style={{ background: 'linear-gradient(135deg, #5b3d31 0%, #3c2720 55%, #2a1c16 100%)', padding: '14px 20px' }}>
-          <div style={{ maxWidth: 1100, margin: '0 auto', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16, flexWrap: 'wrap' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 12, flex: 1, minWidth: 0 }}>
+        <div className="bg-[linear-gradient(135deg,#5b3d31_0%,#3c2720_55%,#2a1c16_100%)] px-5 py-[14px]">
+          <div className="max-w-[1100px] mx-auto flex items-center justify-between gap-4 flex-wrap">
+            <div className="flex items-center gap-3 flex-1 min-w-0">
               {/* Flechas solo si hay más de 1 drop */}
               {scheduledDrops.length > 1 && (
                 <button onClick={prevSlide}
-                  style={{ width: 32, height: 32, borderRadius: 16, background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.15)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', flexShrink: 0 }}>
+                  className="w-8 h-8 rounded-full bg-[rgba(255,255,255,0.1)] border border-[rgba(255,255,255,0.15)] text-white flex items-center justify-center cursor-pointer shrink-0">
                   <Icons.back width={14} height={14} />
                 </button>
               )}
-              <div style={{ width: 38, height: 38, borderRadius: 19, background: 'rgba(255,255,255,0.12)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                <Icons.bell width={16} height={16} style={{ color: '#fff' }} />
+              <div className="w-[38px] h-[38px] rounded-full bg-[rgba(255,255,255,0.12)] flex items-center justify-center shrink-0">
+                <Icons.bell width={16} height={16} className="text-white" />
               </div>
-              <div onClick={() => router.push(`/${tienda.username}/drop/${sliderDrop!.id}`)} style={{ cursor: 'pointer', minWidth: 0, flex: 1 }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <span style={{ fontSize: 10, fontWeight: 800, color: 'rgba(255,255,255,0.55)', textTransform: 'uppercase', letterSpacing: '0.1em', fontFamily: 'var(--font-mono)', background: 'rgba(255,255,255,0.08)', padding: '2px 8px', borderRadius: 4 }}>PRÓXIMO DROP</span>
+              <div onClick={() => router.push(`/${tienda.username}/drop/${sliderDrop!.id}`)} className="cursor-pointer min-w-0 flex-1">
+                <div className="flex items-center gap-2">
+                  <span className="text-[10px] font-extrabold text-[rgba(255,255,255,0.55)] uppercase tracking-[0.1em] font-[var(--font-mono)] bg-[rgba(255,255,255,0.08)] px-2 py-[2px] rounded-[4px]">PRÓXIMO DROP</span>
                   {scheduledDrops.length > 1 && (
-                    <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.4)', fontFamily: 'var(--font-mono)' }}>{safeSliderIdx + 1}/{scheduledDrops.length}</span>
+                    <span className="text-[10px] text-[rgba(255,255,255,0.4)] font-[var(--font-mono)]">{safeSliderIdx + 1}/{scheduledDrops.length}</span>
                   )}
                 </div>
-                <div style={{ fontSize: 15, fontWeight: 700, color: '#fff', marginTop: 2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                <div className="text-[15px] font-bold text-white mt-[2px] whitespace-nowrap overflow-hidden text-ellipsis">
                   {sliderDrop!.nombre}
                 </div>
                 {(() => {
                   const n = sliderDrop!.prendas?.[0]?.count ?? 0;
                   if (n === 0) return null;
-                  return <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.5)', marginTop: 2 }}>{n} {n === 1 ? 'prenda' : 'prendas'}</div>;
+                  return <div className="text-[12px] text-[rgba(255,255,255,0.5)] mt-[2px]">{n} {n === 1 ? 'prenda' : 'prendas'}</div>;
                 })()}
               </div>
               {scheduledDrops.length > 1 && (
                 <button onClick={nextSlide}
-                  style={{ width: 32, height: 32, borderRadius: 16, background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.15)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', flexShrink: 0 }}>
+                  className="w-8 h-8 rounded-full bg-[rgba(255,255,255,0.1)] border border-[rgba(255,255,255,0.15)] text-white flex items-center justify-center cursor-pointer shrink-0">
                   <Icons.arrow width={14} height={14} />
                 </button>
               )}
             </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 16, flexShrink: 0 }}>
+            <div className="flex items-center gap-4 shrink-0">
               <CountdownBlocks target={sliderTarget} />
               <button
                 onClick={() => setSubscribeDrop(sliderDrop)}
-                style={{ height: 40, borderRadius: 8, background: '#fff', color: '#111', border: 'none', padding: '0 20px', fontSize: 13, fontWeight: 700, cursor: 'pointer', whiteSpace: 'nowrap' }}>
+                className="h-10 rounded-[8px] bg-white text-[#111] border-none px-5 text-[13px] font-bold cursor-pointer whitespace-nowrap">
                 Notificarme
               </button>
             </div>
           </div>
           {/* Dots indicadores */}
           {scheduledDrops.length > 1 && (
-            <div style={{ maxWidth: 1100, margin: '10px auto 0', display: 'flex', gap: 5, justifyContent: 'center' }}>
+            <div className="max-w-[1100px] mx-auto mt-[10px] flex gap-[5px] justify-center">
               {scheduledDrops.map((_, i) => (
                 <button key={i} onClick={() => setSliderIdx(i)}
-                  style={{ width: i === safeSliderIdx ? 18 : 6, height: 6, borderRadius: 3, background: i === safeSliderIdx ? '#fff' : 'rgba(255,255,255,0.25)', border: 'none', cursor: 'pointer', padding: 0, transition: 'all .2s' }} />
+                  className="h-[6px] rounded-[3px] border-none cursor-pointer p-0 transition-all duration-200"
+                  style={{ width: i === safeSliderIdx ? 18 : 6, background: i === safeSliderIdx ? '#fff' : 'rgba(255,255,255,0.25)' }} />
               ))}
             </div>
           )}
@@ -1060,18 +1051,18 @@ export function TiendaPageClient(props: {
 
       {/* ── ESTADO SIN DROP ACTIVO O PROGRAMADO ── */}
       {showNoDropBanner && (
-        <div className="store-no-drop-banner" style={{ background: 'linear-gradient(135deg, #5b3d31 0%, #3c2720 55%, #2a1c16 100%)', padding: '16px 20px' }}>
-          <div className="store-no-drop-inner" style={{ maxWidth: 1100, margin: '0 auto', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16, flexWrap: 'wrap' }}>
-            <div className="store-no-drop-copy-row" style={{ display: 'flex', alignItems: 'center', gap: 12, minWidth: 0, flex: 1 }}>
-              <div className="store-no-drop-icon" style={{ width: 38, height: 38, borderRadius: 19, background: 'rgba(255,255,255,0.12)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+        <div className="store-no-drop-banner bg-[linear-gradient(135deg,#5b3d31_0%,#3c2720_55%,#2a1c16_100%)] px-5 py-4">
+          <div className="store-no-drop-inner max-w-[1100px] mx-auto flex items-center justify-between gap-4 flex-wrap">
+            <div className="store-no-drop-copy-row flex items-center gap-3 min-w-0 flex-1">
+              <div className="store-no-drop-icon w-[38px] h-[38px] rounded-full bg-[rgba(255,255,255,0.12)] text-white flex items-center justify-center shrink-0">
                 <Icons.box width={16} height={16} />
               </div>
-              <div className="store-no-drop-text" style={{ minWidth: 0 }}>
-                <span style={{ fontSize: 10, fontWeight: 800, color: 'rgba(255,255,255,0.55)', textTransform: 'uppercase', letterSpacing: '0.1em', fontFamily: 'var(--font-mono)', background: 'rgba(255,255,255,0.08)', padding: '2px 8px', borderRadius: 4 }}>SIN DROP PROGRAMADO</span>
-                <div className="store-no-drop-title" style={{ fontSize: 15, fontWeight: 700, color: '#fff', marginTop: 5 }}>
+              <div className="store-no-drop-text min-w-0">
+                <span className="text-[10px] font-extrabold text-[rgba(255,255,255,0.55)] uppercase tracking-[0.1em] font-[var(--font-mono)] bg-[rgba(255,255,255,0.08)] px-2 py-[2px] rounded-[4px]">SIN DROP PROGRAMADO</span>
+                <div className="store-no-drop-title text-[15px] font-bold text-white mt-[5px]">
                   {totalUnidades > 0 ? 'Por ahora comprá desde el catálogo' : 'Nuevos drops próximamente'}
                 </div>
-                <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.5)', marginTop: 2, lineHeight: 1.45 }}>
+                <div className="text-[12px] text-[rgba(255,255,255,0.5)] mt-[2px] leading-[1.45]">
                   {totalUnidades > 0
                     ? 'Cuando la tienda programe otro drop, aparecerá aquí con su contador.'
                     : 'La tienda todavía no tiene piezas disponibles ni un lanzamiento agendado.'}
@@ -1080,18 +1071,16 @@ export function TiendaPageClient(props: {
             </div>
             {totalUnidades > 0 ? (
               <button
-                className="store-no-drop-action"
-                onClick={scrollToCatalog}
-                style={{ height: 40, borderRadius: 8, background: '#fff', color: '#111', border: 'none', padding: '0 20px', fontSize: 13, fontWeight: 700, cursor: 'pointer', whiteSpace: 'nowrap' }}>
+                className="store-no-drop-action h-10 rounded-[8px] bg-white text-[#111] border-none px-5 text-[13px] font-bold cursor-pointer whitespace-nowrap"
+                onClick={scrollToCatalog}>
                 Ver catálogo
               </button>
             ) : tienda.instagram ? (
               <a
-                className="store-no-drop-action"
+                className="store-no-drop-action h-10 rounded-[8px] bg-white text-[#111] no-underline px-5 text-[13px] font-bold inline-flex items-center gap-[7px] whitespace-nowrap"
                 href={`https://instagram.com/${tienda.instagram.replace('@', '')}`}
                 target="_blank"
-                rel="noopener noreferrer"
-                style={{ height: 40, borderRadius: 8, background: '#fff', color: '#111', textDecoration: 'none', padding: '0 20px', fontSize: 13, fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: 7, whiteSpace: 'nowrap' }}>
+                rel="noopener noreferrer">
                 <Icons.ig width={14} height={14} />
                 Seguir tienda
               </a>
@@ -1102,20 +1091,19 @@ export function TiendaPageClient(props: {
 
       {/* ── MAIN CONTENT ── */}
       <div id="catalogo" className="store-catalog">
-        <div style={{ display: 'flex', gap: 24, alignItems: 'flex-start' }}>
+        <div className="flex gap-6 items-start">
 
           {/* ── SIDEBAR FILTROS ── */}
-          <div className="store-sidebar" style={{ width: 260, flexShrink: 0, background: '#fff', borderRadius: 16, border: '1px solid #E8E4DF', overflow: 'hidden', position: 'sticky', top: 72 }}>
+          <div className="store-sidebar w-[260px] shrink-0 bg-white rounded-[16px] border border-[#E8E4DF] overflow-hidden sticky top-[72px]">
 
             {/* Search */}
-            <div style={{ padding: '14px 14px 12px', borderBottom: '1px solid #E8E4DF' }}>
-              <div style={{ position: 'relative' }}>
-                <svg style={{ position: 'absolute', left: 11, top: '50%', transform: 'translateY(-50%)', color: '#aaa', pointerEvents: 'none' }} width="14" height="14" viewBox="0 0 20 20" fill="none">
+            <div className="px-[14px] pt-[14px] pb-3 border-b border-[#E8E4DF]">
+              <div className="relative">
+                <svg className="absolute left-[11px] top-1/2 -translate-y-1/2 text-[#aaa] pointer-events-none" width="14" height="14" viewBox="0 0 20 20" fill="none">
                   <circle cx="9" cy="9" r="6" stroke="currentColor" strokeWidth="1.5" /><path d="M14 14l3 3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
                 </svg>
                 <input
-                  className="input"
-                  style={{ paddingLeft: 32, paddingRight: 10, height: 38, fontSize: 13, borderRadius: 10 }}
+                  className="input pl-8 pr-[10px] h-[38px] text-[13px] rounded-[10px]"
                   placeholder="Buscar prenda, marca..."
                   value={searchQuery}
                   onChange={e => { setSearchQuery(e.target.value); setVisibleCount(12); }}
@@ -1124,24 +1112,24 @@ export function TiendaPageClient(props: {
             </div>
 
             {/* CATEGORÍA */}
-            <div style={{ borderBottom: '1px solid #E8E4DF' }}>
+            <div className="border-b border-[#E8E4DF]">
               <button
                 onClick={() => setOpenSections(s => ({ ...s, categoria: !s.categoria }))}
-                style={{ width: '100%', padding: '15px 18px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'none', border: 'none', cursor: 'pointer' }}
+                className="w-full px-[18px] py-[15px] flex items-center justify-between bg-none border-none cursor-pointer"
               >
-                <span style={{ fontSize: 12, fontWeight: 800, letterSpacing: '0.08em', color: '#111', textTransform: 'uppercase' }}>Categoría</span>
-                <svg style={{ transform: openSections.categoria ? 'rotate(180deg)' : 'none', transition: 'transform .2s', flexShrink: 0 }} width="16" height="16" viewBox="0 0 20 20" fill="none">
+                <span className="text-[12px] font-extrabold tracking-[0.08em] text-[#111] uppercase">Categoría</span>
+                <svg className={`shrink-0 transition-transform duration-200 ${openSections.categoria ? 'rotate-180' : ''}`} width="16" height="16" viewBox="0 0 20 20" fill="none">
                   <path d="M5 7.5l5 5 5-5" stroke="#888" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
                 </svg>
               </button>
               {openSections.categoria && orderedCategoryNames.length > 0 && (
-                <div style={{ padding: '0 8px 10px' }}>
+                <div className="px-2 pb-[10px]">
                   {orderedCategoryNames.map(cat => (
                     <button key={cat}
                       onClick={() => { setCatFilter(catFilter === cat ? null : cat); setVisibleCount(12); }}
-                      style={{ width: '100%', padding: '7px 10px', borderRadius: 8, border: 'none', background: catFilter === cat ? '#f7efe7' : 'transparent', color: catFilter === cat ? 'var(--accent)' : '#333', fontSize: 13, fontWeight: catFilter === cat ? 700 : 500, cursor: 'pointer', textAlign: 'left', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      className={`w-full px-[10px] py-[7px] rounded-[8px] border-none text-[13px] cursor-pointer text-left flex justify-between items-center ${catFilter === cat ? 'bg-[#f7efe7] text-[var(--accent)] font-bold' : 'bg-transparent text-[#333] font-medium'}`}>
                       <span>{cat}</span>
-                      <span style={{ color: catFilter === cat ? 'var(--accent)' : '#bbb', fontSize: 11, fontWeight: 600 }}>{productCategoryCounts[cat] ?? 0}</span>
+                      <span className={`text-[11px] font-semibold ${catFilter === cat ? 'text-[var(--accent)]' : 'text-[#bbb]'}`}>{productCategoryCounts[cat] ?? 0}</span>
                     </button>
                   ))}
                 </div>
@@ -1149,22 +1137,22 @@ export function TiendaPageClient(props: {
             </div>
 
             {/* TALLA */}
-            <div style={{ borderBottom: '1px solid #E8E4DF' }}>
+            <div className="border-b border-[#E8E4DF]">
               <button
                 onClick={() => setOpenSections(s => ({ ...s, talla: !s.talla }))}
-                style={{ width: '100%', padding: '15px 18px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'none', border: 'none', cursor: 'pointer' }}
+                className="w-full px-[18px] py-[15px] flex items-center justify-between bg-none border-none cursor-pointer"
               >
-                <span style={{ fontSize: 12, fontWeight: 800, letterSpacing: '0.08em', color: '#111', textTransform: 'uppercase' }}>Talla</span>
-                <svg style={{ transform: openSections.talla ? 'rotate(180deg)' : 'none', transition: 'transform .2s', flexShrink: 0 }} width="16" height="16" viewBox="0 0 20 20" fill="none">
+                <span className="text-[12px] font-extrabold tracking-[0.08em] text-[#111] uppercase">Talla</span>
+                <svg className={`shrink-0 transition-transform duration-200 ${openSections.talla ? 'rotate-180' : ''}`} width="16" height="16" viewBox="0 0 20 20" fill="none">
                   <path d="M5 7.5l5 5 5-5" stroke="#888" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
                 </svg>
               </button>
               {openSections.talla && allTallas.length > 0 && (
-                <div style={{ padding: '0 10px 12px', display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                <div className="px-[10px] pb-3 flex flex-wrap gap-[6px]">
                   {allTallas.map(talla => (
                     <button key={talla}
                       onClick={() => { setTallaFilter(tallaFilter === talla ? null : talla); setVisibleCount(12); }}
-                      style={{ padding: '5px 12px', borderRadius: 8, border: tallaFilter === talla ? 'none' : '1px solid #E8E4DF', background: tallaFilter === talla ? 'var(--accent)' : '#fff', color: tallaFilter === talla ? '#fff' : '#444', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>
+                      className={`px-3 py-[5px] rounded-[8px] text-[12px] font-semibold cursor-pointer ${tallaFilter === talla ? 'bg-[var(--accent)] text-white border-none' : 'bg-white text-[#444] border border-[#E8E4DF]'}`}>
                       {talla}
                     </button>
                   ))}
@@ -1173,30 +1161,28 @@ export function TiendaPageClient(props: {
             </div>
 
             {/* PRECIO */}
-            <div style={{ borderBottom: '1px solid #E8E4DF' }}>
+            <div className="border-b border-[#E8E4DF]">
               <button
                 onClick={() => setOpenSections(s => ({ ...s, precio: !s.precio }))}
-                style={{ width: '100%', padding: '15px 18px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'none', border: 'none', cursor: 'pointer' }}
+                className="w-full px-[18px] py-[15px] flex items-center justify-between bg-none border-none cursor-pointer"
               >
-                <span style={{ fontSize: 12, fontWeight: 800, letterSpacing: '0.08em', color: '#111', textTransform: 'uppercase' }}>Precio</span>
-                <svg style={{ transform: openSections.precio ? 'rotate(180deg)' : 'none', transition: 'transform .2s', flexShrink: 0 }} width="16" height="16" viewBox="0 0 20 20" fill="none">
+                <span className="text-[12px] font-extrabold tracking-[0.08em] text-[#111] uppercase">Precio</span>
+                <svg className={`shrink-0 transition-transform duration-200 ${openSections.precio ? 'rotate-180' : ''}`} width="16" height="16" viewBox="0 0 20 20" fill="none">
                   <path d="M5 7.5l5 5 5-5" stroke="#888" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
                 </svg>
               </button>
               {openSections.precio && (
-                <div style={{ padding: '0 14px 14px', display: 'flex', gap: 8, alignItems: 'center' }}>
+                <div className="px-[14px] pb-[14px] flex gap-2 items-center">
                   <input
-                    className="input"
-                    style={{ flex: 1, height: 36, fontSize: 13, borderRadius: 8, minWidth: 0 }}
+                    className="input flex-1 h-9 text-[13px] rounded-[8px] min-w-0"
                     type="number"
                     placeholder="Min"
                     value={precioMin}
                     onChange={e => { setPrecioMin(e.target.value); setVisibleCount(12); }}
                   />
-                  <span style={{ color: '#ccc', fontSize: 12 }}>—</span>
+                  <span className="text-[#ccc] text-[12px]">—</span>
                   <input
-                    className="input"
-                    style={{ flex: 1, height: 36, fontSize: 13, borderRadius: 8, minWidth: 0 }}
+                    className="input flex-1 h-9 text-[13px] rounded-[8px] min-w-0"
                     type="number"
                     placeholder="Max"
                     value={precioMax}
@@ -1210,19 +1196,19 @@ export function TiendaPageClient(props: {
             <div>
               <button
                 onClick={() => setOpenSections(s => ({ ...s, marca: !s.marca }))}
-                style={{ width: '100%', padding: '15px 18px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'none', border: 'none', cursor: 'pointer' }}
+                className="w-full px-[18px] py-[15px] flex items-center justify-between bg-none border-none cursor-pointer"
               >
-                <span style={{ fontSize: 12, fontWeight: 800, letterSpacing: '0.08em', color: '#111', textTransform: 'uppercase' }}>Marca</span>
-                <svg style={{ transform: openSections.marca ? 'rotate(180deg)' : 'none', transition: 'transform .2s', flexShrink: 0 }} width="16" height="16" viewBox="0 0 20 20" fill="none">
+                <span className="text-[12px] font-extrabold tracking-[0.08em] text-[#111] uppercase">Marca</span>
+                <svg className={`shrink-0 transition-transform duration-200 ${openSections.marca ? 'rotate-180' : ''}`} width="16" height="16" viewBox="0 0 20 20" fill="none">
                   <path d="M5 7.5l5 5 5-5" stroke="#888" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
                 </svg>
               </button>
               {openSections.marca && allMarcas.length > 0 && (
-                <div style={{ padding: '0 8px 10px' }}>
+                <div className="px-2 pb-[10px]">
                   {allMarcas.map(marca => (
                     <button key={marca}
                       onClick={() => { setMarcaFilter(marcaFilter === marca ? null : marca); setVisibleCount(12); }}
-                      style={{ width: '100%', padding: '7px 10px', borderRadius: 8, border: 'none', background: marcaFilter === marca ? '#f7efe7' : 'transparent', color: marcaFilter === marca ? 'var(--accent)' : '#333', fontSize: 13, fontWeight: marcaFilter === marca ? 700 : 500, cursor: 'pointer', textAlign: 'left' }}>
+                      className={`w-full px-[10px] py-[7px] rounded-[8px] border-none text-[13px] cursor-pointer text-left ${marcaFilter === marca ? 'bg-[#f7efe7] text-[var(--accent)] font-bold' : 'bg-transparent text-[#333] font-medium'}`}>
                       {marca}
                     </button>
                   ))}
@@ -1232,8 +1218,8 @@ export function TiendaPageClient(props: {
 
             {/* Limpiar filtros */}
             {hasActiveFilters && (
-              <div style={{ padding: '10px 14px 14px', borderTop: '1px solid #E8E4DF' }}>
-                <button onClick={clearAllFilters} style={{ width: '100%', height: 36, borderRadius: 9, border: '1px solid #E8E4DF', background: '#fff', color: '#888', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>
+              <div className="px-[14px] pt-[10px] pb-[14px] border-t border-[#E8E4DF]">
+                <button onClick={clearAllFilters} className="w-full h-9 rounded-[9px] border border-[#E8E4DF] bg-white text-[#888] text-[12px] font-bold cursor-pointer">
                   Limpiar filtros
                 </button>
               </div>
@@ -1241,30 +1227,30 @@ export function TiendaPageClient(props: {
           </div>
 
           {/* ── CONTENIDO PRINCIPAL ── */}
-          <div style={{ flex: 1, minWidth: 0 }}>
+          <div className="flex-1 min-w-0">
 
             {/* Header: título + sort */}
-            <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', marginBottom: 20, flexWrap: 'wrap', gap: 12 }}>
+            <div className="flex items-end justify-between mb-5 flex-wrap gap-3">
               <div>
-                <div style={{ fontSize: 22, fontWeight: 900, color: '#111', letterSpacing: '-0.02em', lineHeight: 1.2 }}>
+                <div className="text-[22px] font-black text-[#111] tracking-[-0.02em] leading-[1.2]">
                   {catFilter ? catFilter : 'Todas las prendas'}
                 </div>
-                <div style={{ fontSize: 13, color: '#888', marginTop: 3 }}>
+                <div className="text-[13px] text-[#888] mt-[3px]">
                   {prendasFiltradas.length} {prendasFiltradas.length === 1 ? 'prenda' : 'prendas'}
                 </div>
               </div>
-              <div style={{ position: 'relative' }}>
+              <div className="relative">
                 <select
                   value={sortOrder}
                   onChange={e => setSortOrder(e.target.value as typeof sortOrder)}
-                  style={{ appearance: 'none', WebkitAppearance: 'none', padding: '0 36px 0 14px', height: 40, borderRadius: 12, border: '1px solid #E8E4DF', background: '#fff', fontSize: 13, fontWeight: 600, cursor: 'pointer', color: '#333' }}
+                  className="appearance-none pr-9 pl-[14px] h-10 rounded-[12px] border border-[#E8E4DF] bg-white text-[13px] font-semibold cursor-pointer text-[#333]"
                 >
                   <option value="newest">Más recientes</option>
                   <option value="oldest">Más antiguos</option>
                   <option value="price_asc">Menor precio</option>
                   <option value="price_desc">Mayor precio</option>
                 </select>
-                <svg style={{ position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }} width="14" height="14" viewBox="0 0 20 20" fill="none">
+                <svg className="absolute right-[10px] top-1/2 -translate-y-1/2 pointer-events-none" width="14" height="14" viewBox="0 0 20 20" fill="none">
                   <path d="M5 7.5l5 5 5-5" stroke="#888" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
                 </svg>
               </div>
@@ -1272,23 +1258,12 @@ export function TiendaPageClient(props: {
 
             {/* Grid de productos */}
             {prendasFiltradas.length === 0 ? (
-              <div style={{ textAlign: 'center', padding: '80px 0', color: '#999' }}>
-                <div style={{
-                  width: 48,
-                  height: 48,
-                  borderRadius: 12,
-                  background: 'var(--surface-2)',
-                  border: '1px solid var(--line)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  margin: '0 auto 14px',
-                  color: 'var(--ink-3)',
-                }}>
+              <div className="text-center py-[80px] text-[#999]">
+                <div className="w-[48px] h-[48px] rounded-[12px] bg-[var(--surface-2)] border border-[var(--line)] flex items-center justify-center mx-auto mb-[14px] text-[var(--ink-3)]">
                   <Icons.grid width={19} height={19} />
                 </div>
-                <div style={{ fontSize: 16, fontWeight: 600, color: '#444', marginBottom: 6 }}>{catFilter ? `Sin prendas en ${catFilter}` : 'Sin prendas disponibles'}</div>
-                <div style={{ fontSize: 13 }}>El inventario de esta tienda aparecerá aquí.</div>
+                <div className="text-[16px] font-semibold text-[#444] mb-[6px]">{catFilter ? `Sin prendas en ${catFilter}` : 'Sin prendas disponibles'}</div>
+                <div className="text-[13px]">El inventario de esta tienda aparecerá aquí.</div>
               </div>
             ) : (
               <>
@@ -1337,8 +1312,8 @@ export function TiendaPageClient(props: {
 
                 {/* Ver más */}
                 {hayMasPrendas && (
-                  <div style={{ textAlign: 'center', marginTop: 32 }}>
-                    <button onClick={() => setVisibleCount(c => c + 12)} style={{ height: 44, padding: '0 32px', borderRadius: 22, border: '1px solid #E8E4DF', background: '#fff', fontSize: 14, fontWeight: 600, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 8, color: '#4A4540' }}>
+                  <div className="text-center mt-8">
+                    <button onClick={() => setVisibleCount(c => c + 12)} className="h-11 px-8 rounded-[22px] border border-[#E8E4DF] bg-white text-[14px] font-semibold cursor-pointer inline-flex items-center gap-2 text-[#4A4540]">
                       Ver más productos ({prendasFiltradas.length - visibleCount} restantes)
                       <svg width="14" height="14" viewBox="0 0 20 20" fill="none"><path d="M10 3v14M3 10l7 7 7-7" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" /></svg>
                     </button>
@@ -1351,7 +1326,7 @@ export function TiendaPageClient(props: {
         </div>{/* fin flex sidebar+main */}
 
         {/* ── BENEFICIOS ── */}
-        <div style={{ margin: '48px 0 0', background: '#fff', borderRadius: 16, border: '1px solid #E8E4DF', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))' }}>
+        <div className="mt-12 bg-white rounded-[16px] border border-[#E8E4DF] grid grid-cols-[repeat(auto-fit,minmax(200px,1fr))]">
           {[
             {
               svg: (
@@ -1384,48 +1359,43 @@ export function TiendaPageClient(props: {
               desc: 'Piezas originales verificadas',
             },
           ].map((b, i, arr) => (
-            <div key={i} style={{
-              textAlign: 'center',
-              padding: '28px 24px',
-              borderRight: i < arr.length - 1 ? '1px solid #E8E4DF' : 'none',
-              display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10,
-            }}>
-              <div style={{ width: 44, height: 44, borderRadius: 12, background: '#F2F0EC', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#1A1714' }}>
+            <div key={i} className={`text-center px-6 py-7 flex flex-col items-center gap-[10px] ${i < arr.length - 1 ? 'border-r border-[#E8E4DF]' : ''}`}>
+              <div className="w-[44px] h-[44px] rounded-[12px] bg-[#F2F0EC] flex items-center justify-center text-[#1A1714]">
                 {b.svg}
               </div>
-              <div style={{ fontSize: 14, fontWeight: 700, color: '#111' }}>{b.title}</div>
-              <div style={{ fontSize: 12, color: '#888', lineHeight: 1.6, maxWidth: 180 }}>{b.desc}</div>
+              <div className="text-[14px] font-bold text-[#111]">{b.title}</div>
+              <div className="text-[12px] text-[#888] leading-[1.6] max-w-[180px]">{b.desc}</div>
             </div>
           ))}
         </div>
       </div>
 
       {/* ── FOOTER ── */}
-      <footer style={{ background: 'linear-gradient(180deg, #fffaf5 0%, #f4ede6 100%)', color: 'var(--ink)', padding: '32px 20px 24px', borderTop: '1px solid var(--line)' }}>
-        <div style={{ maxWidth: 1100, margin: '0 auto' }}>
-          <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 24, flexWrap: 'wrap', marginBottom: 24, paddingBottom: 24, borderBottom: '1px solid var(--line)' }}>
+      <footer className="bg-[linear-gradient(180deg,#fffaf5_0%,#f4ede6_100%)] text-[var(--ink)] px-5 pt-8 pb-6 border-t border-[var(--line)]">
+        <div className="max-w-[1100px] mx-auto">
+          <div className="flex items-start justify-between gap-6 flex-wrap mb-6 pb-6 border-b border-[var(--line)]">
             <div>
-              <div style={{ fontSize: 18, fontWeight: 800, marginBottom: 6 }}>{tienda.nombre}</div>
-              <div style={{ fontSize: 13, color: 'var(--ink-3)', maxWidth: 280, lineHeight: 1.55 }}>
+              <div className="text-[18px] font-extrabold mb-[6px]">{tienda.nombre}</div>
+              <div className="text-[13px] text-[var(--ink-3)] max-w-[280px] leading-[1.55]">
                 {tienda.bio || 'Tu tienda de moda sostenible'}
               </div>
-              <div className="store-footer-contact-row" style={{ display: 'flex', alignItems: 'center', gap: '10px 14px', flexWrap: 'wrap', marginTop: 12, maxWidth: 620 }}>
+              <div className="store-footer-contact-row flex items-center flex-wrap mt-3 max-w-[620px] gap-x-[14px] gap-y-[10px]">
                 {footerAddress && (
-                  <div className="store-footer-address" style={{ display: 'inline-flex', alignItems: 'flex-start', gap: 6, fontSize: 13, color: 'var(--ink-2)', lineHeight: 1.45 }}>
-                    <Icons.pin width={14} height={14} style={{ marginTop: 2, flexShrink: 0 }} />
+                  <div className="store-footer-address inline-flex items-start gap-[6px] text-[13px] text-[var(--ink-2)] leading-[1.45]">
+                    <Icons.pin width={14} height={14} className="mt-[2px] shrink-0" />
                     <span>{footerAddress}</span>
                   </div>
                 )}
                 {tienda.instagram && (
                   <a href={`https://instagram.com/${tienda.instagram.replace('@', '')}`} target="_blank" rel="noopener noreferrer"
-                    style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 13, color: 'var(--ink-2)', textDecoration: 'none' }}>
+                    className="inline-flex items-center gap-[6px] text-[13px] text-[var(--ink-2)] no-underline">
                     <Icons.ig width={14} height={14} />
                     {tienda.instagram}
                   </a>
                 )}
                 {tiendaEmail && (
                   <a href={`mailto:${tiendaEmail}`}
-                    style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 13, color: 'var(--ink-2)', textDecoration: 'none' }}>
+                    className="inline-flex items-center gap-[6px] text-[13px] text-[var(--ink-2)] no-underline">
                     <Icons.mail width={14} height={14} />
                     {tiendaEmail}
                   </a>
@@ -1433,37 +1403,37 @@ export function TiendaPageClient(props: {
               </div>
             </div>
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12 }}>
-            <div style={{ fontSize: 12, color: 'var(--ink-3)' }}>© {new Date().getFullYear()} - {tienda.nombre} · Tecnología de Droppi</div>
+          <div className="flex items-center justify-between flex-wrap gap-3">
+            <div className="text-[12px] text-[var(--ink-3)]">© {new Date().getFullYear()} - {tienda.nombre} · Tecnología de Droppi</div>
             {(tienda.instagram || tienda.facebook || tienda.tiktok) && (
-              <div className="store-footer-socials" style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 8 }}>
-                <div style={{ fontSize: 11, color: 'var(--ink-3)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Seguínos en nuestras redes</div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <div className="store-footer-socials flex flex-col items-end gap-2">
+                <div className="text-[11px] text-[var(--ink-3)] uppercase tracking-[0.08em]">Seguínos en nuestras redes</div>
+                <div className="flex items-center gap-2">
                   {tienda.instagram && (
                     <a href={`https://instagram.com/${tienda.instagram.replace('@', '')}`} target="_blank" rel="noopener noreferrer"
                       title="Instagram"
-                      style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 34, height: 34, borderRadius: 17, border: '1px solid var(--line)', color: 'var(--ink-2)', textDecoration: 'none', background: 'rgba(255,255,255,0.72)' }}>
+                      className="flex items-center justify-center w-[34px] h-[34px] rounded-full border border-[var(--line)] text-[var(--ink-2)] no-underline bg-[rgba(255,255,255,0.72)]">
                       <Icons.ig width={16} height={16} />
                     </a>
                   )}
                   {tienda.facebook && (
                     <a href={tienda.facebook.startsWith('http') ? tienda.facebook : `https://facebook.com/${tienda.facebook}`} target="_blank" rel="noopener noreferrer"
                       title="Facebook"
-                      style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 34, height: 34, borderRadius: 17, border: '1px solid var(--line)', color: 'var(--ink-2)', textDecoration: 'none', background: 'rgba(255,255,255,0.72)' }}>
+                      className="flex items-center justify-center w-[34px] h-[34px] rounded-full border border-[var(--line)] text-[var(--ink-2)] no-underline bg-[rgba(255,255,255,0.72)]">
                       <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z" /></svg>
                     </a>
                   )}
                   {tienda.tiktok && (
                     <a href={tienda.tiktok.startsWith('http') ? tienda.tiktok : `https://tiktok.com/@${tienda.tiktok.replace('@', '')}`} target="_blank" rel="noopener noreferrer"
                       title="TikTok"
-                      style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 34, height: 34, borderRadius: 17, border: '1px solid var(--line)', color: 'var(--ink-2)', textDecoration: 'none', background: 'rgba(255,255,255,0.72)' }}>
+                      className="flex items-center justify-center w-[34px] h-[34px] rounded-full border border-[var(--line)] text-[var(--ink-2)] no-underline bg-[rgba(255,255,255,0.72)]">
                       <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-2.88 2.5 2.89 2.89 0 0 1-2.89-2.89 2.89 2.89 0 0 1 2.89-2.89c.28 0 .54.04.79.1V9.01a6.33 6.33 0 0 0-.79-.05 6.34 6.34 0 0 0-6.34 6.34 6.34 6.34 0 0 0 6.34 6.34 6.34 6.34 0 0 0 6.33-6.34V8.69a8.18 8.18 0 0 0 4.78 1.52V6.75a4.85 4.85 0 0 1-1.01-.06z" /></svg>
                     </a>
                   )}
                   {tienda.whatsapp && (
                     <a href={`https://wa.me/${tienda.whatsapp.replace(/\D/g, '')}`} target="_blank" rel="noopener noreferrer"
                       title="WhatsApp"
-                      style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 34, height: 34, borderRadius: 17, border: '1px solid var(--line)', color: '#25d366', textDecoration: 'none', background: 'rgba(255,255,255,0.72)' }}>
+                      className="flex items-center justify-center w-[34px] h-[34px] rounded-full border border-[var(--line)] text-[#25d366] no-underline bg-[rgba(255,255,255,0.72)]">
                       <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 0 1 2.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0 0 12.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 0 0 5.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 0 0-3.48-8.413z"/></svg>
                     </a>
                   )}
@@ -1496,7 +1466,7 @@ export function TiendaPageClient(props: {
           onProfileUpdate={setComprador}
         />
       )}
-      {showBag && <div style={{ display: 'none' }} />}
+      {showBag && <div className="hidden" />}
     </div>
   );
 }

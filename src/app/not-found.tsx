@@ -2,30 +2,20 @@ import Link from 'next/link'
 
 export default function NotFound() {
   return (
-    <div style={{
-      minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center',
-      background: '#FAF9F7', padding: 24,
-    }}>
-      <div style={{ textAlign: 'center', maxWidth: 400 }}>
-        <div style={{
-          fontSize: 72, fontWeight: 800, letterSpacing: '-0.04em',
-          color: '#E8DED5', lineHeight: 1, marginBottom: 16,
-        }}>
+    <div className="min-h-screen flex items-center justify-center bg-[#FAF9F7] p-6">
+      <div className="text-center max-w-[400px]">
+        <div className="text-[72px] font-extrabold tracking-[-0.04em] text-[#E8DED5] leading-none mb-4">
           404
         </div>
-        <div style={{ fontSize: 20, fontWeight: 700, letterSpacing: '-0.01em', marginBottom: 8 }}>
+        <div className="text-[20px] font-bold tracking-[-0.01em] mb-2">
           Página no encontrada
         </div>
-        <div style={{ fontSize: 14, color: '#8A8380', lineHeight: 1.6, marginBottom: 28 }}>
+        <div className="text-[14px] text-[#8A8380] leading-relaxed mb-7">
           La página que buscás no existe o fue movida.
         </div>
         <Link
           href="/"
-          style={{
-            display: 'inline-block', background: '#1A1714', color: '#fff',
-            fontSize: 14, fontWeight: 600, padding: '11px 24px',
-            borderRadius: 10, textDecoration: 'none',
-          }}
+          className="inline-block bg-[#1A1714] text-white text-[14px] font-semibold py-[11px] px-6 rounded-[10px] no-underline"
         >
           Volver al inicio
         </Link>

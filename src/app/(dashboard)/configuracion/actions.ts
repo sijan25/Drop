@@ -5,6 +5,7 @@ import { parsePhoneNumberWithError } from 'libphonenumber-js';
 import { createClient, createServiceClient } from '@/lib/supabase/server';
 import { getCatalogDefaults, type CatalogOptionTipo, type TipoNegocio } from '@/lib/catalog-options';
 import { guardServerMutation } from '@/lib/security/request';
+import { encryptPixelPaySecret } from '@/lib/pixelpay/security';
 import {
   STORE_USERNAME_TAKEN_ERROR,
   USERNAME_CHANGE_COOLDOWN_DAYS,
@@ -548,6 +549,77 @@ export async function resetearCatalogo(): Promise<{ error?: string; opciones?: O
 
   revalidatePath('/configuracion');
   return { opciones: (inserted ?? []) as OpcionCatalogo[] };
+}
+
+export async function guardarPixelPayCredenciales(data: {
+  sandbox: boolean;
+  enabled: boolean;
+  endpoint: string;
+  keyId: string;
+  secretKey: string;
+}): Promise<{ error?: string }> {
+  const { error: authError, tiendaId, supabase } = await getTiendaId();
+  if (authError || !supabase) return { error: authError ?? 'Error' };
+
+  const update: Record<string, unknown> = {
+    pixelpay_sandbox: data.sandbox,
+    pixelpay_enabled: data.enabled,
+  };
+
+  if (!data.sandbox) {
+    const { data: current } = await supabase
+      .from('tiendas')
+      .select('pixelpay_secret_key')
+      .eq('id', tiendaId!)
+      .maybeSingle();
+
+    if (!data.endpoint || !data.keyId || (!data.secretKey && !current?.pixelpay_secret_key)) {
+      return { error: 'Completá endpoint, Key ID y Secret Key de producción.' };
+    }
+    update.pixelpay_endpoint = data.endpoint.trim();
+    update.pixelpay_key_id = data.keyId.trim();
+    if (data.secretKey.trim()) {
+      try {
+        update.pixelpay_secret_key = encryptPixelPaySecret(data.secretKey);
+      } catch {
+        return { error: 'No se pudo cifrar el Secret Key. Configurá PIXELPAY_CREDENTIALS_SECRET.' };
+      }
+    }
+  }
+
+  const { error } = await supabase
+    .from('tiendas')
+    .update(update)
+    .eq('id', tiendaId!);
+
+  if (error) return { error: error.message };
+
+  // Sync metodos_pago: create or deactivate the PixelPay method
+  const { data: existing } = await supabase
+    .from('metodos_pago')
+    .select('id')
+    .eq('tienda_id', tiendaId!)
+    .eq('tipo', 'tarjeta')
+    .maybeSingle();
+
+  if (data.enabled) {
+    if (existing) {
+      await supabase.from('metodos_pago').update({ activo: true }).eq('id', existing.id);
+    } else {
+      await supabase.from('metodos_pago').insert({
+        tienda_id: tiendaId!,
+        tipo: 'tarjeta',
+        nombre: 'PixelPay',
+        proveedor: 'pixelpay',
+        activo: true,
+      });
+    }
+  } else if (existing) {
+    await supabase.from('metodos_pago').update({ activo: false }).eq('id', existing.id);
+  }
+
+  revalidatePath('/configuracion');
+  return {};
 }
 
 export async function eliminarMetodoEnvio(id: string): Promise<{ error?: string }> {

@@ -38,7 +38,7 @@ export function ContactoForm() {
         <div className={s.successIcon}>✓</div>
         <h2>Mensaje enviado</h2>
         <p>Gracias por escribirnos. Te respondemos en menos de 24 horas hábiles.</p>
-        <button className={s.btn} style={{ maxWidth: 200, marginTop: 8 }} onClick={() => setStatus('idle')}>
+        <button className={`${s.btn} max-w-[200px] mt-2`} onClick={() => setStatus('idle')}>
           Enviar otro mensaje
         </button>
       </div>

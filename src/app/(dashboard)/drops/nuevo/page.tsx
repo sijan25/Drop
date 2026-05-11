@@ -42,22 +42,16 @@ const PRENDA_VACIA: Omit<PrendaForm, 'id' | 'tone' | 'fotos' | 'cloudinaryIds'> 
 // ── stepper ────────────────────────────────────────────────────────────────
 function Stepper({ steps, active }: { steps: string[]; active: number }) {
   return (
-    <div className="new-drop-stepper" style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+    <div className="new-drop-stepper flex items-center gap-[6px]">
       {steps.map((s, i) => (
-        <div key={i} className="new-drop-stepper-item" style={{ display: 'flex', alignItems: 'center', gap: i < steps.length - 1 ? 6 : 0 }}>
-          <div className="new-drop-stepper-step" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <div className="new-drop-stepper-bubble" style={{
-              width: 22, height: 22, borderRadius: 11,
-              background: i < active ? 'var(--ink)' : i === active ? '#fff' : 'var(--surface-2)',
-              border: i === active ? '1.5px solid var(--ink)' : '1.5px solid transparent',
-              color: i < active ? '#fff' : 'var(--ink-2)',
-              fontSize: 11, fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'center',
-            }}>
+        <div key={i} className={`new-drop-stepper-item flex items-center${i < steps.length - 1 ? ' gap-[6px]' : ''}`}>
+          <div className="new-drop-stepper-step flex items-center gap-2">
+            <div className={`new-drop-stepper-bubble w-[22px] h-[22px] rounded-full text-[11px] font-semibold flex items-center justify-center ${i < active ? 'bg-[var(--ink)] border-[1.5px] border-transparent text-white' : i === active ? 'bg-white border-[1.5px] border-[var(--ink)] text-[var(--ink-2)]' : 'bg-[var(--surface-2)] border-[1.5px] border-transparent text-[var(--ink-2)]'}`}>
               {i < active ? <Icons.check width={11} height={11}/> : i + 1}
             </div>
-            <span className="new-drop-stepper-label" style={{ fontSize: 12, fontWeight: i === active ? 600 : 400, color: i <= active ? 'var(--ink)' : 'var(--ink-3)' }}>{s}</span>
+            <span className={`new-drop-stepper-label text-[12px] ${i === active ? 'font-semibold' : 'font-normal'} ${i <= active ? 'text-[var(--ink)]' : 'text-[var(--ink-3)]'}`}>{s}</span>
           </div>
-          {i < steps.length - 1 && <div className="new-drop-stepper-line" style={{ width: 24, height: 1, background: 'var(--line)', marginLeft: 6 }}/>}
+          {i < steps.length - 1 && <div className="new-drop-stepper-line w-6 h-px bg-[var(--line)] ml-[6px]"/>}
         </div>
       ))}
     </div>
@@ -144,34 +138,34 @@ function ModalPrenda({
   return (
     <div
       onClick={onCerrar}
-      style={{ position: 'fixed', inset: 0, background: 'rgba(15,20,25,0.45)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 400, padding: 24 }}
+      className="fixed inset-0 bg-[rgba(15,20,25,0.45)] flex items-center justify-center z-[400] p-6"
     >
       <div
         onClick={e => e.stopPropagation()}
-        style={{ width: '100%', maxWidth: 540, background: '#fff', borderRadius: 16, boxShadow: '0 30px 80px rgba(0,0,0,0.2)', display: 'flex', flexDirection: 'column', maxHeight: '90vh' }}
+        className="w-full max-w-[540px] bg-white rounded-2xl shadow-[0_30px_80px_rgba(0,0,0,0.2)] flex flex-col max-h-[90vh]"
       >
         {/* Header */}
-        <div style={{ padding: '18px 22px', borderBottom: '1px solid var(--line)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0 }}>
-          <div style={{ fontSize: 16, fontWeight: 600 }}>{inicial ? 'Editar prenda' : 'Agregar prenda'}</div>
-          <button onClick={onCerrar} style={{ color: 'var(--ink-3)', lineHeight: 1 }}>
+        <div className="px-[22px] py-[18px] border-b border-[var(--line)] flex items-center justify-between shrink-0">
+          <div className="text-[16px] font-semibold">{inicial ? 'Editar prenda' : 'Agregar prenda'}</div>
+          <button onClick={onCerrar} className="text-[var(--ink-3)] leading-none">
             <Icons.close width={16} height={16}/>
           </button>
         </div>
 
         {/* Body */}
-        <div style={{ padding: '20px 22px', overflowY: 'auto', display: 'grid', gap: 14 }}>
+        <div className="px-[22px] py-5 overflow-y-auto grid gap-[14px]">
 
           {/* Fotos de la prenda — máx 5 */}
           <div>
             <label className="label">Fotos</label>
-            <input ref={fotoRef} type="file" accept="image/jpeg,image/png,image/webp" style={{ display: 'none' }} onChange={handleFoto}/>
-            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+            <input ref={fotoRef} type="file" accept="image/jpeg,image/png,image/webp" className="hidden" onChange={handleFoto}/>
+            <div className="flex gap-2 flex-wrap">
               {fotos.map((url, i) => (
-                <div key={i} style={{ width: 72, height: 72, borderRadius: 8, overflow: 'hidden', border: '1px solid var(--line)', position: 'relative' }}>
+                <div key={i} className="w-[72px] h-[72px] rounded-lg overflow-hidden border border-[var(--line)] relative">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img loading="lazy" src={url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }}/>
+                  <img loading="lazy" src={url} alt="" className="w-full h-full object-cover"/>
                   <button onClick={() => setFotos(f => f.filter((_, j) => j !== i))}
-                    style={{ position: 'absolute', top: 2, right: 2, background: 'rgba(0,0,0,0.55)', borderRadius: 4, color: '#fff', width: 18, height: 18, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, border: 'none', cursor: 'pointer' }}>
+                    className="absolute top-[2px] right-[2px] bg-[rgba(0,0,0,0.55)] rounded text-white w-[18px] h-[18px] flex items-center justify-center text-[10px] border-0 cursor-pointer">
                     ×
                   </button>
                 </div>
@@ -180,20 +174,20 @@ function ModalPrenda({
                 <button
                   onClick={() => fotoRef.current?.click()}
                   disabled={subiendo}
-                  style={{ width: 72, height: 72, borderRadius: 8, border: '1.5px dashed var(--line)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 4, color: 'var(--ink-3)', fontSize: 10, background: 'var(--surface-2)', cursor: subiendo ? 'default' : 'pointer', opacity: subiendo ? 0.7 : 1 }}>
-                  {subiendo ? <span style={{ fontSize: 10 }}>Subiendo…</span> : <><Icons.plus width={16} height={16}/><span>Foto</span></>}
+                  className={`w-[72px] h-[72px] rounded-lg border-[1.5px] border-dashed border-[var(--line)] flex flex-col items-center justify-center gap-1 text-[var(--ink-3)] text-[10px] bg-[var(--surface-2)] ${subiendo ? 'cursor-default opacity-70' : 'cursor-pointer'}`}>
+                  {subiendo ? <span className="text-[10px]">Subiendo…</span> : <><Icons.plus width={16} height={16}/><span>Foto</span></>}
                 </button>
               )}
             </div>
-            <div className="t-mute" style={{ fontSize: 11, marginTop: 4 }}>{fotos.length}/5 fotos · JPG, PNG, WEBP</div>
+            <div className="t-mute text-[11px] mt-1">{fotos.length}/5 fotos · JPG, PNG, WEBP</div>
           </div>
 
           <hr className="hr"/>
 
           {/* Nombre + Marca */}
-          <div className="new-drop-form-grid-2" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+          <div className="new-drop-form-grid-2 grid grid-cols-2 gap-3">
             <div>
-              <label className="label">Nombre <span style={{ color: 'var(--urgent)' }}>*</span></label>
+              <label className="label">Nombre <span className="text-[var(--urgent)]">*</span></label>
               <input
                 className="input"
                 placeholder={productoPlaceholder}
@@ -228,7 +222,7 @@ function ModalPrenda({
           </div>
 
           <div>
-            <label className="label">{tallaLabel} <span style={{ color: 'var(--urgent)' }}>*</span></label>
+            <label className="label">{tallaLabel} <span className="text-[var(--urgent)]">*</span></label>
             <SizeSelector
               options={tallas}
               selected={form.tallas}
@@ -237,7 +231,7 @@ function ModalPrenda({
               onQuantityChange={handleQtyChange}
             />
             {form.tallas.length > 0 && (
-              <div style={{ marginTop: 6, fontSize: 12, color: 'var(--ink-3)' }}>
+              <div className="mt-[6px] text-[12px] text-[var(--ink-3)]">
                 Total: <strong>{total}</strong> unidad{total !== 1 ? 'es' : ''} · Hacé clic en la talla para quitarla
               </div>
             )}
@@ -245,12 +239,11 @@ function ModalPrenda({
 
           {/* Precio */}
           <div>
-            <label className="label">Precio (L) <span style={{ color: 'var(--urgent)' }}>*</span></label>
-            <div style={{ position: 'relative' }}>
-              <span style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', fontSize: 14, fontWeight: 600, color: 'var(--ink-3)' }}>L</span>
+            <label className="label">Precio (L) <span className="text-[var(--urgent)]">*</span></label>
+            <div className="relative">
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[14px] font-semibold text-[var(--ink-3)]">L</span>
               <input
-                className="input mono tnum"
-                style={{ paddingLeft: 28 }}
+                className="input mono tnum pl-7"
                 placeholder="0.00"
                 type="number"
                 min="0"
@@ -263,10 +256,9 @@ function ModalPrenda({
 
           {/* Descripción */}
           <div>
-            <label className="label">Descripción <span className="t-mute" style={{ fontWeight: 400 }}>(opcional)</span></label>
+            <label className="label">Descripción <span className="t-mute font-normal">(opcional)</span></label>
             <textarea
-              className="input"
-              style={{ height: 80, padding: 12, resize: 'none', fontSize: 13, lineHeight: 1.55 }}
+              className="input h-20 p-3 resize-none text-[13px] leading-[1.55]"
               placeholder="Color, detalles, estado de la prenda, medidas exactas…"
               value={form.descripcion}
               onChange={e => set('descripcion', e.target.value)}
@@ -274,14 +266,14 @@ function ModalPrenda({
           </div>
 
           {error && (
-            <div style={{ padding: '10px 14px', background: '#fef2f2', border: '1px solid #fecaca', borderRadius: 8, fontSize: 13, color: 'var(--urgent)' }}>
+            <div className="px-[14px] py-[10px] bg-[#fef2f2] border border-[#fecaca] rounded-lg text-[13px] text-[var(--urgent)]">
               {error}
             </div>
           )}
         </div>
 
         {/* Footer */}
-        <div className="new-drop-modal-footer" style={{ padding: '14px 22px', borderTop: '1px solid var(--line)', display: 'flex', justifyContent: 'flex-end', gap: 8, flexShrink: 0 }}>
+        <div className="new-drop-modal-footer px-[22px] py-[14px] border-t border-[var(--line)] flex justify-end gap-2 shrink-0">
           <button onClick={onCerrar} className="btn btn-outline">Cancelar</button>
           <button onClick={guardar} disabled={subiendo} className="btn btn-primary">
             {inicial ? 'Guardar cambios' : 'Agregar prenda'}
@@ -480,37 +472,37 @@ export default function NuevoDropPage() {
 
   return (
     <>
-      <div className="new-drop-shell" style={{ height: '100%', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+      <div className="new-drop-shell h-full flex flex-col overflow-hidden">
         {/* Header */}
-        <div className="new-drop-header" style={{ padding: '20px 28px 16px', borderBottom: '1px solid var(--line)', display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: 20, flexShrink: 0 }}>
+        <div className="new-drop-header px-7 pt-5 pb-4 border-b border-[var(--line)] flex items-end justify-between gap-5 shrink-0">
           <div>
-            <div style={{ fontSize: 20, fontWeight: 600, letterSpacing: '-0.015em' }}>Nuevo drop</div>
-            <div className="t-mute" style={{ fontSize: 13, marginTop: 3 }}>Configurá tu próximo lanzamiento en 4 pasos</div>
+            <div className="text-[20px] font-semibold tracking-[-0.015em]">Nuevo drop</div>
+            <div className="t-mute text-[13px] mt-[3px]">Configurá tu próximo lanzamiento en 4 pasos</div>
           </div>
-          <div style={{ display: 'flex', gap: 8 }}>
+          <div className="flex gap-2">
             <button onClick={() => router.push('/drops')} className="btn btn-ghost btn-sm">Cancelar</button>
           </div>
         </div>
 
         {/* Stepper */}
-        <div className="new-drop-stepper-wrap" style={{ padding: '18px 28px', borderBottom: '1px solid var(--line)', background: '#fff', flexShrink: 0 }}>
+        <div className="new-drop-stepper-wrap px-7 py-[18px] border-b border-[var(--line)] bg-white shrink-0">
           <Stepper steps={steps} active={step}/>
         </div>
 
         {/* Contenido */}
-        <div className="new-drop-content" style={{ flex: 1, overflowY: 'auto', padding: '28px', background: 'var(--bg)' }}>
-          <div className="new-drop-content-inner" style={{ maxWidth: 720, margin: '0 auto' }}>
+        <div className="new-drop-content flex-1 overflow-y-auto p-7 bg-[var(--bg)]">
+          <div className="new-drop-content-inner max-w-[720px] mx-auto">
 
             {/* ── Step 0: Info ── */}
             {step === 0 && (
-              <div className="new-drop-card card" style={{ padding: 24 }}>
-                <div style={{ fontSize: 16, fontWeight: 600, marginBottom: 4 }}>Información del drop</div>
-                <div className="t-mute" style={{ fontSize: 13, marginBottom: 20 }}>Esto es lo que verán tus compradoras en el enlace de IG.</div>
-                <div style={{ display: 'grid', gap: 14 }}>
+              <div className="new-drop-card card p-6">
+                <div className="text-[16px] font-semibold mb-1">Información del drop</div>
+                <div className="t-mute text-[13px] mb-5">Esto es lo que verán tus compradoras en el enlace de IG.</div>
+                <div className="grid gap-[14px]">
                   <div>
-                    <label className="label">Nombre <span style={{ color: 'var(--urgent)' }}>*</span></label>
+                    <label className="label">Nombre <span className="text-[var(--urgent)]">*</span></label>
                     <input
-                      className="input"
+                      className={`input${infoErrors.name ? ' border-[var(--urgent)]' : ''}`}
                       placeholder="Fardo de primavera"
                       value={form.name}
                       onChange={e => {
@@ -518,13 +510,12 @@ export default function NuevoDropPage() {
                         setErrPub('');
                         setInfoErrors(prev => ({ ...prev, name: undefined }));
                       }}
-                      style={infoErrors.name ? { borderColor: 'var(--urgent)' } : undefined}
                     />
-                    {infoErrors.name && <div style={{ marginTop: 5, fontSize: 12, color: 'var(--urgent)' }}>{infoErrors.name}</div>}
+                    {infoErrors.name && <div className="mt-[5px] text-[12px] text-[var(--urgent)]">{infoErrors.name}</div>}
                   </div>
                   <div>
                     <label className="label">Descripción</label>
-                    <textarea className="input" style={{ height: 88, padding: 12, resize: 'none' }} placeholder="48 prendas femeninas, tallas XS a L…" value={form.desc} onChange={e => setForm({ ...form, desc: e.target.value })}/>
+                    <textarea className="input h-[88px] p-3 resize-none" placeholder="48 prendas femeninas, tallas XS a L…" value={form.desc} onChange={e => setForm({ ...form, desc: e.target.value })}/>
                   </div>
                   <div>
                     <label className="label">Foto de portada</label>
@@ -532,33 +523,32 @@ export default function NuevoDropPage() {
                       ref={portadaRef}
                       type="file"
                       accept="image/jpeg,image/png,image/webp"
-                      style={{ display: 'none' }}
+                      className="hidden"
                       onChange={handlePortada}
                     />
                     <div
                       onClick={() => !subiendoPortada && portadaRef.current?.click()}
-                      style={{ border: `1.5px dashed ${infoErrors.portada ? 'var(--urgent)' : 'var(--line)'}`, borderRadius: 12, overflow: 'hidden', cursor: subiendoPortada ? 'default' : 'pointer', background: '#fff', opacity: subiendoPortada ? 0.7 : 1 }}
+                      className={`border-[1.5px] border-dashed rounded-xl overflow-hidden bg-white${subiendoPortada ? ' cursor-default opacity-70' : ' cursor-pointer'}${infoErrors.portada ? ' border-[var(--urgent)]' : ' border-[var(--line)]'}`}
                     >
                       {portadaUrl ? (
                         // eslint-disable-next-line @next/next/no-img-element
-                        <img loading="lazy" src={portadaUrl} alt="portada" style={{ width: '100%', height: 180, objectFit: 'cover', display: 'block' }}/>
+                        <img loading="lazy" src={portadaUrl} alt="portada" className="w-full h-[180px] object-cover block"/>
                       ) : (
-                        <div style={{ padding: 24, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8 }}>
-                          <Icons.upload width={20} height={20} style={{ color: 'var(--ink-3)' }}/>
-                          <div style={{ fontSize: 13, fontWeight: 500 }}>Arrastrá una foto o click para subir</div>
-                          <div className="t-mute" style={{ fontSize: 11 }}>JPG, PNG, WEBP · Recomendado 4:5 · Máx 5MB</div>
+                        <div className="p-6 flex flex-col items-center gap-2">
+                          <Icons.upload width={20} height={20} className="text-[var(--ink-3)]"/>
+                          <div className="text-[13px] font-medium">Arrastrá una foto o click para subir</div>
+                          <div className="t-mute text-[11px]">JPG, PNG, WEBP · Recomendado 4:5 · Máx 5MB</div>
                         </div>
                       )}
                     </div>
                     {subiendoPortada && (
-                      <div className="t-mute" style={{ fontSize: 11, marginTop: 6 }}>Subiendo a Cloudinary…</div>
+                      <div className="t-mute text-[11px] mt-[6px]">Subiendo a Cloudinary…</div>
                     )}
-                    {infoErrors.portada && <div style={{ marginTop: 6, fontSize: 12, color: 'var(--urgent)' }}>{infoErrors.portada}</div>}
+                    {infoErrors.portada && <div className="mt-[6px] text-[12px] text-[var(--urgent)]">{infoErrors.portada}</div>}
                     {portadaUrl && !subiendoPortada && (
                       <button
                         onClick={() => { setPortadaUrl(''); setInfoErrors(prev => ({ ...prev, portada: 'Subí una foto de portada para continuar.' })); if (portadaRef.current) portadaRef.current.value = ''; }}
-                        className="t-mute"
-                        style={{ fontSize: 11, marginTop: 6, textDecoration: 'underline', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
+                        className="t-mute text-[11px] mt-[6px] underline bg-transparent border-0 cursor-pointer p-0"
                       >
                         Quitar foto
                       </button>
@@ -570,10 +560,10 @@ export default function NuevoDropPage() {
 
             {/* ── Step 1: Programación ── */}
             {step === 1 && (
-              <div className="new-drop-card card" style={{ padding: 24 }}>
-                <div style={{ fontSize: 16, fontWeight: 600, marginBottom: 4 }}>Cuándo abre y por cuánto</div>
-                <div className="t-mute" style={{ fontSize: 13, marginBottom: 20 }}>Las compradoras recibirán notificación 15min antes.</div>
-                <div className="new-drop-form-grid-2" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14, marginBottom: 20 }}>
+              <div className="new-drop-card card p-6">
+                <div className="text-[16px] font-semibold mb-1">Cuándo abre y por cuánto</div>
+                <div className="t-mute text-[13px] mb-5">Las compradoras recibirán notificación 15min antes.</div>
+                <div className="new-drop-form-grid-2 grid grid-cols-2 gap-[14px] mb-5">
                   <div>
                     <label className="label">Fecha de apertura</label>
                     <input className="input" type="date" value={form.date} onChange={e => setForm({ ...form, date: e.target.value })}/>
@@ -584,31 +574,28 @@ export default function NuevoDropPage() {
                   </div>
                 </div>
                 <label className="label">Duración del drop</label>
-                <div className="new-drop-duration-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8 }}>
+                <div className="new-drop-duration-grid grid grid-cols-4 gap-2">
                   {['1h', '6h', '24h', '48h'].map(d => (
-                    <button key={d} onClick={() => { setForm({ ...form, duration: d }); setScheduleErrors({}); }} style={{
-                      padding: '12px 10px', borderRadius: 10,
-                      background: form.duration === d ? 'var(--ink)' : '#fff',
-                      color: form.duration === d ? '#fff' : 'var(--ink)',
-                      border: `1px solid ${scheduleErrors.duration ? 'var(--urgent)' : form.duration === d ? 'var(--ink)' : 'var(--line)'}`,
-                      fontSize: 14, fontWeight: 500,
-                    }}>{d}</button>
+                    <button key={d} onClick={() => { setForm({ ...form, duration: d }); setScheduleErrors({}); }}
+                      className={`py-3 px-[10px] rounded-[10px] text-[14px] font-medium ${form.duration === d ? 'bg-[var(--ink)] text-white border border-[var(--ink)]' : `bg-white text-[var(--ink)] border ${scheduleErrors.duration ? 'border-[var(--urgent)]' : 'border-[var(--line)]'}`}`}>
+                      {d}
+                    </button>
                   ))}
                 </div>
-                {scheduleErrors.duration && <div style={{ marginTop: 6, fontSize: 12, color: 'var(--urgent)' }}>{scheduleErrors.duration}</div>}
+                {scheduleErrors.duration && <div className="mt-[6px] text-[12px] text-[var(--urgent)]">{scheduleErrors.duration}</div>}
               </div>
             )}
 
             {/* ── Step 2: Prendas ── */}
             {step === 2 && (
               <div>
-                <div className="new-drop-products-header" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
+                <div className="new-drop-products-header flex items-center justify-between mb-[14px]">
                   <div>
-                    <div style={{ fontSize: 15, fontWeight: 600 }}>
+                    <div className="text-[15px] font-semibold">
                       Prendas del drop
-                      {prendas.length > 0 && <span className="t-mute" style={{ fontWeight: 400 }}> ({totalUnidades} uds)</span>}
+                      {prendas.length > 0 && <span className="t-mute font-normal"> ({totalUnidades} uds)</span>}
                     </div>
-                    <div className="t-mute" style={{ fontSize: 12, marginTop: 2 }}>Agregá cada prenda con su talla, precio y descripción.</div>
+                    <div className="t-mute text-[12px] mt-[2px]">Agregá cada prenda con su talla, precio y descripción.</div>
                   </div>
                   <button
                     onClick={() => { setEditando(undefined); setModalAbierto(true); }}
@@ -619,13 +606,13 @@ export default function NuevoDropPage() {
                 </div>
 
                 {prendas.length === 0 && (
-                  <div className="new-drop-empty-card card" style={{ padding: 40, textAlign: 'center', borderColor: productsError ? 'var(--urgent)' : undefined }}>
-                    <div style={{ width: 48, height: 48, borderRadius: 24, background: 'var(--surface-2)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 14px' }}>
-                      <Icons.grid width={20} height={20} style={{ color: 'var(--ink-3)' }}/>
+                  <div className={`new-drop-empty-card card p-10 text-center${productsError ? ' border-[var(--urgent)]' : ''}`}>
+                    <div className="w-12 h-12 rounded-full bg-[var(--surface-2)] flex items-center justify-center mx-auto mb-[14px]">
+                      <Icons.grid width={20} height={20} className="text-[var(--ink-3)]"/>
                     </div>
-                    <div style={{ fontSize: 14, fontWeight: 500, marginBottom: 6 }}>Sin prendas todavía</div>
-                    <div className="t-mute" style={{ fontSize: 13, marginBottom: 20 }}>Agregá las prendas que van a estar en este drop.</div>
-                    {productsError && <div style={{ fontSize: 12, color: 'var(--urgent)', marginBottom: 14 }}>{productsError}</div>}
+                    <div className="text-[14px] font-medium mb-[6px]">Sin prendas todavía</div>
+                    <div className="t-mute text-[13px] mb-5">Agregá las prendas que van a estar en este drop.</div>
+                    {productsError && <div className="text-[12px] text-[var(--urgent)] mb-[14px]">{productsError}</div>}
                     <button onClick={() => { setEditando(undefined); setModalAbierto(true); }} className="btn btn-primary btn-sm">
                       <Icons.plus width={13} height={13}/> Agregar primera prenda
                     </button>
@@ -634,42 +621,42 @@ export default function NuevoDropPage() {
 
                 {prendas.length > 0 && (
                   <>
-                    <div className="new-drop-products-card card" style={{ overflow: 'hidden', marginBottom: 12 }}>
-                      <div className="new-drop-products-head mono" style={{ display: 'grid', gridTemplateColumns: COL, padding: '10px 16px', borderBottom: '1px solid var(--line)', fontSize: 11, color: 'var(--ink-3)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-                        <div/><div>Prenda</div><div style={{ textAlign: 'right' }}>Cant.</div><div style={{ textAlign: 'right' }}>Precio</div><div/>
+                    <div className="new-drop-products-card card overflow-hidden mb-3">
+                      <div className="new-drop-products-head mono grid px-4 py-[10px] border-b border-[var(--line)] text-[11px] text-[var(--ink-3)] uppercase tracking-[0.04em]" style={{ gridTemplateColumns: COL }}>
+                        <div/><div>Prenda</div><div className="text-right">Cant.</div><div className="text-right">Precio</div><div/>
                       </div>
                       {prendas.map((p, i) => (
-                        <div key={p.id} className="new-drop-product-row" style={{ display: 'grid', gridTemplateColumns: COL, padding: '10px 16px', borderBottom: i < prendas.length - 1 ? '1px solid var(--line-2)' : 'none', alignItems: 'center', fontSize: 13 }}>
-                          <div className="new-drop-product-thumb" style={{ width: 36, height: 36, borderRadius: 6, overflow: 'hidden', flexShrink: 0 }}>
+                        <div key={p.id} className={`new-drop-product-row grid px-4 py-[10px] items-center text-[13px]${i < prendas.length - 1 ? ' border-b border-[var(--line-2)]' : ''}`} style={{ gridTemplateColumns: COL }}>
+                          <div className="new-drop-product-thumb w-9 h-9 rounded-md overflow-hidden shrink-0">
                             {p.fotos?.[0] ? (
                               // eslint-disable-next-line @next/next/no-img-element
-                              <img loading="lazy" src={p.fotos?.[0]} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}/>
+                              <img loading="lazy" src={p.fotos?.[0]} alt="" className="w-full h-full object-cover block"/>
                             ) : (
                               <Ph tone={p.tone} radius={6}/>
                             )}
                           </div>
-                          <div className="new-drop-product-main" style={{ minWidth: 0 }}>
-                            <div style={{ fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{p.nombre}</div>
-                            <div className="t-mute" style={{ fontSize: 11, marginTop: 2 }}>
+                          <div className="new-drop-product-main min-w-0">
+                            <div className="font-semibold whitespace-nowrap overflow-hidden text-ellipsis">{p.nombre}</div>
+                            <div className="t-mute text-[11px] mt-[2px]">
                               {[p.marca, formatProductSizes(p), p.categoria].filter(Boolean).join(' · ')}
                             </div>
                           </div>
-                          <div className="new-drop-product-qty mono tnum" style={{ fontWeight: 700, textAlign: 'right', fontSize: 13 }}>{totalCantidad(p.cantidades_por_talla, p.tallas)}</div>
-                          <div className="new-drop-product-price mono tnum" style={{ fontWeight: 700, textAlign: 'right', fontSize: 13 }}>L {(Number(p.precio) * totalCantidad(p.cantidades_por_talla, p.tallas)).toLocaleString()}</div>
-                          <div className="new-drop-product-actions" style={{ display: 'flex', gap: 2, justifyContent: 'flex-end' }}>
-                            <button onClick={() => abrirEditar(p)} className="btn-ghost" style={{ padding: 5 }}>
-                              <Icons.edit width={13} height={13} style={{ color: 'var(--ink-3)' }}/>
+                          <div className="new-drop-product-qty mono tnum font-bold text-right text-[13px]">{totalCantidad(p.cantidades_por_talla, p.tallas)}</div>
+                          <div className="new-drop-product-price mono tnum font-bold text-right text-[13px]">L {(Number(p.precio) * totalCantidad(p.cantidades_por_talla, p.tallas)).toLocaleString()}</div>
+                          <div className="new-drop-product-actions flex gap-[2px] justify-end">
+                            <button onClick={() => abrirEditar(p)} className="btn-ghost p-[5px]">
+                              <Icons.edit width={13} height={13} className="text-[var(--ink-3)]"/>
                             </button>
-                            <button onClick={() => eliminarPrenda(p.id)} className="btn-ghost" style={{ padding: 5 }}>
-                              <Icons.trash width={13} height={13} style={{ color: 'var(--ink-3)' }}/>
+                            <button onClick={() => eliminarPrenda(p.id)} className="btn-ghost p-[5px]">
+                              <Icons.trash width={13} height={13} className="text-[var(--ink-3)]"/>
                             </button>
                           </div>
                         </div>
                       ))}
                     </div>
-                    <div className="new-drop-products-total" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 16px', background: '#fff', borderRadius: 10, border: '1px solid var(--line)' }}>
-                      <span className="t-mute" style={{ fontSize: 13 }}>{prendas.length} línea{prendas.length !== 1 ? 's' : ''} · {totalUnidades} unidad{totalUnidades !== 1 ? 'es' : ''} · valor total</span>
-                      <span className="mono tnum" style={{ fontSize: 16, fontWeight: 700 }}>L {totalValor.toLocaleString()}</span>
+                    <div className="new-drop-products-total flex justify-between items-center px-4 py-3 bg-white rounded-[10px] border border-[var(--line)]">
+                      <span className="t-mute text-[13px]">{prendas.length} línea{prendas.length !== 1 ? 's' : ''} · {totalUnidades} unidad{totalUnidades !== 1 ? 'es' : ''} · valor total</span>
+                      <span className="mono tnum text-[16px] font-bold">L {totalValor.toLocaleString()}</span>
                     </div>
                   </>
                 )}
@@ -678,12 +665,12 @@ export default function NuevoDropPage() {
 
             {/* ── Step 3: Revisar ── */}
             {step === 3 && (
-              <div className="new-drop-card card" style={{ padding: 0, overflow: 'hidden' }}>
-                <div style={{ padding: 20, borderBottom: '1px solid var(--line)' }}>
-                  <div style={{ fontSize: 16, fontWeight: 600 }}>Revisar y publicar</div>
-                  <div className="t-mute" style={{ fontSize: 12 }}>Confirmá los datos antes de publicar el drop.</div>
+              <div className="new-drop-card card p-0 overflow-hidden">
+                <div className="p-5 border-b border-[var(--line)]">
+                  <div className="text-[16px] font-semibold">Revisar y publicar</div>
+                  <div className="t-mute text-[12px]">Confirmá los datos antes de publicar el drop.</div>
                 </div>
-                <div style={{ padding: 20, display: 'grid', gap: 10 }}>
+                <div className="p-5 grid gap-[10px]">
                   {[
                     ['Nombre', form.name || '—'],
                     ['Apertura', `${form.date} ${form.time}`],
@@ -691,33 +678,33 @@ export default function NuevoDropPage() {
                     ['Prendas', `${prendas.length} líneas · ${totalUnidades} unidades`],
                     ['Valor total', formatCurrency(totalValor)],
                   ].map(([k, v]) => (
-                    <div key={k} className="new-drop-review-row" style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, padding: '8px 0', borderBottom: '1px solid var(--line-2)' }}>
+                    <div key={k} className="new-drop-review-row flex justify-between text-[13px] py-2 border-b border-[var(--line-2)]">
                       <span className="t-mute">{k}</span>
-                      <span style={{ fontWeight: 500 }}>{v}</span>
+                      <span className="font-medium">{v}</span>
                     </div>
                   ))}
                 </div>
                 {prendas.length > 0 && (
-                  <div style={{ padding: '0 20px 20px' }}>
-                    <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 10 }}>Prendas ({prendas.length})</div>
-                    <div style={{ display: 'grid', gap: 8 }}>
+                  <div className="px-5 pb-5">
+                    <div className="text-[13px] font-semibold mb-[10px]">Prendas ({prendas.length})</div>
+                    <div className="grid gap-2">
                       {prendas.map(p => (
-                        <div key={p.id} className="new-drop-review-product" style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '8px 12px', background: 'var(--surface-2)', borderRadius: 8 }}>
-                          <div style={{ width: 32, height: 32, borderRadius: 6, overflow: 'hidden', flexShrink: 0 }}>
+                        <div key={p.id} className="new-drop-review-product flex items-center gap-3 px-3 py-2 bg-[var(--surface-2)] rounded-lg">
+                          <div className="w-8 h-8 rounded-md overflow-hidden shrink-0">
                             {p.fotos?.[0] ? (
                               // eslint-disable-next-line @next/next/no-img-element
-                              <img loading="lazy" src={p.fotos?.[0]} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}/>
+                              <img loading="lazy" src={p.fotos?.[0]} alt="" className="w-full h-full object-cover block"/>
                             ) : (
                               <Ph tone={p.tone} radius={6}/>
                             )}
                           </div>
-                          <div style={{ flex: 1, fontSize: 12, minWidth: 0 }}>
-                            <div style={{ fontWeight: 500, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{p.nombre}</div>
-                            <div className="t-mute" style={{ fontSize: 11 }}>
+                          <div className="flex-1 text-[12px] min-w-0">
+                            <div className="font-medium whitespace-nowrap overflow-hidden text-ellipsis">{p.nombre}</div>
+                            <div className="t-mute text-[11px]">
                               {[p.marca, formatProductSizes(p), p.categoria, `${totalCantidad(p.cantidades_por_talla, p.tallas)} ud.`].filter(Boolean).join(' · ')}
                             </div>
                           </div>
-                          <span className="mono tnum" style={{ fontSize: 12, fontWeight: 600, flexShrink: 0 }}>L {(Number(p.precio) * totalCantidad(p.cantidades_por_talla, p.tallas)).toLocaleString()}</span>
+                          <span className="mono tnum text-[12px] font-semibold shrink-0">L {(Number(p.precio) * totalCantidad(p.cantidades_por_talla, p.tallas)).toLocaleString()}</span>
                         </div>
                       ))}
                     </div>
@@ -730,15 +717,15 @@ export default function NuevoDropPage() {
         </div>
 
         {/* Footer nav */}
-        <div className="new-drop-footer" style={{ padding: '12px 28px', borderTop: '1px solid var(--line)', background: '#fff', display: 'flex', flexDirection: 'column', gap: 8, flexShrink: 0 }}>
+        <div className="new-drop-footer px-7 py-3 border-t border-[var(--line)] bg-white flex flex-col gap-2 shrink-0">
           {errPub && (
-            <div style={{ padding: '8px 12px', background: '#fef2f2', border: '1px solid #fecaca', borderRadius: 8, fontSize: 13, color: 'var(--urgent)' }}>
+            <div className="px-3 py-2 bg-[#fef2f2] border border-[#fecaca] rounded-lg text-[13px] text-[var(--urgent)]">
               {errPub}
             </div>
           )}
-          <div className="new-drop-footer-actions" style={{ display: 'flex', justifyContent: 'space-between' }}>
+          <div className="new-drop-footer-actions flex justify-between">
             <button onClick={() => setStep(s => Math.max(0, s - 1))} className="btn btn-outline" disabled={step === 0 || publicando}>
-              <Icons.arrow width={14} height={14} style={{ transform: 'rotate(180deg)' }} />
+              <Icons.arrow width={14} height={14} className="rotate-180" />
               Atrás
             </button>
             {step < 3 ? (

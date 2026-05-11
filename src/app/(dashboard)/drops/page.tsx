@@ -83,10 +83,10 @@ function resumenVacio(): ResumenDrop {
 
 function DropThumb({ drop, tone }: { drop: Drop; tone: typeof TONES[number] }) {
   return (
-    <div style={{ width: 44, height: 44, borderRadius: 8, overflow: 'hidden', background: 'var(--surface-2)', flexShrink: 0 }}>
+    <div className="w-11 h-11 rounded-lg overflow-hidden bg-[var(--surface-2)] shrink-0">
       {drop.foto_portada_url ? (
         // eslint-disable-next-line @next/next/no-img-element
-        <img loading="lazy" src={drop.foto_portada_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}/>
+        <img loading="lazy" src={drop.foto_portada_url} alt="" className="w-full h-full object-cover block"/>
       ) : (
         <Ph tone={tone} radius={8}/>
       )}
@@ -101,27 +101,27 @@ function MetricCard({ label, value, help, icon: Icon }: {
   icon: (p: React.SVGProps<SVGSVGElement> & { width?: number; height?: number }) => React.ReactNode;
 }) {
   return (
-    <div className="card" style={{ padding: 16 }}>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
-        <div className="mono t-mute" style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: 0 }}>{label}</div>
-        <div style={{ width: 30, height: 30, borderRadius: 8, background: 'var(--surface-2)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--ink-2)' }}>
+    <div className="card p-4">
+      <div className="flex items-center justify-between gap-3">
+        <div className="mono t-mute text-[11px] uppercase tracking-[0]">{label}</div>
+        <div className="w-[30px] h-[30px] rounded-lg bg-[var(--surface-2)] flex items-center justify-center text-[var(--ink-2)]">
           <Icon width={14} height={14}/>
         </div>
       </div>
-      <div className="tnum" style={{ fontSize: 27, fontWeight: 700, marginTop: 8 }}>{value}</div>
-      <div className="t-mute" style={{ fontSize: 12, marginTop: 3 }}>{help}</div>
+      <div className="tnum text-[27px] font-bold mt-2">{value}</div>
+      <div className="t-mute text-[12px] mt-[3px]">{help}</div>
     </div>
   );
 }
 
 function EmptyState({ title, body, action }: { title: string; body: string; action?: React.ReactNode }) {
   return (
-    <div style={{ padding: '38px 16px', textAlign: 'center' }}>
-      <div style={{ width: 44, height: 44, borderRadius: 12, background: 'var(--surface-2)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 12px', color: 'var(--ink-3)' }}>
+    <div className="px-4 py-[38px] text-center">
+      <div className="w-11 h-11 rounded-xl bg-[var(--surface-2)] flex items-center justify-center mx-auto mb-3 text-[var(--ink-3)]">
         <Icons.sparkle width={18} height={18}/>
       </div>
-      <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 5 }}>{title}</div>
-      <div className="t-mute" style={{ fontSize: 13, marginBottom: action ? 16 : 0 }}>{body}</div>
+      <div className="text-[14px] font-semibold mb-[5px]">{title}</div>
+      <div className={`t-mute text-[13px]${action ? ' mb-4' : ''}`}>{body}</div>
       {action}
     </div>
   );
@@ -316,15 +316,15 @@ export default function DropsPage() {
   ];
 
   return (
-    <div className="drops-page-shell" style={{ height: '100%', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-      <div className="drops-page-header" style={{ padding: '20px 28px 16px', borderBottom: '1px solid var(--line)', display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: 20, flexShrink: 0 }}>
+    <div className="drops-page-shell h-full flex flex-col overflow-hidden">
+      <div className="drops-page-header px-7 pt-5 pb-4 border-b border-[var(--line)] flex items-end justify-between gap-5 shrink-0">
         <div>
-          <div style={{ fontSize: 22, fontWeight: 700 }}>Drops</div>
-          <div className="t-mute" style={{ fontSize: 13, marginTop: 3 }}>
+          <div className="text-[22px] font-bold">Drops</div>
+          <div className="t-mute text-[13px] mt-[3px]">
             {loading ? 'Cargando drops...' : `${stats.activos} en vivo · ${stats.programados} programados · ${stats.cerrados} cerrados`}
           </div>
         </div>
-        <div className="drops-header-actions" style={{ display: 'flex', gap: 8 }}>
+        <div className="drops-header-actions flex gap-2">
           {tienda && (
             <button onClick={() => router.push(`/${tienda.username}`)} className="btn btn-outline btn-sm">
               <Icons.eye width={13} height={13}/> Vista compradora
@@ -336,25 +336,25 @@ export default function DropsPage() {
         </div>
       </div>
 
-      <div className="drops-page-content" style={{ flex: 1, overflowY: 'auto', padding: '20px 28px 28px' }}>
-        <div className="drops-metrics-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(190px, 1fr))', gap: 12, marginBottom: 20 }}>
+      <div className="drops-page-content flex-1 overflow-y-auto px-7 pt-5 pb-7">
+        <div className="drops-metrics-grid grid gap-3 mb-5 grid-cols-[repeat(auto-fit,minmax(190px,1fr))]">
           <MetricCard label="Drops activos" value={String(stats.activos)} help={`${stats.programados} programados en cola`} icon={Icons.sparkle}/>
           <MetricCard label="Cerrados" value={String(stats.cerrados)} help={`${dinero(stats.totalCerrado)} recaudados`} icon={Icons.check}/>
           <MetricCard label="Unidades vendidas" value={String(stats.vendidas)} help={`${stats.apartadas} apartadas pendientes`} icon={Icons.bag}/>
           <MetricCard label="Comprobantes" value={String(comprobantesPendientes)} help="Pagos por verificar" icon={Icons.inbox}/>
         </div>
 
-        <div className="drops-overview-grid" style={{ display: 'grid', gridTemplateColumns: 'minmax(360px, 1.05fr) minmax(420px, 1.35fr)', gap: 20, alignItems: 'start', marginBottom: 24 }}>
+        <div className="drops-overview-grid grid gap-5 items-start mb-6 grid-cols-[minmax(360px,1.05fr)_minmax(420px,1.35fr)]">
           <section>
-            <div className="drops-section-heading" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
-              <div style={{ fontSize: 15, fontWeight: 700 }}>En curso y próximos</div>
+            <div className="drops-section-heading flex items-center justify-between mb-[10px]">
+              <div className="text-[15px] font-bold">En curso y próximos</div>
               <button onClick={() => router.push('/drops/nuevo')} className="btn btn-outline btn-sm">
                 <Icons.plus width={12} height={12}/> Crear
               </button>
             </div>
-            <div className="card" style={{ overflow: 'hidden' }}>
+            <div className="card overflow-hidden">
               {loading ? (
-                <div style={{ padding: 24, color: 'var(--ink-3)', fontSize: 13, textAlign: 'center' }}>Cargando...</div>
+                <div className="p-6 text-[var(--ink-3)] text-[13px] text-center">Cargando...</div>
               ) : activos.length === 0 ? (
                 <EmptyState
                   title="No hay drops activos"
@@ -375,20 +375,19 @@ export default function DropsPage() {
                     <div
                       key={d.id}
                       onClick={() => router.push(`/drops/${d.id}`)}
-                      className="drops-active-row"
-                      style={{ padding: '14px 16px', borderBottom: i < activos.length - 1 ? '1px solid var(--line)' : 'none', display: 'flex', alignItems: 'center', gap: 12, cursor: 'pointer' }}
+                      className={`drops-active-row px-4 py-[14px] flex items-center gap-3 cursor-pointer${i < activos.length - 1 ? ' border-b border-[var(--line)]' : ''}`}
                     >
                       <DropThumb drop={d} tone={TONES[i % TONES.length]}/>
-                      <div className="drops-active-copy" style={{ flex: 1, minWidth: 0 }}>
-                        <div className="drops-active-title-row" style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-                          <div style={{ fontSize: 13, fontWeight: 700, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{d.nombre}</div>
+                      <div className="drops-active-copy flex-1 min-w-0">
+                        <div className="drops-active-title-row flex gap-2 items-center">
+                          <div className="text-[13px] font-bold whitespace-nowrap overflow-hidden text-ellipsis">{d.nombre}</div>
                           <span className={s.badge}>{d.estado === 'activo' && <span className="dot"/>}{s.label}</span>
                         </div>
-                        <div className="t-mute" style={{ fontSize: 12, marginTop: 3 }}>
+                        <div className="t-mute text-[12px] mt-[3px]">
                           {resumen.total} unidades · {resumen.vendidas || d.vendidas_count || 0} vendidas · {dinero(d.recaudado_total)}
                         </div>
                       </div>
-                      <div className="drops-active-countdown mono tnum" style={{ fontSize: 12, color: s.tone, minWidth: 78, textAlign: 'right' }}>
+                      <div className="drops-active-countdown mono tnum text-[12px] min-w-[78px] text-right" style={{ color: s.tone }}>
                         {showCountdown && targetMs !== null && (
                           <CountdownTimer
                             target={targetMs}
@@ -436,67 +435,67 @@ export default function DropsPage() {
           </section>
 
           <section>
-            <div className="drops-section-heading" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
-              <div style={{ fontSize: 15, fontWeight: 700 }}>Resumen de drop cerrado</div>
+            <div className="drops-section-heading flex items-center justify-between mb-[10px]">
+              <div className="text-[15px] font-bold">Resumen de drop cerrado</div>
               {cerrados.length > 0 && (
-                <select className="drops-closed-select input" style={{ width: 220, height: 32, fontSize: 12 }} value={cerradoSeleccionado?.id ?? ''} onChange={e => setDropCerradoId(e.target.value)}>
+                <select className="drops-closed-select input w-[220px] h-8 text-[12px]" value={cerradoSeleccionado?.id ?? ''} onChange={e => setDropCerradoId(e.target.value)}>
                   {cerrados.map(d => <option key={d.id} value={d.id}>{d.nombre}</option>)}
                 </select>
               )}
             </div>
-            <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
+            <div className="card p-0 overflow-hidden">
               {loading ? (
-                <div style={{ padding: 24, color: 'var(--ink-3)', fontSize: 13, textAlign: 'center' }}>Cargando resumen...</div>
+                <div className="p-6 text-[var(--ink-3)] text-[13px] text-center">Cargando resumen...</div>
               ) : !cerradoSeleccionado ? (
                 <EmptyState title="Todavía no hay drops cerrados" body="Cuando cierres un drop, su recaudación, remanentes y apartados aparecerán aquí."/>
               ) : (
                 <>
-                  <div className="drops-closed-summary" style={{ padding: 22, display: 'grid', gridTemplateColumns: '72px 1fr auto', gap: 16, alignItems: 'center' }}>
-                    <div style={{ width: 72, height: 90, borderRadius: 10, overflow: 'hidden', background: 'var(--surface-2)' }}>
+                  <div className="drops-closed-summary p-[22px] grid grid-cols-[72px_1fr_auto] gap-4 items-center">
+                    <div className="w-[72px] h-[90px] rounded-[10px] overflow-hidden bg-[var(--surface-2)]">
                       {cerradoSeleccionado.foto_portada_url ? (
                         // eslint-disable-next-line @next/next/no-img-element
-                        <img loading="lazy" src={cerradoSeleccionado.foto_portada_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}/>
+                        <img loading="lazy" src={cerradoSeleccionado.foto_portada_url} alt="" className="w-full h-full object-cover block"/>
                       ) : <Ph tone="sand" aspect="4/5" radius={10}/>}
                     </div>
-                    <div style={{ minWidth: 0 }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-2 mb-[6px]">
                         <span className="badge badge-sold">Cerrado</span>
-                        <span className="t-mute" style={{ fontSize: 12 }}>{fmtFecha(cerradoSeleccionado.cierra_at ?? cerradoSeleccionado.inicia_at)}</span>
+                        <span className="t-mute text-[12px]">{fmtFecha(cerradoSeleccionado.cierra_at ?? cerradoSeleccionado.inicia_at)}</span>
                       </div>
-                      <div style={{ fontSize: 18, fontWeight: 700, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{cerradoSeleccionado.nombre}</div>
-                      <div className="t-mute" style={{ fontSize: 12, marginTop: 2 }}>{resumenSeleccionado.total} unidades publicadas</div>
+                      <div className="text-[18px] font-bold whitespace-nowrap overflow-hidden text-ellipsis">{cerradoSeleccionado.nombre}</div>
+                      <div className="t-mute text-[12px] mt-[2px]">{resumenSeleccionado.total} unidades publicadas</div>
                     </div>
-                    <div className="drops-closed-total" style={{ textAlign: 'right' }}>
-                      <div className="mono t-mute" style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: 0 }}>Total recaudado</div>
-                      <div className="tnum" style={{ fontSize: 34, lineHeight: 1.05, fontWeight: 800 }}>{dinero(cerradoSeleccionado.recaudado_total)}</div>
+                    <div className="drops-closed-total text-right">
+                      <div className="mono t-mute text-[10px] uppercase tracking-[0]">Total recaudado</div>
+                      <div className="tnum text-[34px] leading-[1.05] font-extrabold">{dinero(cerradoSeleccionado.recaudado_total)}</div>
                       {resumenSeleccionado.valorApartado > 0 && (
-                        <div className="t-mute" style={{ fontSize: 12, marginTop: 4 }}>+ {dinero(resumenSeleccionado.valorApartado)} pendientes</div>
+                        <div className="t-mute text-[12px] mt-1">+ {dinero(resumenSeleccionado.valorApartado)} pendientes</div>
                       )}
                     </div>
                   </div>
 
-                  <div className="drops-closed-stats" style={{ borderTop: '1px solid var(--line)', borderBottom: '1px solid var(--line)', padding: '14px 18px', display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 10 }}>
+                  <div className="drops-closed-stats border-t border-[var(--line)] border-b border-[var(--line)] px-[18px] py-[14px] grid grid-cols-4 gap-[10px]">
                     {[
                       ['Vendidas', resumenSeleccionado.vendidas || cerradoSeleccionado.vendidas_count || 0],
                       ['Apartadas', resumenSeleccionado.apartadas],
                       ['Sin vender', resumenSeleccionado.sinVender],
                       ['Viewers', cerradoSeleccionado.viewers_count ?? 0],
                     ].map(([label, value]) => (
-                      <div key={label} style={{ textAlign: 'center' }}>
-                        <div className="tnum" style={{ fontSize: 22, fontWeight: 700 }}>{value}</div>
-                        <div className="t-mute" style={{ fontSize: 11 }}>{label}</div>
+                      <div key={label} className="text-center">
+                        <div className="tnum text-[22px] font-bold">{value}</div>
+                        <div className="t-mute text-[11px]">{label}</div>
                       </div>
                     ))}
                   </div>
 
-                  <div className="drops-closed-actions" style={{ padding: 16, display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10 }}>
-                    <button onClick={() => router.push('/pedidos')} className="btn btn-outline" style={{ height: 46 }}>
+                  <div className="drops-closed-actions p-4 grid grid-cols-3 gap-[10px]">
+                    <button onClick={() => router.push('/pedidos')} className="btn btn-outline h-[46px]">
                       <Icons.bag width={14} height={14}/> Ver pedidos
                     </button>
-                    <button onClick={() => router.push('/comprobantes')} className="btn btn-outline" style={{ height: 46 }}>
+                    <button onClick={() => router.push('/comprobantes')} className="btn btn-outline h-[46px]">
                       <Icons.inbox width={14} height={14}/> Verificar
                     </button>
-                    <button onClick={() => router.push(`/drops/${cerradoSeleccionado.id}`)} className="btn btn-primary" style={{ height: 46 }}>
+                    <button onClick={() => router.push(`/drops/${cerradoSeleccionado.id}`)} className="btn btn-primary h-[46px]">
                       Ver detalle <Icons.arrow width={14} height={14}/>
                     </button>
                   </div>
@@ -507,55 +506,42 @@ export default function DropsPage() {
         </div>
 
         <section>
-          <div className="drops-history-toolbar" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16, marginBottom: 10 }}>
+          <div className="drops-history-toolbar flex items-center justify-between gap-4 mb-[10px]">
             <div>
-              <div style={{ fontSize: 15, fontWeight: 700 }}>Historial de drops</div>
-              <div className="t-mute" style={{ fontSize: 12, marginTop: 2 }}>Todos tus lanzamientos con estado, resultados y acciones.</div>
+              <div className="text-[15px] font-bold">Historial de drops</div>
+              <div className="t-mute text-[12px] mt-[2px]">Todos tus lanzamientos con estado, resultados y acciones.</div>
             </div>
-            <div className="drops-history-controls" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <div className="drops-history-search" style={{ position: 'relative', width: 260 }}>
-                <Icons.search width={14} height={14} style={{ position: 'absolute', left: 11, top: 9, color: 'var(--ink-3)' }}/>
+            <div className="drops-history-controls flex items-center gap-2">
+              <div className="drops-history-search relative w-[260px]">
+                <Icons.search width={14} height={14} className="absolute left-[11px] top-[9px] text-[var(--ink-3)]"/>
                 <input
-                  className="input"
-                  style={{ height: 34, paddingLeft: 32, fontSize: 12 }}
+                  className="input h-[34px] pl-8 text-[12px]"
                   placeholder="Buscar drop..."
                   value={busqueda}
                   onChange={e => setBusqueda(e.target.value)}
                 />
               </div>
-              <div className="drops-filter-row" style={{ display: 'flex', gap: 4 }}>
+              <div className="drops-filter-row flex gap-1">
                 {filtros.map(f => (
                   <button
                     key={f.id}
                     onClick={() => setFiltro(f.id)}
-                    style={{
-                      height: 34,
-                      padding: '0 10px',
-                      borderRadius: 8,
-                      background: filtro === f.id ? 'var(--ink)' : '#fff',
-                      color: filtro === f.id ? '#fff' : 'var(--ink-3)',
-                      border: `1px solid ${filtro === f.id ? 'var(--ink)' : 'var(--line)'}`,
-                      fontSize: 12,
-                      fontWeight: 600,
-                      display: 'inline-flex',
-                      alignItems: 'center',
-                      gap: 6,
-                    }}
+                    className={`h-[34px] px-[10px] rounded-lg text-[12px] font-semibold inline-flex items-center gap-[6px] border ${filtro === f.id ? 'bg-[var(--ink)] text-white border-[var(--ink)]' : 'bg-white text-[var(--ink-3)] border-[var(--line)]'}`}
                   >
                     {f.label}
-                    <span className="mono tnum" style={{ opacity: 0.7 }}>{f.count}</span>
+                    <span className="mono tnum opacity-70">{f.count}</span>
                   </button>
                 ))}
               </div>
             </div>
           </div>
 
-          <div className="drops-history-card card" style={{ overflow: 'hidden' }}>
-            <div className="drops-history-head mono" style={{ display: 'grid', gridTemplateColumns: '2fr 120px 130px 90px 90px 90px 110px 130px 34px', padding: '10px 16px', borderBottom: '1px solid var(--line)', fontSize: 11, color: 'var(--ink-3)', textTransform: 'uppercase', letterSpacing: 0 }}>
+          <div className="drops-history-card card overflow-hidden">
+            <div className="drops-history-head mono grid grid-cols-[2fr_120px_130px_90px_90px_90px_110px_130px_34px] px-4 py-[10px] border-b border-[var(--line)] text-[11px] text-[var(--ink-3)] uppercase tracking-[0]">
               <div>Drop</div><div>Estado</div><div>Fecha</div><div>Unidades</div><div>Vendidas</div><div>Sin vender</div><div>Viewers</div><div>Recaudado</div><div/>
             </div>
             {loading ? (
-              <div style={{ padding: 32, color: 'var(--ink-3)', fontSize: 13, textAlign: 'center' }}>Cargando historial...</div>
+              <div className="p-8 text-[var(--ink-3)] text-[13px] text-center">Cargando historial...</div>
             ) : historial.length === 0 ? (
               <EmptyState title="Sin resultados" body={busqueda ? 'Intentá con otro nombre o filtro.' : 'Creá tu primer drop para empezar el historial.'}/>
             ) : (
@@ -566,14 +552,13 @@ export default function DropsPage() {
                   <div
                     key={d.id}
                     onClick={() => router.push(`/drops/${d.id}`)}
-                    className="drops-history-row"
-                    style={{ display: 'grid', gridTemplateColumns: '2fr 120px 130px 90px 90px 90px 110px 130px 34px', padding: '12px 16px', borderBottom: i < historial.length - 1 ? '1px solid var(--line-2)' : 'none', alignItems: 'center', fontSize: 12, cursor: 'pointer' }}
+                    className={`drops-history-row grid grid-cols-[2fr_120px_130px_90px_90px_90px_110px_130px_34px] px-4 py-3 items-center text-[12px] cursor-pointer${i < historial.length - 1 ? ' border-b border-[var(--line-2)]' : ''}`}
                   >
-                    <div className="drops-history-main" style={{ display: 'flex', alignItems: 'center', gap: 12, minWidth: 0 }}>
+                    <div className="drops-history-main flex items-center gap-3 min-w-0">
                       <DropThumb drop={d} tone={TONES[i % TONES.length]}/>
-                      <div style={{ minWidth: 0 }}>
-                        <div style={{ fontWeight: 700, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{d.nombre}</div>
-                        <div className="t-mute" style={{ fontSize: 11, marginTop: 2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{d.descripcion || 'Sin descripción'}</div>
+                      <div className="min-w-0">
+                        <div className="font-bold whitespace-nowrap overflow-hidden text-ellipsis">{d.nombre}</div>
+                        <div className="t-mute text-[11px] mt-[2px] whitespace-nowrap overflow-hidden text-ellipsis">{d.descripcion || 'Sin descripción'}</div>
                       </div>
                     </div>
                     <div className="drops-history-status"><span className={s.badge}>{d.estado === 'activo' && <span className="dot"/>}{s.label}</span></div>
@@ -582,12 +567,12 @@ export default function DropsPage() {
                     <div className="drops-history-stat mono tnum" data-label="Vendidas">{r.vendidas || d.vendidas_count || 0}</div>
                     <div className="drops-history-stat mono tnum" data-label="Sin vender">{r.sinVender}</div>
                     <div className="drops-history-stat mono tnum" data-label="Viewers">{(d.viewers_count ?? 0).toLocaleString()}</div>
-                    <div className="drops-history-revenue mono tnum" style={{ fontWeight: 700 }}>{dinero(d.recaudado_total)}</div>
+                    <div className="drops-history-revenue mono tnum font-bold">{dinero(d.recaudado_total)}</div>
                     <div className="drops-history-menu" onClick={e => e.stopPropagation()}>
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                          <button className="btn-ghost" style={{ height: 28, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                            <Icons.more width={13} height={13} style={{ color: 'var(--ink-3)' }}/>
+                          <button className="btn-ghost h-7 flex items-center justify-center">
+                            <Icons.more width={13} height={13} className="text-[var(--ink-3)]"/>
                           </button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">

@@ -29,21 +29,21 @@ export default function PrivacidadPage() {
       </div>
 
       {/* Hero */}
-      <section className="landing-section" style={{ paddingTop: '7rem', paddingBottom: '2rem' }}>
-        <div className="landing-shell" style={{ maxWidth: 760 }}>
+      <section className="landing-section pt-[7rem] pb-8">
+        <div className="landing-shell max-w-[760px]">
           <div className="landing-section-kicker">Legal</div>
-          <h1 className="landing-section-title" style={{ marginBottom: '0.5rem' }}>
+          <h1 className="landing-section-title mb-2">
             Política de <span>Privacidad</span>
           </h1>
-          <p className="landing-section-copy" style={{ marginBottom: 0 }}>
+          <p className="landing-section-copy mb-0">
             Última actualización: {lastUpdated}
           </p>
         </div>
       </section>
 
       {/* Content */}
-      <section className="landing-section" style={{ paddingTop: '1rem' }}>
-        <div className="landing-shell" style={{ maxWidth: 760 }}>
+      <section className="landing-section pt-4">
+        <div className="landing-shell max-w-[760px]">
           <div className="legal-prose">
 
             <h2>1. ¿Quiénes somos?</h2>

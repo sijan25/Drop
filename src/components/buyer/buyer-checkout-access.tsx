@@ -26,37 +26,16 @@ export function BuyerCheckoutAccess({
 
   return (
     <>
-      <div className="buyer-checkout-access" style={{
-        border: '1px solid rgba(0,0,0,0.08)',
-        background: buyer ? '#f7fbf8' : '#f8f8f8',
-        borderRadius: 12,
-        padding: '12px 14px',
-        marginBottom: 18,
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        gap: 12,
-      }}>
-        <div className="buyer-checkout-access-copy" style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0 }}>
-          <div style={{
-            width: 34,
-            height: 34,
-            borderRadius: 10,
-            background: buyer ? '#ecfdf5' : '#fff',
-            border: '1px solid rgba(0,0,0,0.06)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            color: buyer ? '#047857' : '#555',
-            flexShrink: 0,
-          }}>
+      <div className={`buyer-checkout-access border border-[rgba(0,0,0,0.08)] rounded-[12px] p-[12px_14px] mb-[18px] flex items-center justify-between gap-3 ${buyer ? 'bg-[#f7fbf8]' : 'bg-[#f8f8f8]'}`}>
+        <div className="buyer-checkout-access-copy flex items-center gap-[10px] min-w-0">
+          <div className={`w-[34px] h-[34px] rounded-[10px] border border-[rgba(0,0,0,0.06)] flex items-center justify-center shrink-0 ${buyer ? 'bg-[#ecfdf5] text-[#047857]' : 'bg-white text-[#555]'}`}>
             {buyer ? <Icons.check width={17} height={17} /> : <Icons.user width={17} height={17} />}
           </div>
-          <div style={{ minWidth: 0 }}>
-            <div style={{ fontSize: 13, fontWeight: 800, color: '#111' }}>
+          <div className="min-w-0">
+            <div className="text-[13px] font-[800] text-[#111]">
               {buyer ? 'Datos de cuenta cargados' : '¿Ya tenés cuenta?'}
             </div>
-            <div style={{ fontSize: 12, color: '#777', marginTop: 2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+            <div className="text-[12px] text-[#777] mt-[2px] whitespace-nowrap overflow-hidden text-ellipsis">
               {buyer ? buyer.email : 'Iniciá sesión y rellenamos tus datos.'}
             </div>
           </div>
@@ -66,18 +45,7 @@ export function BuyerCheckoutAccess({
           <button
             type="button"
             onClick={() => setOpen(true)}
-            style={{
-              height: 34,
-              borderRadius: 9,
-              border: '1px solid rgba(0,0,0,0.1)',
-              background: '#fff',
-              color: '#111',
-              padding: '0 12px',
-              fontSize: 12,
-              fontWeight: 800,
-              cursor: 'pointer',
-              flexShrink: 0,
-            }}
+            className="h-[34px] rounded-[9px] border border-[rgba(0,0,0,0.1)] bg-white text-[#111] px-3 text-[12px] font-[800] cursor-pointer shrink-0"
           >
             Iniciar sesión
           </button>
@@ -86,19 +54,7 @@ export function BuyerCheckoutAccess({
             type="button"
             onClick={handleLogout}
             disabled={loggingOut}
-            style={{
-              height: 34,
-              borderRadius: 9,
-              border: '1px solid rgba(0,0,0,0.1)',
-              background: '#fff',
-              color: '#777',
-              padding: '0 12px',
-              fontSize: 12,
-              fontWeight: 600,
-              cursor: 'pointer',
-              flexShrink: 0,
-              opacity: loggingOut ? 0.5 : 1,
-            }}
+            className={`h-[34px] rounded-[9px] border border-[rgba(0,0,0,0.1)] bg-white text-[#777] px-3 text-[12px] font-semibold cursor-pointer shrink-0 ${loggingOut ? 'opacity-50' : ''}`}
           >
             {loggingOut ? '...' : 'Cerrar sesión'}
           </button>

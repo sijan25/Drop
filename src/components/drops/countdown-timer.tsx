@@ -25,11 +25,11 @@ export function CountdownTimer({ target, size = 'md', label = true, urgent = fal
     const parts = [['d', d], ['h', h], ['m', m], ['s', s]] as const;
     const filtered = parts.filter(([, v], i) => i > 0 || v > 0);
     return (
-      <div style={{ display: 'flex', gap: 8, alignItems: 'flex-start' }}>
+      <div className="flex gap-2 items-start">
         {filtered.map(([lbl, v]) => (
-          <div key={lbl} style={{ flex: 1, textAlign: 'center', padding: '14px 0', background: '#fff', borderRadius: 12, border: '1px solid var(--line)' }}>
-            <div className="mono tnum" style={{ fontSize: 36, fontWeight: 500, lineHeight: 1, color, letterSpacing: 0 }}>{ready ? pad(v) : '--'}</div>
-            {label && <div className="mono" style={{ fontSize: 10, color: 'var(--ink-3)', marginTop: 6, textTransform: 'uppercase', letterSpacing: 0.04 }}>{{ d: 'días', h: 'horas', m: 'min', s: 'seg' }[lbl]}</div>}
+          <div key={lbl} className="flex-1 text-center py-[14px] bg-white rounded-[12px] border border-[var(--line)]">
+            <div className="mono tnum text-[36px] font-medium leading-none tracking-[0]" style={{ color }}>{ready ? pad(v) : '--'}</div>
+            {label && <div className="mono text-[10px] text-[var(--ink-3)] mt-[6px] uppercase tracking-[0.04em]">{{ d: 'días', h: 'horas', m: 'min', s: 'seg' }[lbl]}</div>}
           </div>
         ))}
       </div>
@@ -38,14 +38,14 @@ export function CountdownTimer({ target, size = 'md', label = true, urgent = fal
 
   if (size === 'sm') {
     return (
-      <span className="mono tnum" style={{ fontSize: 13, fontWeight: 500, color, letterSpacing: 0 }}>
+      <span className="mono tnum text-[13px] font-medium tracking-[0]" style={{ color }}>
         {ready ? `${d > 0 ? `${d}d ` : ''}${pad(h)}:${pad(m)}:${pad(s)}` : '--:--:--'}
       </span>
     );
   }
 
   return (
-    <span className="mono tnum" style={{ fontSize: 16, fontWeight: 500, color, letterSpacing: 0 }}>
+    <span className="mono tnum text-[16px] font-medium tracking-[0]" style={{ color }}>
       {ready ? `${d > 0 ? `${d}d ` : ''}${pad(h)}:${pad(m)}:${pad(s)}` : '--:--:--'}
     </span>
   );

@@ -28,15 +28,10 @@ export function ConfirmModal({
 
   return (
     <ModalOverlay onClose={onClose} zIndex={100} maxWidth={400} blur="2px" bg="rgba(0,0,0,0.45)">
-      <div style={{ overflow: 'hidden', borderRadius: 18 }}>
+      <div className="overflow-hidden rounded-[18px]">
         {/* Icon */}
-        <div style={{ padding: '28px 28px 0', display: 'flex', justifyContent: 'center' }}>
-          <div style={{
-            width: 52, height: 52, borderRadius: 14,
-            background: isDanger ? '#fef2f2' : '#fffbeb',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            color: isDanger ? '#dc2626' : '#d97706',
-          }}>
+        <div className="pt-7 px-7 flex justify-center">
+          <div className={`w-[52px] h-[52px] rounded-[14px] flex items-center justify-center ${isDanger ? 'bg-[#fef2f2] text-[#dc2626]' : 'bg-[#fffbeb] text-[#d97706]'}`}>
             {isDanger
               ? <Icons.trash width={22} height={22} />
               : <Icons.close width={22} height={22} />
@@ -45,41 +40,28 @@ export function ConfirmModal({
         </div>
 
         {/* Content */}
-        <div style={{ padding: '16px 28px 24px', textAlign: 'center' }}>
-          <div style={{ fontSize: 16, fontWeight: 700, letterSpacing: '-0.01em', marginBottom: 8 }}>
+        <div className="px-7 pt-4 pb-6 text-center">
+          <div className="text-[16px] font-bold tracking-[-0.01em] mb-2">
             {title}
           </div>
-          <div style={{ fontSize: 13, color: 'var(--ink-3)', lineHeight: 1.55 }}>
+          <div className="text-[13px] text-[var(--ink-3)] leading-[1.55]">
             {description}
           </div>
         </div>
 
         {/* Actions */}
-        <div style={{
-          padding: '0 20px 20px',
-          display: 'grid',
-          gridTemplateColumns: '1fr 1fr',
-          gap: 8,
-        }}>
+        <div className="px-5 pb-5 grid grid-cols-2 gap-2">
           <button
             onClick={onClose}
             disabled={loading}
-            className="btn btn-outline"
-            style={{ height: 40, fontSize: 13, opacity: loading ? 0.5 : 1 }}
+            className={`btn btn-outline h-[40px] text-[13px] ${loading ? 'opacity-50' : ''}`}
           >
             No, volver
           </button>
           <button
             onClick={() => { onConfirm(); onClose() }}
             disabled={loading}
-            className="btn"
-            style={{
-              height: 40, fontSize: 13, fontWeight: 600,
-              background: isDanger ? '#dc2626' : '#d97706',
-              color: '#fff',
-              border: 'none',
-              opacity: loading ? 0.7 : 1,
-            }}
+            className={`btn h-[40px] text-[13px] font-semibold text-white border-none ${isDanger ? 'bg-[#dc2626]' : 'bg-[#d97706]'} ${loading ? 'opacity-70' : ''}`}
           >
             {loading ? 'Procesando…' : confirmLabel}
           </button>

@@ -82,24 +82,12 @@ export function PhoneInput({
   const maxLength = NATIONAL_DIGIT_LIMITS[iso];
 
   return (
-    <div style={{ display: 'flex', border: '1px solid var(--line)', borderRadius: 8, overflow: 'hidden', background: '#fff', height }}>
+    <div className="flex min-w-0 w-full border border-[var(--line)] rounded-[8px] overflow-hidden bg-white" style={{ height }}>
       <select
         value={iso}
         onChange={e => handleIso(e.target.value as CountryCode)}
-        style={{
-          height: '100%',
-          border: 'none',
-          borderRight: '1px solid var(--line)',
-          background: 'var(--surface-2)',
-          padding: '0 8px',
-          fontSize,
-          fontWeight: 600,
-          cursor: 'pointer',
-          flexShrink: 0,
-          color: 'var(--ink)',
-          outline: 'none',
-          ...selectStyle,
-        }}
+        className="h-full border-none border-r border-[var(--line)] bg-[var(--surface-2)] px-2 font-semibold cursor-pointer shrink-0 text-[var(--ink)] outline-none"
+        style={{ fontSize, borderRight: '1px solid var(--line)', ...selectStyle }}
       >
         {ALL_COUNTRIES.map(c => (
           <option key={c.iso} value={c.iso}>{flag(c.iso)} {c.code}</option>
@@ -113,7 +101,8 @@ export function PhoneInput({
         maxLength={maxLength}
         onChange={e => handleLocal(e.target.value)}
         placeholder={placeholder}
-        style={{ border: 'none', outline: 'none', flex: 1, padding: '0 12px', fontSize, background: 'transparent', color: 'var(--ink)', ...inputStyle }}
+        className="border-none outline-none flex-1 min-w-0 px-3 bg-transparent text-[var(--ink)]"
+        style={{ fontSize, ...inputStyle }}
       />
       <input type="hidden" value={prefix + local} />
     </div>
