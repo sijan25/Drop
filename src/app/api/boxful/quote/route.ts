@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
-import { quoteBoxful } from '@/lib/boxful/client';
+import { quoteBoxfulOptions } from '@/lib/boxful/client';
 import { checkRequestRateLimit, requireTrustedRequestOrigin } from '@/lib/security/request';
 
 const quoteSchema = z.object({
@@ -10,6 +10,7 @@ const quoteSchema = z.object({
   destinationStateName: z.string().trim().min(2).max(90),
   destinationCityId: z.string().trim().max(80).nullable().optional(),
   destinationCityName: z.string().trim().min(2).max(90),
+  preferredCourierId: z.string().trim().max(80).nullable().optional(),
   itemsCount: z.number().int().min(1).max(20),
   subtotal: z.number().min(0).max(1_000_000),
 });
@@ -26,6 +27,10 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Datos de envío incompletos.' }, { status: 400 });
   }
 
-  const quote = await quoteBoxful(parsed.data);
-  return NextResponse.json({ quote });
+  const quotes = await quoteBoxfulOptions(parsed.data);
+  const quote = parsed.data.preferredCourierId
+    ? quotes.find(item => item.courierId === parsed.data.preferredCourierId) ?? quotes[0]
+    : quotes[0];
+
+  return NextResponse.json({ quote, quotes });
 }

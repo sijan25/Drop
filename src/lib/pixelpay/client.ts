@@ -13,7 +13,7 @@ import TransactionResult from '@pixelpay/sdk-core/lib/entities/TransactionResult
 import {
   decryptPixelPaySecret,
   getPixelPayAuthHash,
-  getPixelPaySignature,
+  getPixelPayServiceSignature,
   getSandboxPixelPayCredentials,
   getVoidSignature,
 } from './security';
@@ -77,13 +77,18 @@ function createSettings(credentials: PixelPayCredentials, orderId?: string) {
     settings.setupCredentials(keyId, getPixelPayAuthHash(secret));
   }
 
-  if (keyId && secret && orderId) {
+  const appUrl = credentials.sandbox ? 'https://pixelpay.dev' : credentials.endpoint?.trim();
+  if (keyId && secret && appUrl && orderId) {
     settings.setupHeaders({
-      'x-client-signature': getPixelPaySignature({ keyId, orderId, secret }),
+      'x-client-signature': getPixelPayServiceSignature({
+        keyId,
+        secret,
+        fields: [keyId, orderId, appUrl],
+      }),
     });
   }
 
-  return { settings, secret, keyId };
+  return { settings, secret, keyId, appUrl };
 }
 
 export async function procesarVentaPixelPay(
@@ -140,7 +145,7 @@ export async function procesarVentaPixelPay(
     if (TransactionResult.validateResponse(response)) {
       const result = TransactionResult.fromResponse(response);
 
-      if (secret) {
+      if (!credentials.sandbox && secret) {
         const isValid = service.verifyPaymentHash(result.payment_hash ?? '', order.id, secret);
         if (!isValid) {
           return { success: false, message: 'Verificación de pago fallida. Contactá soporte.' };
@@ -192,6 +197,15 @@ export async function consultarEstadoPixelPay(
 ) {
   const setup = createSettings(credentials);
   if ('error' in setup) return { success: false as const, message: setup.error };
+  if (setup.keyId && setup.secret && setup.appUrl) {
+    setup.settings.setupHeaders({
+      'x-client-signature': getPixelPayServiceSignature({
+        keyId: setup.keyId,
+        secret: setup.secret,
+        fields: [setup.keyId, paymentUuid, setup.appUrl],
+      }),
+    });
+  }
 
   const status = new StatusTransaction();
   status.payment_uuid = paymentUuid;

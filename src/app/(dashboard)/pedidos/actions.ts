@@ -51,7 +51,7 @@ async function getPedidoParaEmail(pedidoId: string, tiendaId: string) {
 
   const { data: tienda } = await supabase
     .from('tiendas')
-    .select('nombre, contact_email, whatsapp')
+    .select('nombre, contact_email, whatsapp, ubicacion, departamento, ciudad')
     .eq('id', tiendaId)
     .single()
 
@@ -63,6 +63,7 @@ async function getPedidoParaEmail(pedidoId: string, tiendaId: string) {
     pedido,
     tiendaNombre: tienda?.nombre ?? 'La tienda',
     tiendaEmail: tienda?.contact_email ?? null,
+    tienda,
     prendaNombre,
   }
 }
@@ -246,6 +247,10 @@ export async function avanzarEstado(
           customerPhone: ctx.pedido.comprador_telefono,
           customerEmail: ctx.pedido.comprador_email,
           customerAddress: ctx.pedido.direccion ?? '',
+          originAddress: ctx.tienda?.ubicacion ?? null,
+          originPhone: ctx.tienda?.whatsapp ?? null,
+          originStateName: ctx.tienda?.departamento ?? null,
+          originCityName: ctx.tienda?.ciudad ?? null,
           customerStateId: metadata.destination?.stateId ?? null,
           customerCityId: metadata.destination?.cityId ?? null,
           customerStateName: metadata.destination?.stateName ?? null,

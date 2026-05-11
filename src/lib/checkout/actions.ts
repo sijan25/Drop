@@ -343,6 +343,7 @@ export async function crearCheckoutPublico(input: CheckoutInput): Promise<{
       destinationStateName: data.envioBoxful.destination.stateName,
       destinationCityId: data.envioBoxful.destination.cityId,
       destinationCityName: data.envioBoxful.destination.cityName,
+      preferredCourierId: data.envioBoxful.quote.courierId,
       itemsCount: itemsNormalizados.length,
       subtotal,
     });

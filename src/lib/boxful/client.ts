@@ -13,11 +13,17 @@ import type {
 } from './types';
 
 const BOXFUL_API_URL = process.env.BOXFUL_API_URL ?? 'https://api.goboxful.com';
+const BOXFUL_BASE_URL = process.env.BOXFUL_BASE_URL ?? BOXFUL_API_URL;
 
 type BoxfulStateApi = {
   id: string;
   name: string;
-  Cities?: Array<{ id: string; name: string }>;
+  Cities?: Array<{ id: string; name: string; latitude?: number | null; longitude?: number | null }>;
+};
+
+type BoxfulAuthResponse = {
+  accessToken?: string;
+  token?: string;
 };
 
 type BoxfulStatesResponse = {
@@ -71,14 +77,52 @@ function normalizeText(value: string) {
 }
 
 function hasBoxfulCredentials() {
-  return Boolean(process.env.BOXFUL_API_TOKEN?.trim());
+  return Boolean(
+    process.env.BOXFUL_API_TOKEN?.trim()
+    || (process.env.BOXFUL_EMAIL?.trim() && process.env.BOXFUL_PASSWORD?.trim())
+  );
 }
 
-async function boxfulRequest<T>(path: string, init?: RequestInit) {
-  const token = process.env.BOXFUL_API_TOKEN?.trim();
+let cachedAuthToken: { token: string; expiresAt: number } | null = null;
+
+async function getBoxfulAccessToken(forceRefresh = false) {
+  const staticToken = process.env.BOXFUL_API_TOKEN?.trim();
+  const email = process.env.BOXFUL_EMAIL?.trim();
+  const password = process.env.BOXFUL_PASSWORD?.trim();
+
+  if (!email || !password) return staticToken || null;
+  if (!forceRefresh && cachedAuthToken && cachedAuthToken.expiresAt > Date.now()) {
+    return cachedAuthToken.token;
+  }
+
+  const response = await fetch(`${BOXFUL_BASE_URL}/auth/client`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email, password }),
+    cache: 'no-store',
+  });
+
+  if (!response.ok) {
+    throw new Error(`Boxful auth respondió ${response.status}.`);
+  }
+
+  const payload = await response.json() as BoxfulAuthResponse;
+  const token = payload.accessToken ?? payload.token;
+  if (!token) throw new Error('Boxful no devolvió accessToken.');
+
+  cachedAuthToken = {
+    token,
+    expiresAt: Date.now() + 45 * 60 * 1000,
+  };
+
+  return token;
+}
+
+async function boxfulRequest<T>(path: string, init?: RequestInit, retryAuth = true): Promise<T | null> {
+  const token = await getBoxfulAccessToken();
   if (!token) return null;
 
-  const response = await fetch(`${BOXFUL_API_URL}${path}`, {
+  const response = await fetch(`${BOXFUL_BASE_URL}${path}`, {
     ...init,
     headers: {
       'Content-Type': 'application/json',
@@ -88,7 +132,31 @@ async function boxfulRequest<T>(path: string, init?: RequestInit) {
     cache: 'no-store',
   });
 
+  if (response.status === 401 && retryAuth) {
+    cachedAuthToken = null;
+    const freshToken = await getBoxfulAccessToken(true);
+    if (!freshToken) return null;
+
+    const retryResponse = await fetch(`${BOXFUL_BASE_URL}${path}`, {
+      ...init,
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${freshToken}`,
+        ...(init?.headers ?? {}),
+      },
+      cache: 'no-store',
+    });
+
+    if (!retryResponse.ok) {
+      throw new Error(`Boxful respondió ${retryResponse.status}.`);
+    }
+
+    return retryResponse.json() as Promise<T>;
+  }
+
   if (!response.ok) {
+    const body = await response.text().catch(() => '');
+    console.error(`[boxful] ${response.status} en ${path}:`, body);
     throw new Error(`Boxful respondió ${response.status}.`);
   }
 
@@ -102,7 +170,12 @@ function onlyHondurasStates(states: BoxfulStateApi[]): BoxfulState[] {
     .map(state => ({
       id: state.id,
       name: state.name,
-      cities: (state.Cities ?? []).map(city => ({ id: city.id, name: city.name })),
+      cities: (state.Cities ?? []).map(city => ({
+        id: city.id,
+        name: city.name,
+        latitude: city.latitude ?? null,
+        longitude: city.longitude ?? null,
+      })),
     }))
     .sort((a, b) => a.name.localeCompare(b.name, 'es'));
 }
@@ -147,6 +220,27 @@ function estimateLocalQuote(input: BoxfulQuoteRequest): BoxfulQuote {
     deliveryType: null,
     source: 'local_estimate',
     note: null,
+  };
+}
+
+function quoteFromCourier(
+  input: BoxfulQuoteRequest,
+  courier: NonNullable<BoxfulQuoterResponse['couriers']>[number] & { numericPrice: number },
+): BoxfulQuote {
+  const pickupExtra = input.mode === 'boxful_recoleccion' ? 35 : 0;
+  return {
+    provider: 'boxful',
+    mode: input.mode,
+    courierId: courier.id,
+    courierName: courier.name,
+    courierLogo: courier.logo ?? null,
+    price: courier.numericPrice + pickupExtra,
+    estimatedDelivery: courier.deliveryType === 'same-day' ? 'Mismo día' : '1-3 días hábiles',
+    deliveryType: courier.deliveryType ?? null,
+    source: 'boxful',
+    note: input.mode === 'boxful_recoleccion'
+      ? 'La recolección queda sujeta a cobertura del courier seleccionado.'
+      : null,
   };
 }
 
@@ -196,15 +290,32 @@ async function findOriginCityId(originCityName: string | null | undefined, state
   return null;
 }
 
-export async function quoteBoxful(input: BoxfulQuoteRequest): Promise<BoxfulQuote> {
+function findLocationByNames(states: BoxfulState[], stateName?: string | null, cityName?: string | null) {
+  const normalizedState = normalizeText(stateName || '');
+  const normalizedCity = normalizeText(cityName || '');
+  if (!normalizedCity) return null;
+
+  const candidateStates = normalizedState
+    ? states.filter(state => normalizeText(state.name) === normalizedState)
+    : states;
+
+  for (const state of candidateStates) {
+    const city = state.cities.find(item => normalizeText(item.name) === normalizedCity);
+    if (city) return { state, city };
+  }
+
+  return null;
+}
+
+export async function quoteBoxfulOptions(input: BoxfulQuoteRequest): Promise<BoxfulQuote[]> {
   if (!hasBoxfulCredentials() || !input.destinationCityId) {
-    return estimateLocalQuote(input);
+    return [estimateLocalQuote(input)];
   }
 
   try {
     const { states } = await getBoxfulStates();
     const originCityId = await findOriginCityId(input.originCityName, states);
-    if (!originCityId) return estimateLocalQuote(input);
+    if (!originCityId) return [estimateLocalQuote(input)];
 
     const response = await boxfulRequest<BoxfulQuoterResponse>('/quoter', {
       method: 'POST',
@@ -214,32 +325,24 @@ export async function quoteBoxful(input: BoxfulQuoteRequest): Promise<BoxfulQuot
       }),
     });
 
-    const courier = response?.couriers
+    const couriers = response?.couriers
       ?.map(item => ({ ...item, numericPrice: Number(item.clientPrice ?? item.price ?? 0) }))
       .filter(item => item.numericPrice > 0)
-      .sort((a, b) => a.numericPrice - b.numericPrice)[0];
+      .sort((a, b) => a.numericPrice - b.numericPrice) ?? [];
 
-    if (!courier) return estimateLocalQuote(input);
+    if (couriers.length === 0) return [estimateLocalQuote(input)];
 
-    const pickupExtra = input.mode === 'boxful_recoleccion' ? 35 : 0;
-    return {
-      provider: 'boxful',
-      mode: input.mode,
-      courierId: courier.id,
-      courierName: courier.name,
-      courierLogo: courier.logo ?? null,
-      price: courier.numericPrice + pickupExtra,
-      estimatedDelivery: courier.deliveryType === 'same-day' ? 'Mismo día' : '1-3 días hábiles',
-      deliveryType: courier.deliveryType ?? null,
-      source: 'boxful',
-      note: input.mode === 'boxful_recoleccion'
-        ? 'La recolección queda sujeta a cobertura del courier seleccionado.'
-        : null,
-    };
+    return couriers.map(courier => quoteFromCourier(input, courier));
   } catch (error) {
     console.error('[boxful] Error cotizando:', error);
-    return estimateLocalQuote(input);
+    return [estimateLocalQuote(input)];
   }
+}
+
+export async function quoteBoxful(input: BoxfulQuoteRequest): Promise<BoxfulQuote> {
+  const quotes = await quoteBoxfulOptions(input);
+  if (!input.preferredCourierId) return quotes[0];
+  return quotes.find(quote => quote.courierId === input.preferredCourierId) ?? quotes[0];
 }
 
 export async function createBoxfulShipment(input: BoxfulCreateShipmentInput): Promise<BoxfulShipmentResult> {
@@ -258,35 +361,56 @@ export async function createBoxfulShipment(input: BoxfulCreateShipmentInput): Pr
     };
   }
 
+  const { states } = await getBoxfulStates();
+  const originLocation = findLocationByNames(states, input.originStateName, input.originCityName);
+  const originAddress = input.originAddress?.trim();
+  const originPhone = input.originPhone?.replace(/\D/g, '').replace(/^504/, '') || input.customerPhone.replace(/\D/g, '').replace(/^504/, '');
+
+  if (!originLocation || !originAddress) {
+    throw new Error('Configurá departamento, ciudad y dirección de retiro de la tienda antes de crear la guía de Boxful.');
+  }
+
+  const shipmentPayload: Record<string, unknown> = {
+    courierId: input.courierId,
+    recolectionDate: new Date().toISOString().split('T')[0],
+    recolectionAddress: {
+      address: originAddress,
+      referencePoint: originAddress,
+      latitude: originLocation.city.latitude ?? 0,
+      longitude: originLocation.city.longitude ?? 0,
+      stateId: originLocation.state.id,
+      cityId: originLocation.city.id,
+      areaCode: '+504',
+      phone: originPhone,
+    },
+    parcels: input.parcels.map(parcel => ({
+      content: parcel.content,
+      price: parcel.price,
+      weight: parcel.weight ?? 1,
+      width: parcel.width ?? 20,
+      height: parcel.height ?? 8,
+      length: parcel.length ?? 25,
+      isFragile: false,
+    })),
+    cod: false,
+    codAmount: 0,
+    customerName: input.customerName,
+    customerLastname: 'Cliente',
+    customerPhone: input.customerPhone.replace(/\D/g, '').replace(/^504/, ''),
+    customerPhoneAreaCode: '+504',
+    customerEmail: input.customerEmail || 'cliente@droppi.local',
+    customerAddress: input.customerAddress,
+    customerState: input.customerStateId,
+    customerCity: input.customerCityId,
+    customerAddressReferencePoint: input.customerAddress,
+    instructions: input.mode === 'boxful_dropoff'
+      ? 'Pedido Droppi. La tienda entregará el paquete en punto autorizado.'
+      : 'Pedido Droppi. Solicitar recolección con la tienda.',
+  };
+
   const response = await boxfulRequest<BoxfulShipmentResponse>('/shipment', {
     method: 'POST',
-    body: JSON.stringify({
-      courierId: input.courierId,
-      recolectionDate: new Date().toISOString(),
-      parcels: input.parcels.map(parcel => ({
-        content: parcel.content,
-        price: parcel.price,
-        weight: parcel.weight ?? 1,
-        width: parcel.width ?? 20,
-        height: parcel.height ?? 8,
-        length: parcel.length ?? 25,
-        isFragile: false,
-      })),
-      cod: false,
-      codAmount: 0,
-      customerName: input.customerName,
-      customerLastname: 'Cliente',
-      customerPhone: input.customerPhone.replace(/\D/g, ''),
-      customerPhoneAreaCode: '+504',
-      customerEmail: input.customerEmail || 'cliente@droppi.local',
-      customerAddress: input.customerAddress,
-      customerState: input.customerStateId,
-      customerCity: input.customerCityId,
-      customerAddressReferencePoint: input.customerAddress,
-      instructions: input.mode === 'boxful_dropoff'
-        ? 'Pedido Droppi. La tienda entregará el paquete en punto autorizado.'
-        : 'Pedido Droppi. Solicitar recolección con la tienda.',
-    }),
+    body: JSON.stringify(shipmentPayload),
   });
 
   const shipment = response?.shipmentData;

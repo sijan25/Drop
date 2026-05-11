@@ -111,11 +111,24 @@ export function BoxfulAddressFields({ originCity, itemsCount, subtotal, onBoxful
   const [boxfulStateId, setBoxfulStateId] = useState('');
   const [boxfulCityId, setBoxfulCityId] = useState('');
   const [boxfulQuote, setBoxfulQuote] = useState<BoxfulQuote | null>(null);
+  const [boxfulQuotes, setBoxfulQuotes] = useState<BoxfulQuote[]>([]);
+  const [selectedCourierId, setSelectedCourierId] = useState('');
   const [boxfulQuoteLoading, setBoxfulQuoteLoading] = useState(false);
   const [boxfulQuoteError, setBoxfulQuoteError] = useState('');
 
   const boxfulState = boxfulStates.find(s => s.id === boxfulStateId) ?? null;
   const boxfulCity = boxfulState?.cities.find(c => c.id === boxfulCityId) ?? null;
+
+  function emitBoxfulSelection(quote: BoxfulQuote | null) {
+    onBoxfulChange({
+      isBoxful: true,
+      quote,
+      mode: boxfulMode,
+      destination: quote && boxfulState && boxfulCity
+        ? { stateId: boxfulState.id, stateName: boxfulState.name, cityId: boxfulCity.id, cityName: boxfulCity.name }
+        : null,
+    });
+  }
 
   useEffect(() => {
     let cancelled = false;
@@ -134,6 +147,8 @@ export function BoxfulAddressFields({ originCity, itemsCount, subtotal, onBoxful
     const ctrl = new AbortController();
     setBoxfulQuoteLoading(true);
     setBoxfulQuoteError('');
+    setBoxfulQuotes([]);
+    setSelectedCourierId('');
     fetch('/api/boxful/quote', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -150,18 +165,26 @@ export function BoxfulAddressFields({ originCity, itemsCount, subtotal, onBoxful
       signal: ctrl.signal,
     })
       .then(r => r.ok ? r.json() : Promise.reject())
-      .then((payload: { quote?: BoxfulQuote; error?: string }) => {
+      .then((payload: { quote?: BoxfulQuote; quotes?: BoxfulQuote[]; error?: string }) => {
         const q = payload.quote ?? null;
+        const options = payload.quotes?.length ? payload.quotes : q ? [q] : [];
         setBoxfulQuote(q);
+        setBoxfulQuotes(options);
+        setSelectedCourierId(q?.courierId ?? '');
         setBoxfulQuoteError(payload.error ?? '');
-        onBoxfulChange({
-          isBoxful: true, quote: q, mode: boxfulMode,
-          destination: { stateId: boxfulState!.id, stateName: boxfulState!.name, cityId: boxfulCity!.id, cityName: boxfulCity!.name },
-        });
+        onBoxfulChange(q && boxfulState && boxfulCity
+          ? {
+              isBoxful: true, quote: q, mode: boxfulMode,
+              destination: { stateId: boxfulState.id, stateName: boxfulState.name, cityId: boxfulCity.id, cityName: boxfulCity.name },
+            }
+          : { isBoxful: true, quote: null, destination: null, mode: boxfulMode }
+        );
       })
       .catch(err => {
         if (err?.name !== 'AbortError') {
           setBoxfulQuote(null);
+          setBoxfulQuotes([]);
+          setSelectedCourierId('');
           setBoxfulQuoteError('No pudimos calcular el envío. Probá otra ciudad.');
           onBoxfulChange({ isBoxful: true, quote: null, destination: null, mode: boxfulMode });
         }
@@ -169,7 +192,7 @@ export function BoxfulAddressFields({ originCity, itemsCount, subtotal, onBoxful
       .finally(() => setBoxfulQuoteLoading(false));
     return () => ctrl.abort();
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [boxfulStateId, boxfulCityId]);
+  }, [boxfulStateId, boxfulCityId, itemsCount, subtotal, originCity]);
 
   return (
     <div className="grid gap-3">
@@ -177,7 +200,14 @@ export function BoxfulAddressFields({ originCity, itemsCount, subtotal, onBoxful
         <div>
           <label className="label">Departamento</label>
           <select className="input input-lg" value={boxfulStateId}
-            onChange={e => { setBoxfulStateId(e.target.value); setBoxfulCityId(''); setBoxfulQuote(null); onBoxfulChange({ isBoxful: true, quote: null, destination: null, mode: boxfulMode }); }}>
+            onChange={e => {
+              setBoxfulStateId(e.target.value);
+              setBoxfulCityId('');
+              setBoxfulQuote(null);
+              setBoxfulQuotes([]);
+              setSelectedCourierId('');
+              onBoxfulChange({ isBoxful: true, quote: null, destination: null, mode: boxfulMode });
+            }}>
             <option value="">Seleccionar...</option>
             {boxfulStates.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
           </select>
@@ -191,6 +221,8 @@ export function BoxfulAddressFields({ originCity, itemsCount, subtotal, onBoxful
               setBoxfulCityId(nextId);
               if (nextCity) onCiudadChange?.(nextCity.name);
               setBoxfulQuote(null);
+              setBoxfulQuotes([]);
+              setSelectedCourierId('');
               onBoxfulChange({ isBoxful: true, quote: null, destination: null, mode: boxfulMode });
             }}>
             <option value="">Seleccionar...</option>
@@ -199,17 +231,43 @@ export function BoxfulAddressFields({ originCity, itemsCount, subtotal, onBoxful
         </div>
       </div>
       {boxfulQuoteLoading && <div className="text-[12px] text-[var(--ink-3)]">Calculando envío...</div>}
-      {boxfulQuote && (
-        <div className="border border-[var(--line)] rounded-[10px] px-3 py-[10px] bg-[var(--surface-2)]">
-          <div className="flex justify-between gap-3 text-[12px]">
-            <span className="font-bold">{boxfulQuote.courierName}</span>
-            <span className="mono tnum font-bold">{formatCurrency(boxfulQuote.price)}</span>
-          </div>
-          <div className="text-[11px] text-[var(--ink-3)] mt-[3px]">
-            {boxfulQuote.estimatedDelivery}
-            {boxfulQuote.source === 'local_estimate' ? ' · Estimado local' : ' · Cotización Boxful'}
-          </div>
-          {boxfulQuote.note && <div className="text-[11px] text-[var(--ink-3)] mt-[3px]">{boxfulQuote.note}</div>}
+      {boxfulQuotes.length > 0 && (
+        <div className="grid gap-[8px]">
+          <div className="text-[13px] font-semibold">Elegí el courier</div>
+          {boxfulQuotes.map((quote, index) => {
+            const optionId = quote.courierId ?? `local-${index}`;
+            const selected = selectedCourierId === optionId || (!selectedCourierId && index === 0);
+            return (
+              <label
+                key={optionId}
+                className={`flex items-center gap-3 border-[1.5px] rounded-[12px] px-3 py-[10px] bg-white cursor-pointer ${selected ? 'border-[var(--ink)]' : 'border-[var(--line)]'}`}
+              >
+                <input
+                  type="radio"
+                  name="boxful-courier"
+                  className="w-4 h-4 accent-[var(--ink)]"
+                  checked={selected}
+                  onChange={() => {
+                    setSelectedCourierId(optionId);
+                    setBoxfulQuote(quote);
+                    emitBoxfulSelection(quote);
+                  }}
+                />
+
+                <div className="flex-1 min-w-0">
+                  <div className="flex justify-between gap-3 text-[12px]">
+                    <span className="font-bold truncate">{quote.courierName}</span>
+                    <span className="mono tnum font-bold whitespace-nowrap">{formatCurrency(quote.price)}</span>
+                  </div>
+                  <div className="text-[11px] text-[var(--ink-3)] mt-[2px]">
+                    {quote.estimatedDelivery}
+                    {quote.source === 'local_estimate' ? ' · Estimado local' : ' · Cotización Boxful'}
+                  </div>
+                </div>
+              </label>
+            );
+          })}
+          {boxfulQuote?.note && <div className="text-[11px] text-[var(--ink-3)]">{boxfulQuote.note}</div>}
         </div>
       )}
       {boxfulQuoteError && <div className="text-[12px] text-[var(--urgent)]">{boxfulQuoteError}</div>}

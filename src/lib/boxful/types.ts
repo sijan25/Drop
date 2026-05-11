@@ -3,6 +3,8 @@ export type BoxfulShippingMode = 'boxful_dropoff' | 'boxful_recoleccion';
 export type BoxfulCity = {
   id: string;
   name: string;
+  latitude?: number | null;
+  longitude?: number | null;
 };
 
 export type BoxfulState = {
@@ -18,6 +20,7 @@ export type BoxfulQuoteRequest = {
   destinationStateName: string;
   destinationCityId?: string | null;
   destinationCityName: string;
+  preferredCourierId?: string | null;
   itemsCount: number;
   subtotal: number;
 };
@@ -45,6 +48,10 @@ export type BoxfulCreateShipmentInput = {
   customerPhone: string;
   customerEmail?: string | null;
   customerAddress: string;
+  originAddress?: string | null;
+  originPhone?: string | null;
+  originStateName?: string | null;
+  originCityName?: string | null;
   customerStateId?: string | null;
   customerCityId?: string | null;
   customerStateName?: string | null;

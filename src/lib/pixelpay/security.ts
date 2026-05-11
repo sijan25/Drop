@@ -70,6 +70,14 @@ export function getPixelPaySignature(opts: {
   return createHmac('sha3-512', opts.secret).update(payload).digest('hex');
 }
 
+export function getPixelPayServiceSignature(opts: {
+  keyId: string;
+  secret: string;
+  fields: Array<string | number>;
+}) {
+  return createHmac('sha3-512', opts.secret).update(opts.fields.join('|')).digest('hex');
+}
+
 export function getSandboxPixelPayCredentials() {
   return {
     keyId: SANDBOX_KEY_ID,
