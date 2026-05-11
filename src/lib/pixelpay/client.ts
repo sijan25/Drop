@@ -120,6 +120,7 @@ export async function procesarVentaPixelPay(
   order.customer_name = orderData.customerName;
   order.customer_email = orderData.customerEmail;
   order.amount = credentials.sandbox ? 1 : orderData.amount;
+  order.callback_url = `${process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000'}/api/webhooks/pixelpay`;
 
   if (!credentials.sandbox) {
     for (const it of orderData.items) {
