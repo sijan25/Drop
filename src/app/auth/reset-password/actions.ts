@@ -19,6 +19,11 @@ export async function actualizarPasswordRecuperacion(input: {
     ? await createBuyerClient()
     : await createClient();
 
+  const { data: { user }, error: authError } = await supabase.auth.getUser();
+  if (authError || !user) {
+    return { error: 'No autorizado. El link puede haber expirado.' };
+  }
+
   const { error } = await supabase.auth.updateUser({ password });
 
   if (error) {
