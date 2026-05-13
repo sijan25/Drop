@@ -179,7 +179,7 @@ export default function OnboardingPage() {
     <div className={s.obPage}>
       {/* Top bar */}
       <div className={s.obTopbar}>
-        <Logo size={18} />
+        <Logo size={28} />
         <div className={s.obSteps}>
           {STEPS.map((label, i) => {
             const state = i < step ? 'done' : i === step ? 'active' : 'pending';
