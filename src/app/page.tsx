@@ -308,7 +308,7 @@ export default function Home() {
         <div className="landing-shell">
           <nav className="landing-nav">
             <Link className="landing-brand" href="/">
-              <Logo size={32} wordmarkSize={18} className="landing-logo" />
+              <Logo size={40} wordmarkSize={20} className="landing-logo" />
             </Link>
 
             <div className="landing-nav-links">
