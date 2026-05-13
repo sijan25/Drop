@@ -67,13 +67,11 @@
 }
 
 .glyphD {
-  animation: fd-logo-d 6.4s ease-in-out infinite;
+  opacity: 1;
 }
 
 .glyphBag {
-  opacity: 0;
-  transform: scale(0.78) rotate(8deg);
-  animation: fd-logo-bag 6.4s ease-in-out infinite;
+  opacity: 1;
 }
 
 .wordmark {
@@ -86,58 +84,9 @@
   white-space: nowrap;
 }
 
-@keyframes fd-logo-d {
-  0%,
-  36% {
-    opacity: 1;
-    transform: scale(1) rotate(0deg);
-  }
-
-  44%,
-  80% {
-    opacity: 0;
-    transform: scale(0.76) rotate(-10deg);
-  }
-
-  88%,
-  100% {
-    opacity: 1;
-    transform: scale(1) rotate(0deg);
-  }
-}
-
-@keyframes fd-logo-bag {
-  0%,
-  38% {
-    opacity: 0;
-    transform: scale(0.78) rotate(8deg);
-  }
-
-  48%,
-  76% {
-    opacity: 1;
-    transform: scale(1) rotate(0deg);
-  }
-
-  84%,
-  100% {
-    opacity: 0;
-    transform: scale(0.8) rotate(-8deg);
-  }
-}
-
 @media (prefers-reduced-motion: reduce) {
   .glyphD,
   .glyphBag {
-    animation: none;
-  }
-
-  .glyphD {
     opacity: 1;
-    transform: none;
-  }
-
-  .glyphBag {
-    opacity: 0;
   }
 }
