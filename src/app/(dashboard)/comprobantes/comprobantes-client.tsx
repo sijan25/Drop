@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import { Icons } from '@/components/shared/icons'
 import { Ph } from '@/components/shared/image-placeholder'
 import { confirmarPago, rechazarPago } from './actions'
-import { formatCurrency } from '@/lib/config/platform'
+import { formatCurrencyTienda } from '@/lib/config/platform'
 
 type PrendaItem = {
   id: string
@@ -55,7 +55,7 @@ function fmt(iso: string | null | undefined) {
   return d.toLocaleDateString('es-HN', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })
 }
 
-export default function ComprobantesClient({ comprobantes, historial }: { comprobantes: Comprobante[]; historial: Comprobante[] }) {
+export default function ComprobantesClient({ comprobantes, historial, simbolo = 'L' }: { comprobantes: Comprobante[]; historial: Comprobante[]; simbolo?: string }) {
   const router = useRouter()
   const [tab, setTab] = useState<'pendientes' | 'historial'>('pendientes')
   const [idx, setIdx] = useState(0)
@@ -183,7 +183,7 @@ export default function ComprobantesClient({ comprobantes, historial }: { compro
                       {c.pedido?.comprador_nombre ?? '—'}
                     </td>
                     <td className="ch-total py-3 pr-3">
-                      <span className="mono tnum font-semibold">L {(c.pedido?.monto_total ?? 0).toLocaleString()}</span>
+                      <span className="mono tnum font-semibold">{simbolo} {(c.pedido?.monto_total ?? 0).toLocaleString()}</span>
                     </td>
                     <td className="ch-estado py-3 pr-3">
                       <span className={`inline-flex items-center gap-1 px-2 py-[3px] rounded-[6px] text-[11px] font-bold ${c.estado === 'verificado' ? 'bg-[#ecfdf5] text-[#065f46]' : 'bg-[#fef2f2] text-[#991b1b]'}`}>
@@ -270,7 +270,7 @@ export default function ComprobantesClient({ comprobantes, historial }: { compro
                 ))}
                 <div className="flex justify-between pt-[10px] mt-[6px] border-t border-dashed border-[#d4d4d4] text-[14px] font-semibold">
                   <span>Monto</span>
-                  <span className="mono">L {(current.monto_declarado ?? 0).toLocaleString()}.00</span>
+                  <span className="mono">{simbolo} {(current.monto_declarado ?? 0).toLocaleString()}.00</span>
                 </div>
               </div>
             </div>
@@ -300,7 +300,7 @@ export default function ComprobantesClient({ comprobantes, historial }: { compro
                       {[item.prenda?.marca, (item.talla_seleccionada ?? item.prenda?.talla) && `Talla ${item.talla_seleccionada ?? item.prenda?.talla}`].filter(Boolean).join(' · ')}
                     </div>
                   </div>
-                  <div className="mono tnum text-[14px] font-bold shrink-0">L {item.precio.toLocaleString()}</div>
+                  <div className="mono tnum text-[14px] font-bold shrink-0">{simbolo} {item.precio.toLocaleString()}</div>
                 </div>
               ))}
             </div>
@@ -325,8 +325,8 @@ export default function ComprobantesClient({ comprobantes, historial }: { compro
             <hr className="hr"/>
             <div className="grid gap-[6px]">
               {[
-                ['Esperado',    formatCurrency(pedido?.monto_total ?? 0), ''],
-                ['Comprobante', current.monto_declarado != null ? `${formatCurrency(current.monto_declarado)}${current.coincide_monto ? ' ✓' : ''}` : '—', current.coincide_monto ? '#065f46' : ''],
+                ['Esperado',    formatCurrencyTienda(pedido?.monto_total ?? 0, simbolo), ''],
+                ['Comprobante', current.monto_declarado != null ? `${formatCurrencyTienda(current.monto_declarado, simbolo)}${current.coincide_monto ? ' ✓' : ''}` : '—', current.coincide_monto ? '#065f46' : ''],
                 ['Cuenta',      current.cuenta_destino ? `${current.banco ?? ''} ${current.cuenta_destino}${current.coincide_cuenta ? ' ✓' : ''}` : '—', current.coincide_cuenta ? '#065f46' : ''],
                 ['Referencia',  current.referencia ? `${current.referencia}${current.coincide_referencia ? ' ✓' : ''}` : '—', current.coincide_referencia ? '#065f46' : ''],
               ].map(([k, v, c]) => (

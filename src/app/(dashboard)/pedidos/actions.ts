@@ -49,9 +49,10 @@ async function getPedidoParaEmail(pedidoId: string, tiendaId: string) {
 
   if (!pedido) return null
 
-  const { data: tienda } = await supabase
+  const svc = await createServiceClient()
+  const { data: tienda } = await svc
     .from('tiendas')
-    .select('nombre, contact_email, whatsapp, ubicacion, departamento, ciudad')
+    .select('nombre, contact_email, whatsapp, ubicacion, departamento, ciudad, codigo_telefono, boxful_email, boxful_password, boxful_enabled')
     .eq('id', tiendaId)
     .single()
 
@@ -59,12 +60,17 @@ async function getPedidoParaEmail(pedidoId: string, tiendaId: string) {
   const items = ((pedido as any).pedido_items ?? []) as Array<{ precio?: number; prendas?: { nombre?: string | null } | null }>
   const prendaNombre = items[0]?.prendas?.nombre ?? 'Prenda'
 
+  const boxfulCreds = tienda?.boxful_enabled && tienda.boxful_email && tienda.boxful_password
+    ? { email: tienda.boxful_email, password: tienda.boxful_password }
+    : null
+
   return {
     pedido,
     tiendaNombre: tienda?.nombre ?? 'La tienda',
     tiendaEmail: tienda?.contact_email ?? null,
     tienda,
     prendaNombre,
+    boxfulCreds,
   }
 }
 
@@ -145,7 +151,8 @@ export async function cancelarPedido(pedidoId: string) {
       return { error: 'No se puede anular en PixelPay porque falta el order_id del pago.' }
     }
 
-    const { data: tiendaCredenciales, error: tiendaError } = await supabase
+    const svcAnular = await createServiceClient()
+    const { data: tiendaCredenciales, error: tiendaError } = await svcAnular
       .from('tiendas')
       .select('pixelpay_endpoint, pixelpay_key_id, pixelpay_secret_key, pixelpay_sandbox')
       .eq('id', auth.tiendaId)
@@ -251,6 +258,7 @@ export async function avanzarEstado(
           originPhone: ctx.tienda?.whatsapp ?? null,
           originStateName: ctx.tienda?.departamento ?? null,
           originCityName: ctx.tienda?.ciudad ?? null,
+          phoneAreaCode: ctx.tienda?.codigo_telefono ?? '+504',
           customerStateId: metadata.destination?.stateId ?? null,
           customerCityId: metadata.destination?.cityId ?? null,
           customerStateName: metadata.destination?.stateName ?? null,
@@ -263,7 +271,7 @@ export async function avanzarEstado(
             height: 8,
             length: 25,
           })),
-        })
+        }, ctx.boxfulCreds)
 
         update.tracking_numero = shipment.shipmentNumber
         update.tracking_url = shipment.trackingUrl
@@ -273,7 +281,7 @@ export async function avanzarEstado(
         update.envio_courier_nombre = shipment.courierName
       } catch (error) {
         console.error('[boxful] No se pudo crear envío:', error)
-        return { error: 'No pudimos crear la guía de Boxful. Intentá de nuevo o ingresá tracking manual.' }
+        return { error: error instanceof Error ? error.message : 'No pudimos crear la guía de Boxful.' }
       }
     }
   }

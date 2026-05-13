@@ -94,6 +94,7 @@ export async function notificarPedidoCreado(opts: {
   prendaMarca?: string | null
   prendaTalla?: string | null
   montoTotal: number
+  simboloMoneda?: string | null
   tiendaNombre: string
   tiendaUsername: string
   tiendaEmail?: string | null
@@ -115,6 +116,7 @@ export async function notificarPedidoCreado(opts: {
       prendaMarca: opts.prendaMarca,
       prendaTalla: opts.prendaTalla,
       montoTotal: opts.montoTotal,
+      simboloMoneda: opts.simboloMoneda,
       tiendaNombre: opts.tiendaNombre,
       tiendaUsername: opts.tiendaUsername,
       metodoPago: opts.metodoPago,
@@ -143,6 +145,7 @@ export async function notificarPedidoCreado(opts: {
     compradorEmail: opts.compradorEmail,
     prendaNombre: opts.prendaNombre,
     montoTotal: opts.montoTotal,
+    simboloMoneda: opts.simboloMoneda,
     metodoPago: opts.metodoPago,
     metodoEnvio: opts.metodoEnvio,
     direccion: opts.direccion,
@@ -172,6 +175,7 @@ export async function notificarPagoConfirmado(opts: {
   numeroPedido: string
   prendaNombre: string
   montoTotal: number
+  simboloMoneda?: string | null
   tiendaNombre: string
   tiendaEmail?: string | null
   metodoEnvio: string
@@ -186,6 +190,7 @@ export async function notificarPagoConfirmado(opts: {
     numeroPedido: opts.numeroPedido,
     prendaNombre: opts.prendaNombre,
     montoTotal: opts.montoTotal,
+    simboloMoneda: opts.simboloMoneda,
     tiendaNombre: opts.tiendaNombre,
     metodoEnvio: opts.metodoEnvio,
     direccion: opts.direccion,

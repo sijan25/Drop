@@ -8,7 +8,7 @@ import { CountdownTimer } from '@/components/drops/countdown-timer';
 import { Icons } from '@/components/shared/icons';
 import { Ph } from '@/components/shared/image-placeholder';
 import { createClient } from '@/lib/supabase/client';
-import { formatCurrency } from '@/lib/config/platform';
+import { formatCurrencyTienda } from '@/lib/config/platform';
 import { TONES } from '@/lib/ui/tones';
 import { getProductTotalQuantity } from '@/lib/product-sizes';
 import {
@@ -66,9 +66,6 @@ function fmtFecha(iso: string | null | undefined): string {
   return `${d.getDate()} ${m} · ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
 }
 
-function dinero(valor: number | null | undefined): string {
-  return formatCurrency(valor ?? 0);
-}
 
 function statusInfo(estado: string | null | undefined) {
   if (estado === 'activo') return { label: 'En vivo', badge: 'badge badge-live', tone: 'var(--urgent)' };
@@ -130,6 +127,8 @@ function EmptyState({ title, body, action }: { title: string; body: string; acti
 export default function DropsPage() {
   const router = useRouter();
   const [tienda, setTienda] = useState<Tienda | null>(null);
+  const [simbolo, setSimbolo] = useState('L');
+  function dinero(valor: number | null | undefined) { return formatCurrencyTienda(valor ?? 0, simbolo); }
   const [drops, setDrops] = useState<Drop[]>([]);
   const [prendas, setPrendas] = useState<PrendaResumen[]>([]);
   const [comprobantesPendientes, setComprobantesPendientes] = useState(0);
@@ -154,13 +153,14 @@ export default function DropsPage() {
 
       const { data: t } = await supabase
         .from('tiendas')
-        .select('id, nombre, username')
+        .select('id, nombre, username, simbolo_moneda')
         .eq('user_id', user.id as never)
         .single();
 
       if (!t) { router.push('/onboarding'); return; }
-      const tiendaData = t as { id: string; nombre: string; username: string };
+      const tiendaData = t as { id: string; nombre: string; username: string; simbolo_moneda: string };
       setTienda(tiendaData);
+      setSimbolo(tiendaData.simbolo_moneda ?? 'L');
 
       const { data: dropsData } = await supabase
         .from('drops')

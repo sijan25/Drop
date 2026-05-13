@@ -37,6 +37,7 @@ type TiendaContexto = {
   user_id: string
   contact_email: string | null
   whatsapp: string | null
+  simbolo_moneda: string | null
 }
 
 type ContextoPago = {
@@ -94,7 +95,7 @@ async function getContextoAutorizado(comprobanteId: string, pedidoId: string) {
 
   const { data: tienda, error: tiendaError } = await supabase
     .from('tiendas')
-    .select('id, nombre, username, user_id, contact_email, whatsapp')
+    .select('id, nombre, username, user_id, contact_email, whatsapp, simbolo_moneda')
     .eq('id', pedido.tienda_id)
     .maybeSingle()
 
@@ -175,6 +176,7 @@ export async function confirmarPago(comprobanteId: string, pedidoId: string) {
       numeroPedido: ctx.pedido.numero,
       prendaNombre: ctx.prendaNombre,
       montoTotal: ctx.pedido.monto_total,
+      simboloMoneda: ctx.tienda.simbolo_moneda,
       tiendaNombre: ctx.tienda.nombre,
       tiendaEmail: ctx.tiendaEmail,
       metodoEnvio: ctx.pedido.metodo_envio === 'domicilio' ? 'Envío a domicilio' : 'Pickup / Retiro en tienda',
@@ -186,6 +188,7 @@ export async function confirmarPago(comprobanteId: string, pedidoId: string) {
       numeroPedido: ctx.pedido.numero,
       prendaNombre: ctx.prendaNombre,
       montoTotal: ctx.pedido.monto_total,
+      simboloMoneda: ctx.tienda.simbolo_moneda,
       tiendaNombre: ctx.tienda.nombre,
     }).catch(() => {}),
   ])

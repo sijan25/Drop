@@ -1,12 +1,12 @@
 'use client';
 
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Icons } from '@/components/shared/icons';
 import { Ph } from '@/components/shared/image-placeholder';
 import { SizeSelector } from '@/components/shared/size-selector';
 import { createClient } from '@/lib/supabase/client';
-import { formatCurrency } from '@/lib/config/platform';
+import { formatCurrencyTienda } from '@/lib/config/platform';
 import { uploadImage } from '@/lib/cloudinary/client';
 import { formatProductSizes, normalizeProductSizes } from '@/lib/product-sizes';
 import { useCatalogOptions } from '@/hooks/use-catalog-options';
@@ -303,6 +303,16 @@ export default function NuevoDropPage() {
   const [infoErrors, setInfoErrors] = useState<{ name?: string; portada?: string }>({});
   const [scheduleErrors, setScheduleErrors] = useState<{ duration?: string }>({});
   const [productsError, setProductsError] = useState('');
+  const [simbolo, setSimbolo] = useState('L');
+
+  useEffect(() => {
+    const supabase = createClient();
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      if (!user) return;
+      supabase.from('tiendas').select('simbolo_moneda').eq('user_id', user.id as never).single()
+        .then(({ data }) => { if (data) setSimbolo((data as unknown as { simbolo_moneda: string }).simbolo_moneda ?? 'L'); });
+    });
+  }, []);
   const portadaRef = useRef<HTMLInputElement>(null);
   const router = useRouter();
   const steps = ['Info', 'Programación', 'Prendas', 'Revisar'];
@@ -642,7 +652,7 @@ export default function NuevoDropPage() {
                             </div>
                           </div>
                           <div className="new-drop-product-qty mono tnum font-bold text-right text-[13px]">{totalCantidad(p.cantidades_por_talla, p.tallas)}</div>
-                          <div className="new-drop-product-price mono tnum font-bold text-right text-[13px]">L {(Number(p.precio) * totalCantidad(p.cantidades_por_talla, p.tallas)).toLocaleString()}</div>
+                          <div className="new-drop-product-price mono tnum font-bold text-right text-[13px]">{simbolo} {(Number(p.precio) * totalCantidad(p.cantidades_por_talla, p.tallas)).toLocaleString()}</div>
                           <div className="new-drop-product-actions flex gap-[2px] justify-end">
                             <button onClick={() => abrirEditar(p)} className="btn-ghost p-[5px]">
                               <Icons.edit width={13} height={13} className="text-[var(--ink-3)]"/>
@@ -656,7 +666,7 @@ export default function NuevoDropPage() {
                     </div>
                     <div className="new-drop-products-total flex justify-between items-center px-4 py-3 bg-white rounded-[10px] border border-[var(--line)]">
                       <span className="t-mute text-[13px]">{prendas.length} línea{prendas.length !== 1 ? 's' : ''} · {totalUnidades} unidad{totalUnidades !== 1 ? 'es' : ''} · valor total</span>
-                      <span className="mono tnum text-[16px] font-bold">L {totalValor.toLocaleString()}</span>
+                      <span className="mono tnum text-[16px] font-bold">{simbolo} {totalValor.toLocaleString()}</span>
                     </div>
                   </>
                 )}
@@ -676,7 +686,7 @@ export default function NuevoDropPage() {
                     ['Apertura', `${form.date} ${form.time}`],
                     ['Duración', form.duration],
                     ['Prendas', `${prendas.length} líneas · ${totalUnidades} unidades`],
-                    ['Valor total', formatCurrency(totalValor)],
+                    ['Valor total', formatCurrencyTienda(totalValor, simbolo)],
                   ].map(([k, v]) => (
                     <div key={k} className="new-drop-review-row flex justify-between text-[13px] py-2 border-b border-[var(--line-2)]">
                       <span className="t-mute">{k}</span>
@@ -704,7 +714,7 @@ export default function NuevoDropPage() {
                               {[p.marca, formatProductSizes(p), p.categoria, `${totalCantidad(p.cantidades_por_talla, p.tallas)} ud.`].filter(Boolean).join(' · ')}
                             </div>
                           </div>
-                          <span className="mono tnum text-[12px] font-semibold shrink-0">L {(Number(p.precio) * totalCantidad(p.cantidades_por_talla, p.tallas)).toLocaleString()}</span>
+                          <span className="mono tnum text-[12px] font-semibold shrink-0">{simbolo} {(Number(p.precio) * totalCantidad(p.cantidades_por_talla, p.tallas)).toLocaleString()}</span>
                         </div>
                       ))}
                     </div>

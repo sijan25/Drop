@@ -4,7 +4,7 @@ import { useRouter } from 'next/navigation';
 import { CountdownTimer } from '@/components/drops/countdown-timer';
 import { Icons } from '@/components/shared/icons';
 import { Ph } from '@/components/shared/image-placeholder';
-import { formatCurrency } from '@/lib/config/platform';
+import { formatCurrencyTienda } from '@/lib/config/platform';
 import { TONES } from '@/lib/ui/tones';
 
 interface Drop {
@@ -107,12 +107,14 @@ export default function DashboardPageClient({
   drops,
   pedidos,
   stats,
+  simbolo = 'L',
 }: {
   tiendaUsername: string;
   tiendaNombre: string;
   drops: Drop[];
   pedidos: Pedido[];
   stats: Stats;
+  simbolo?: string;
 }) {
   const router = useRouter();
   const now = new Date();
@@ -137,7 +139,7 @@ export default function DashboardPageClient({
             <div className="dash-live-bar-stats flex gap-[6px] ml-1">
               {[
                 { l: 'Vendidas', v: String(dropActivo.vendidas_count ?? 0), c: '#86efac' },
-                { l: 'Recaudado', v: formatCurrency(dropActivo.recaudado_total ?? 0), c: '#fbbf24' },
+                { l: 'Recaudado', v: formatCurrencyTienda(dropActivo.recaudado_total ?? 0, simbolo), c: '#fbbf24' },
               ].map(s => (
                 <div key={s.l} className="flex items-center gap-[5px] px-[10px] py-1 rounded-[7px] bg-[rgba(255,255,255,0.07)] border border-[rgba(255,255,255,0.1)]">
                   <span className="text-[10px] text-[rgba(255,255,255,0.5)] uppercase tracking-[0.06em]">{s.l}</span>
@@ -177,7 +179,7 @@ export default function DashboardPageClient({
 
       <div className="dash-page-content flex-1 overflow-y-auto px-7 pt-5 pb-7 bg-[radial-gradient(circle_at_top_right,rgba(201,100,66,0.06)_0%,transparent_20%),linear-gradient(180deg,rgba(255,255,255,0.18)_0%,transparent_100%)]">
         <div className="dash-stats-grid grid gap-[14px] mb-6" style={{ gridTemplateColumns: 'repeat(4, minmax(160px, 1fr))' }}>
-          <StatCard label="Ventas del mes" value={formatCurrency(stats.ventasMes)} help="Este mes · pedidos pagados" icon={Icons.wallet} accent="orange"/>
+          <StatCard label="Ventas del mes" value={formatCurrencyTienda(stats.ventasMes, simbolo)} help="Este mes · pedidos pagados" icon={Icons.wallet} accent="orange"/>
           <StatCard label="Drops activos" value={String(stats.dropsActivos)} help="Lanzamientos en vivo" icon={Icons.sparkle}/>
           <StatCard label="Comprobantes" value={String(stats.comprobantesP)} help="Pagos por verificar" icon={Icons.inbox}/>
           <StatCard label="Inventario activo" value={String(stats.inventarioActivo)} help="Unidades disponibles" icon={Icons.grid}/>
@@ -227,7 +229,7 @@ export default function DashboardPageClient({
                         {isLive || d.estado === 'programado' ? (
                           <span className={`mono tnum text-[11px] ${isLive ? 'text-[var(--urgent)]' : 'text-[var(--ink-3)]'}`}><CountdownTimer target={target} size="sm"/></span>
                         ) : (
-                          <span className={`tnum text-[12px] font-bold ${(d.recaudado_total ?? 0) > 0 ? 'text-[var(--ink)]' : 'text-[var(--ink-3)]'}`}>{formatCurrency(d.recaudado_total ?? 0)}</span>
+                          <span className={`tnum text-[12px] font-bold ${(d.recaudado_total ?? 0) > 0 ? 'text-[var(--ink)]' : 'text-[var(--ink-3)]'}`}>{formatCurrencyTienda(d.recaudado_total ?? 0, simbolo)}</span>
                         )}
                       </div>
                     </div>
@@ -283,7 +285,7 @@ export default function DashboardPageClient({
                       <div className="ventas-c-buyer whitespace-nowrap overflow-hidden text-ellipsis pr-3">{p.comprador_nombre}</div>
                       <div className="ventas-c-item t-mute whitespace-nowrap overflow-hidden text-ellipsis">{prendaLabel}</div>
                       <div className="ventas-c-size mono tnum font-bold">{talla ?? '—'}</div>
-                      <div className="ventas-c-amount mono tnum font-bold">L {p.monto_total.toLocaleString()}</div>
+                      <div className="ventas-c-amount mono tnum font-bold">{simbolo} {p.monto_total.toLocaleString()}</div>
                       <div className="ventas-c-date t-mute">{fmt(p.created_at)}</div>
                       <div className="ventas-c-status">{estadoBadge(p.estado)}</div>
                     </div>

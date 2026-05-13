@@ -95,6 +95,7 @@ type Pedido = {
   pagado_at: string | null
   empacado_at: string | null
   en_camino_at: string | null
+  entregado_at: string | null
   tracking_numero: string | null
   tracking_url: string | null
   envio_proveedor: string | null
@@ -122,7 +123,7 @@ function estadoLabel(e: string | null) {
   const map: Record<string, string> = {
     apartado: 'Apartado', por_verificar: 'Por verificar',
     pagado: 'Pagado', empacado: 'Empacado',
-    en_camino: 'Enviado', cancelado: 'Cancelado',
+    en_camino: 'En camino', entregado: 'Entregado', cancelado: 'Cancelado',
   }
   return map[e ?? ''] ?? e ?? '—'
 }
@@ -131,6 +132,7 @@ function badgeClass(e: string | null) {
   if (e === 'por_verificar') return 'badge badge-held'
   if (e === 'pagado') return 'badge badge-ok'
   if (e === 'en_camino') return 'badge badge-sold'
+  if (e === 'entregado') return 'badge badge-ok'
   if (e === 'cancelado') return 'badge badge-danger'
   return 'badge'
 }
@@ -173,12 +175,13 @@ function metodoEnvioLabel(pedido: Pick<Pedido, 'metodo_envio' | 'envio_modalidad
 }
 
 export default function PedidosClient({
-  pedidos, semanaCount, transitoTotal, metodosEnvio,
+  pedidos, semanaCount, transitoTotal, metodosEnvio, simbolo = 'L',
 }: {
   pedidos: Pedido[]
   semanaCount: number
   transitoTotal: number
   metodosEnvio: { id: string; nombre: string; tracking_url: string | null }[]
+  simbolo?: string
 }) {
   const router = useRouter()
   const shellRef = useRef<HTMLDivElement>(null)
@@ -371,7 +374,7 @@ export default function PedidosClient({
         />
       )}
 
-      <div className="orders-content flex-1 overflow-y-auto px-7 py-5">
+      <div className="orders-content flex-1 overflow-y-auto overflow-x-auto px-7 py-5">
         {pedidos.length === 0 ? (
           <div className="card p-10 text-center text-[var(--ink-3)]">
             Sin pedidos todavía
@@ -431,7 +434,7 @@ export default function PedidosClient({
                   <div
                     className="mono tnum orders-amount font-medium whitespace-nowrap"
                     style={{ gridColumn: isCompact ? 2 : undefined, gridRow: isCompact ? 1 : undefined, alignSelf: isCompact ? 'start' : undefined }}
-                  >L {r.monto_total.toLocaleString()}</div>
+                  >{simbolo} {r.monto_total.toLocaleString()}</div>
                   <div
                     className={`t-mute orders-date ${isCompact ? 'text-[11px]' : ''}`}
                     style={{ gridColumn: isCompact ? 1 : undefined, gridRow: isCompact ? 6 : undefined }}
@@ -462,7 +465,7 @@ export default function PedidosClient({
                             <div key={item.id} className="flex gap-[10px] items-center text-[12px]">
                               <div className="flex-1 font-medium">{item.prenda?.nombre ?? '—'}{item.prenda?.marca ? ` · ${item.prenda.marca}` : ''}</div>
                               <div className="mono t-mute whitespace-nowrap">{(item.talla_seleccionada ?? item.prenda?.talla) ? `T. ${item.talla_seleccionada ?? item.prenda?.talla}` : '—'}</div>
-                              <div className="mono tnum whitespace-nowrap font-medium">L {Number(item.precio).toLocaleString()}</div>
+                              <div className="mono tnum whitespace-nowrap font-medium">{simbolo} {Number(item.precio).toLocaleString()}</div>
                             </div>
                           ))}
                         </div>
@@ -479,7 +482,8 @@ export default function PedidosClient({
                           {[
                             { t: 'Pagado',   d: r.pagado_at },
                             { t: 'Empacado', d: r.empacado_at },
-                            { t: 'Enviado',  d: r.en_camino_at },
+                            { t: 'En camino', d: r.en_camino_at },
+                            { t: 'Entregado', d: r.entregado_at },
                           ].map(({ t, d }) => (
                             <div key={t} className="flex gap-[10px] items-center">
                               <div className={`w-[14px] h-[14px] rounded-full flex items-center justify-center shrink-0 ${d ? 'bg-[var(--ink)]' : 'bg-white border-[1.5px] border-[var(--line)]'}`}>
@@ -555,7 +559,7 @@ export default function PedidosClient({
                               <Icons.mail width={13} height={13}/> Reenviar correo
                             </button>
                           )}
-                          {r.estado !== 'cancelado' && r.estado !== 'en_camino' && (
+                          {r.estado !== 'cancelado' && r.estado !== 'en_camino' && r.estado !== 'entregado' && (
                             <button
                               onClick={(e) => { e.stopPropagation(); handleCancelar(r.id) }}
                               disabled={pending}

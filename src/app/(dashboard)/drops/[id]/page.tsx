@@ -11,7 +11,7 @@ import { SizeSelector } from '@/components/shared/size-selector';
 import { useDropViewerCount } from '@/hooks/use-drop-viewer-count';
 import { createClient } from '@/lib/supabase/client';
 import { uploadImage } from '@/lib/cloudinary/client';
-import { formatCurrency } from '@/lib/config/platform';
+import { formatCurrencyTienda } from '@/lib/config/platform';
 import { useCountdown } from '@/hooks/use-countdown';
 import { formatProductSizes, getProductTotalQuantity } from '@/lib/product-sizes';
 import { useCatalogOptions } from '@/hooks/use-catalog-options';
@@ -67,9 +67,6 @@ const PRENDA_VACIA: PrendaForm = { nombre: '', marca: '', talla: '', tallas: [],
 const BADGE: Record<string, string> = { disponible: 'badge-ok', apartada: 'badge-held', vendida: 'badge-sold', remanente: 'badge-rem' };
 const LABEL: Record<string, string> = { disponible: 'Disponible', apartada: 'Apartada', vendida: 'Vendida', remanente: 'Remanente' };
 
-function dinero(valor: number | null | undefined): string {
-  return formatCurrency(valor ?? 0);
-}
 
 function fmtFecha(iso: string | null | undefined): string {
   if (!iso) return 'Pendiente';
@@ -365,6 +362,8 @@ export default function DropDetallePage() {
   const [modalAbierto, setModalAbierto] = useState(false);
   const [modalTiempo, setModalTiempo] = useState(false);
   const [tiendaUsername, setTiendaUsername] = useState<string>('');
+  const [simbolo, setSimbolo] = useState<string>('L');
+  function dinero(valor: number | null | undefined) { return formatCurrencyTienda(valor ?? 0, simbolo); }
 
   useEffect(() => {
     async function cargar() {
@@ -385,10 +384,12 @@ export default function DropDetallePage() {
         setDrop(loadedDrop);
         const { data: tienda } = await supabase
           .from('tiendas')
-          .select('username')
+          .select('username, simbolo_moneda')
           .eq('id', loadedDrop.tienda_id as never)
           .single();
-        setTiendaUsername((tienda as { username: string } | null)?.username ?? '');
+        const t = tienda as { username: string; simbolo_moneda: string } | null;
+        setTiendaUsername(t?.username ?? '');
+        setSimbolo(t?.simbolo_moneda ?? 'L');
       }
       setPrendas((prendasRes.data ?? []) as Prenda[]);
       setAnotaciones((anotacionesRes.data ?? []) as Anotacion[]);
@@ -681,7 +682,7 @@ export default function DropDetallePage() {
               { label: 'Viendo ahora', value: drop?.estado === 'activo' ? liveViewerCount : (drop?.viewers_count ?? 0), icon: Icons.eye },
               { label: 'Vendidas', value: vendidas || (drop?.vendidas_count ?? 0), icon: Icons.bag },
               { label: 'Apartadas', value: apartadas, icon: Icons.inbox },
-              { label: 'Recaudado', value: formatCurrency(drop?.recaudado_total ?? 0), icon: Icons.card },
+              { label: 'Recaudado', value: dinero(drop?.recaudado_total ?? 0), icon: Icons.card },
             ].map(s => {
               const Ic = s.icon;
               return (
@@ -758,7 +759,7 @@ export default function DropDetallePage() {
                     </div>
                     <div className="drop-detail-product-name font-medium">{p.nombre}</div>
                     <div className="drop-detail-product-meta t-mute">{[p.marca, formatProductSizes(p)].filter(Boolean).join(' · ')}</div>
-                    <div className="drop-detail-product-price mono tnum font-medium">L {p.precio}</div>
+                    <div className="drop-detail-product-price mono tnum font-medium">{simbolo} {p.precio}</div>
                     <div className="drop-detail-product-qty mono tnum font-semibold">{getProductTotalQuantity(p)}</div>
                     <div className="drop-detail-product-status"><span className={`badge ${BADGE[p.estado] ?? ''}`}>{LABEL[p.estado] ?? p.estado}</span></div>
                     <DropdownMenu>

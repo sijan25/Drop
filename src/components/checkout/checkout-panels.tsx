@@ -9,9 +9,9 @@ import { BuyerCheckoutAccess } from '@/components/buyer/buyer-checkout-access';
 import type { BuyerProfile } from '@/components/buyer/buyer-auth-modal';
 import type { MetodoPago, MetodoEnvio } from '@/types/envio';
 import { Alert } from '@/components/shared/alert';
-import { PLATFORM, formatCurrency, formatCurrencyFree } from '@/lib/config/platform';
+import { PLATFORM, formatCurrencyTienda, formatCurrencyFreeTienda } from '@/lib/config/platform';
 import type { BoxfulQuote, BoxfulShippingMode, BoxfulState } from '@/lib/boxful/types';
-import { PhoneInput } from '@/components/shared/phone-input';
+import { PhoneInput, isoFromPhoneCode } from '@/components/shared/phone-input';
 
 const BOXFUL_ID = 'boxful';
 
@@ -30,7 +30,7 @@ export type CheckoutPrenda = {
   fotos: string[] | null;
 };
 
-export function CheckoutProcessingOverlay({ message, total }: { message: string; total?: number }) {
+export function CheckoutProcessingOverlay({ message, total, simbolo = PLATFORM.currencySymbol }: { message: string; total?: number; simbolo?: string }) {
   return (
     <div className="absolute inset-0 z-20 bg-white/95 backdrop-blur-[2px] flex items-center justify-center px-6">
       <div className="w-full max-w-[360px] text-center">
@@ -41,8 +41,8 @@ export function CheckoutProcessingOverlay({ message, total }: { message: string;
         </div>
         {typeof total === 'number' && (
           <div className="inline-flex items-baseline gap-[4px] rounded-[999px] bg-[var(--surface-2)] px-4 py-2">
-            <span className="text-[11px] text-[var(--ink-3)]">{PLATFORM.currency}</span>
-            <span className="mono tnum text-[18px] font-extrabold">{formatCurrency(total)}</span>
+            <span className="text-[11px] text-[var(--ink-3)]">{simbolo}</span>
+            <span className="mono tnum text-[18px] font-extrabold">{formatCurrencyTienda(total, simbolo)}</span>
           </div>
         )}
         <div className="mt-5 text-[12px] text-[var(--ink-3)]">
@@ -54,29 +54,30 @@ export function CheckoutProcessingOverlay({ message, total }: { message: string;
 }
 
 /* ──────── RESUMEN DE LÍNEAS ──────── */
-export function ResumenLineas({ precio, costoEnvio, total }: { precio: number; costoEnvio: number; total: number }) {
+export function ResumenLineas({ precio, costoEnvio, total, simbolo = PLATFORM.currencySymbol }: { precio: number; costoEnvio: number; total: number; simbolo?: string }) {
   return (
     <>
       <div className="flex justify-between text-[13px] text-[var(--ink-2)] mb-[6px]">
-        <span>Subtotal</span><span className="mono tnum">{formatCurrency(precio)}</span>
+        <span>Subtotal</span><span className="mono tnum">{formatCurrencyTienda(precio, simbolo)}</span>
       </div>
       <div className="flex justify-between text-[13px] text-[var(--ink-2)] mb-2">
-        <span>Envío</span><span className="mono tnum">{formatCurrencyFree(costoEnvio)}</span>
+        <span>Envío</span><span className="mono tnum">{formatCurrencyFreeTienda(costoEnvio, simbolo)}</span>
       </div>
       <div className="flex justify-between text-[15px] font-bold">
         <span>Total</span>
-        <span><span className="text-[11px] text-[var(--ink-3)] mr-[3px]">{PLATFORM.currency}</span><span className="mono tnum">{formatCurrency(total)}</span></span>
+        <span><span className="text-[11px] text-[var(--ink-3)] mr-[3px]">{simbolo}</span><span className="mono tnum">{formatCurrencyTienda(total, simbolo)}</span></span>
       </div>
     </>
   );
 }
 
 /* ──────── MINIATURA DE PRENDA ──────── */
-function PrendaSummary({ prenda, tallaSeleccionada, costoEnvio, total }: {
+function PrendaSummary({ prenda, tallaSeleccionada, costoEnvio, total, simbolo = PLATFORM.currencySymbol }: {
   prenda: CheckoutPrenda;
   tallaSeleccionada: string | null;
   costoEnvio: number;
   total: number;
+  simbolo?: string;
 }) {
   return (
     <div className="buyer-checkout-summary bg-[var(--surface-2)] rounded-[12px] px-4 py-[14px] mb-6">
@@ -90,19 +91,22 @@ function PrendaSummary({ prenda, tallaSeleccionada, costoEnvio, total }: {
           <div className="text-[14px] font-semibold">{prenda.nombre}</div>
           <div className="text-[12px] text-[var(--ink-3)]">{prenda.marca}{tallaSeleccionada ? ` · Talla ${tallaSeleccionada}` : ''}</div>
         </div>
-        <div className="mono tnum text-[15px] font-bold">{formatCurrency(prenda.precio)}</div>
+        <div className="mono tnum text-[15px] font-bold">{formatCurrencyTienda(prenda.precio, simbolo)}</div>
       </div>
       <hr className="border-none border-t border-[var(--line)] my-3" />
-      <ResumenLineas precio={prenda.precio} costoEnvio={costoEnvio} total={total} />
+      <ResumenLineas precio={prenda.precio} costoEnvio={costoEnvio} total={total} simbolo={simbolo} />
     </div>
   );
 }
 
 /* ──────── BOXFUL ADDRESS FIELDS (departamento + ciudad + cotización) ──────── */
-export function BoxfulAddressFields({ originCity, itemsCount, subtotal, onBoxfulChange, onCiudadChange }: {
+export function BoxfulAddressFields({ tiendaId, prendaId, originCity, itemsCount, subtotal, simbolo = PLATFORM.currencySymbol, onBoxfulChange, onCiudadChange }: {
+  tiendaId: string;
+  prendaId?: string;
   originCity?: string | null;
   itemsCount: number;
   subtotal: number;
+  simbolo?: string;
   onBoxfulChange: (data: BoxfulChangeData) => void;
   onCiudadChange?: (ciudad: string) => void;
 }) {
@@ -132,15 +136,22 @@ export function BoxfulAddressFields({ originCity, itemsCount, subtotal, onBoxful
 
   useEffect(() => {
     let cancelled = false;
-    fetch('/api/boxful/states')
-      .then(r => r.ok ? r.json() : Promise.reject())
+    const params = new URLSearchParams({ tiendaId });
+    if (prendaId) params.set('prendaId', prendaId);
+    fetch(`/api/boxful/states?${params.toString()}`)
+      .then(r => r.json().then(payload => r.ok ? payload : Promise.reject(payload)))
       .then((payload: { states?: BoxfulState[] }) => {
         if (cancelled) return;
         setBoxfulStates(payload.states ?? []);
       })
-      .catch(() => { if (!cancelled) setBoxfulStates([]); });
+      .catch((payload: { error?: string } | undefined) => {
+        if (!cancelled) {
+          setBoxfulStates([]);
+          setBoxfulQuoteError(payload?.error ?? 'No pudimos cargar ciudades de Boxful.');
+        }
+      });
     return () => { cancelled = true; };
-  }, []);
+  }, [tiendaId, prendaId]);
 
   useEffect(() => {
     if (!boxfulState || !boxfulCity) return;
@@ -153,6 +164,8 @@ export function BoxfulAddressFields({ originCity, itemsCount, subtotal, onBoxful
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
+        tiendaId,
+        ...(prendaId ? { prendaId } : {}),
         mode: boxfulMode,
         originCityName: originCity ?? PLATFORM.defaultCity,
         destinationStateId: boxfulState.id,
@@ -164,7 +177,7 @@ export function BoxfulAddressFields({ originCity, itemsCount, subtotal, onBoxful
       }),
       signal: ctrl.signal,
     })
-      .then(r => r.ok ? r.json() : Promise.reject())
+      .then(r => r.json().then(payload => r.ok ? payload : Promise.reject(payload)))
       .then((payload: { quote?: BoxfulQuote; quotes?: BoxfulQuote[]; error?: string }) => {
         const q = payload.quote ?? null;
         const options = payload.quotes?.length ? payload.quotes : q ? [q] : [];
@@ -185,7 +198,7 @@ export function BoxfulAddressFields({ originCity, itemsCount, subtotal, onBoxful
           setBoxfulQuote(null);
           setBoxfulQuotes([]);
           setSelectedCourierId('');
-          setBoxfulQuoteError('No pudimos calcular el envío. Probá otra ciudad.');
+          setBoxfulQuoteError(err?.error ?? 'No pudimos calcular el envío. Probá otra ciudad.');
           onBoxfulChange({ isBoxful: true, quote: null, destination: null, mode: boxfulMode });
         }
       })
@@ -257,7 +270,7 @@ export function BoxfulAddressFields({ originCity, itemsCount, subtotal, onBoxful
                 <div className="flex-1 min-w-0">
                   <div className="flex justify-between gap-3 text-[12px]">
                     <span className="font-bold truncate">{quote.courierName}</span>
-                    <span className="mono tnum font-bold whitespace-nowrap">{formatCurrency(quote.price)}</span>
+                    <span className="mono tnum font-bold whitespace-nowrap">{formatCurrencyTienda(quote.price, simbolo)}</span>
                   </div>
                   <div className="text-[11px] text-[var(--ink-3)] mt-[2px]">
                     {quote.estimatedDelivery}
@@ -276,16 +289,17 @@ export function BoxfulAddressFields({ originCity, itemsCount, subtotal, onBoxful
 }
 
 /* ──────── SHIPPING SELECTOR (solo opciones de radio) ──────── */
-export function ShippingSelector({ metodosEnvio, metodoEnvioId, boxfulQuote, boxfulQuoteLoading, onChange }: {
+export function ShippingSelector({ metodosEnvio, metodoEnvioId, boxfulQuote, boxfulQuoteLoading, simbolo = PLATFORM.currencySymbol, onChange }: {
   metodosEnvio: MetodoEnvio[];
   metodoEnvioId: string;
   boxfulQuote?: BoxfulQuote | null;
   boxfulQuoteLoading?: boolean;
+  simbolo?: string;
   onChange: (id: string) => void;
 }) {
   const isBoxfulSelected = metodoEnvioId === BOXFUL_ID;
   const boxfulResumen = boxfulQuote
-    ? formatCurrency(boxfulQuote.price)
+    ? formatCurrencyTienda(boxfulQuote.price, simbolo)
     : boxfulQuoteLoading ? 'Calculando...' : '—';
 
   return (
@@ -320,7 +334,7 @@ export function ShippingSelector({ metodosEnvio, metodoEnvioId, boxfulQuote, box
           <div className="flex-1">
             <div className="flex justify-between">
               <div className="text-[14px] font-semibold">{m.nombre}</div>
-              <div className="mono tnum text-[14px] font-semibold">{formatCurrencyFree(m.precio)}</div>
+              <div className="mono tnum text-[14px] font-semibold">{formatCurrencyFreeTienda(m.precio, simbolo)}</div>
             </div>
             <div className="text-[12px] text-[var(--ink-3)] mt-[2px]">{m.proveedor} · {m.tiempo_estimado}</div>
             <div className="text-[12px] text-[var(--ink-3)]">{m.cobertura}</div>
@@ -332,7 +346,8 @@ export function ShippingSelector({ metodosEnvio, metodoEnvioId, boxfulQuote, box
 }
 
 /* ──────── PANEL ENVÍO ──────── */
-export function EnvioPanel({ prenda, tallaSeleccionada, nombre, email, whatsapp, direccion, ciudad, buyer, metodoEnvioId, metodosEnvio, dropTarget, costoEnvio, total, errorMsg, boxfulOriginCity, boxfulData, onChange, onBuyer, onBoxfulChange, onContinuar, onCerrar }: {
+export function EnvioPanel({ tiendaId, prenda, tallaSeleccionada, nombre, email, whatsapp, direccion, ciudad, buyer, metodoEnvioId, metodosEnvio, dropTarget, costoEnvio, total, errorMsg, boxfulOriginCity, boxfulData, simbolo, pais, codigoTelefono, onChange, onBuyer, onBoxfulChange, onContinuar, onCerrar }: {
+  tiendaId: string;
   prenda: CheckoutPrenda;
   tallaSeleccionada: string | null;
   nombre: string; email: string; whatsapp: string; direccion: string; ciudad: string;
@@ -343,6 +358,9 @@ export function EnvioPanel({ prenda, tallaSeleccionada, nombre, email, whatsapp,
   costoEnvio: number; total: number; errorMsg: string;
   boxfulOriginCity?: string | null;
   boxfulData?: BoxfulChangeData | null;
+  simbolo?: string;
+  pais?: string;
+  codigoTelefono?: string;
   onChange: (f: string, v: string) => void;
   onBuyer: (buyer: BuyerProfile) => void;
   onBoxfulChange?: (data: BoxfulChangeData) => void;
@@ -371,7 +389,7 @@ export function EnvioPanel({ prenda, tallaSeleccionada, nombre, email, whatsapp,
       <div className="h-[2px] bg-[var(--line)] rounded-[2px] mb-7">
         <div className="h-full w-1/2 bg-[var(--ink)] rounded-[2px]" />
       </div>
-      <PrendaSummary prenda={prenda} tallaSeleccionada={tallaSeleccionada} costoEnvio={costoEnvio} total={total} />
+      <PrendaSummary prenda={prenda} tallaSeleccionada={tallaSeleccionada} costoEnvio={costoEnvio} total={total} simbolo={simbolo} />
       <BuyerCheckoutAccess buyer={buyer} onBuyer={onBuyer} />
       <div className="mb-[14px]">
         <label className="label">Nombre completo</label>
@@ -379,7 +397,7 @@ export function EnvioPanel({ prenda, tallaSeleccionada, nombre, email, whatsapp,
       </div>
       <div className="mb-[14px]">
         <label className="label">WhatsApp</label>
-        <PhoneInput value={whatsapp} onChange={v => onChange('whatsapp', v)} size="lg" />
+        <PhoneInput value={whatsapp} onChange={v => onChange('whatsapp', v)} size="lg" defaultCountry={codigoTelefono ? isoFromPhoneCode(codigoTelefono) : undefined} />
       </div>
       <div className="mb-[6px]">
         <label className="label">
@@ -395,9 +413,12 @@ export function EnvioPanel({ prenda, tallaSeleccionada, nombre, email, whatsapp,
       {metodoEnvioId === BOXFUL_ID ? (
         <div className="mb-6">
           <BoxfulAddressFields
+            tiendaId={tiendaId}
+            prendaId={prenda.id}
             originCity={boxfulOriginCity}
             itemsCount={1}
             subtotal={prenda.precio}
+            simbolo={simbolo}
             onBoxfulChange={data => { onBoxfulChange?.(data); onChange('ciudad', data.destination?.cityName ?? ciudad); }}
             onCiudadChange={c => onChange('ciudad', c)}
           />
@@ -410,7 +431,7 @@ export function EnvioPanel({ prenda, tallaSeleccionada, nombre, email, whatsapp,
           </div>
           <div>
             <label className="label">País</label>
-            <input className="input input-lg bg-[var(--surface-2)] text-[var(--ink-3)]" value={PLATFORM.country} readOnly />
+            <input className="input input-lg bg-[var(--surface-2)] text-[var(--ink-3)]" value={pais ?? PLATFORM.country} readOnly />
           </div>
         </div>
       )}
@@ -419,6 +440,7 @@ export function EnvioPanel({ prenda, tallaSeleccionada, nombre, email, whatsapp,
         metodosEnvio={metodosEnvio}
         metodoEnvioId={metodoEnvioId}
         boxfulQuote={boxfulData?.quote}
+        simbolo={simbolo}
         onChange={id => {
           onChange('metodoEnvioId', id);
           if (id !== BOXFUL_ID) onBoxfulChange?.({ isBoxful: false, quote: null, destination: null, mode: 'boxful_dropoff' });
@@ -436,7 +458,7 @@ export function EnvioPanel({ prenda, tallaSeleccionada, nombre, email, whatsapp,
 /* ──────── PANEL PAGO ──────── */
 export type CardData = { number: string; holder: string; expireMonth: string; expireYear: string; cvv: string; billingAddress: string; billingCity: string; billingState: string; billingPhone: string };
 
-export function PagoPanel({ prenda, tallaSeleccionada, metodosPago, metodoPagoId, tiendaEmail, costoEnvio, total, dropTarget, uploading, comprobanteUrl, errorMsg, loading, processingMessage, fileRef, compradorNombre, cardData, onCardChange, onChange, onSubirComprobante, onConfirmar, onVolver }: {
+export function PagoPanel({ prenda, tallaSeleccionada, metodosPago, metodoPagoId, tiendaEmail, costoEnvio, total, dropTarget, uploading, comprobanteUrl, errorMsg, loading, processingMessage, fileRef, compradorNombre, cardData, simbolo, onCardChange, onChange, onSubirComprobante, onConfirmar, onVolver }: {
   prenda: CheckoutPrenda;
   tallaSeleccionada: string | null;
   metodosPago: MetodoPago[];
@@ -446,6 +468,7 @@ export function PagoPanel({ prenda, tallaSeleccionada, metodosPago, metodoPagoId
   fileRef: React.RefObject<HTMLInputElement | null>;
   compradorNombre?: string;
   cardData?: CardData;
+  simbolo?: string;
   onCardChange?: (field: keyof CardData, value: string) => void;
   onChange: (f: string, v: string) => void;
   onSubirComprobante: (file: File) => void;
@@ -463,6 +486,7 @@ export function PagoPanel({ prenda, tallaSeleccionada, metodosPago, metodoPagoId
         <CheckoutProcessingOverlay
           message={processingMessage ?? 'Estamos validando tu pedido y confirmando la compra.'}
           total={total}
+          simbolo={simbolo}
         />
       )}
       <div className="flex items-center justify-between mb-6">
@@ -485,7 +509,7 @@ export function PagoPanel({ prenda, tallaSeleccionada, metodosPago, metodoPagoId
       <div className="h-[2px] bg-[var(--line)] rounded-[2px] mb-7">
         <div className="h-full w-full bg-[var(--ink)] rounded-[2px]" />
       </div>
-      <PrendaSummary prenda={prenda} tallaSeleccionada={tallaSeleccionada} costoEnvio={costoEnvio} total={total} />
+      <PrendaSummary prenda={prenda} tallaSeleccionada={tallaSeleccionada} costoEnvio={costoEnvio} total={total} simbolo={simbolo} />
       <div className="text-[14px] font-semibold mb-3">Método de pago</div>
       <div className="grid gap-[10px] mb-5">
         {metodosPago.map(m => {
@@ -549,7 +573,7 @@ export function PagoPanel({ prenda, tallaSeleccionada, metodosPago, metodoPagoId
       {esTransferencia && (
         <div className="bg-[var(--surface-2)] rounded-[12px] px-[18px] py-4 mb-4">
           <div className="text-[12px] text-[var(--ink-3)] mb-2">Transferí este monto exacto:</div>
-          <div className="mono tnum text-[32px] font-bold tracking-[-0.04em]">{formatCurrency(total)}</div>
+          <div className="mono tnum text-[32px] font-bold tracking-[-0.04em]">{formatCurrencyTienda(total, simbolo ?? PLATFORM.currencySymbol)}</div>
           <div className="text-[13px] text-[var(--ink-3)] mt-[6px]">Concepto: <strong>{refPedido}</strong></div>
         </div>
       )}

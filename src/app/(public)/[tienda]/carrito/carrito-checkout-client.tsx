@@ -9,11 +9,11 @@ import type { BuyerProfile } from '@/components/buyer/buyer-auth-modal';
 import { carritoItemKey, useCarrito } from '@/hooks/use-carrito';
 import { obtenerPerfilComprador } from '@/lib/buyer/actions';
 import { crearCheckoutPublico } from '@/lib/checkout/actions';
-import { PLATFORM, formatCurrency, formatCurrencyFree } from '@/lib/config/platform';
+import { getTiendaConfig, formatCurrencyTienda, formatCurrencyFreeTienda } from '@/lib/config/platform';
 import { obtenerCarrito } from '@/lib/cart/actions';
 import { uploadImage } from '@/lib/cloudinary/client';
 import { ShippingSelector, BoxfulAddressFields, CheckoutProcessingOverlay } from '@/components/checkout/checkout-panels';
-import { PhoneInput } from '@/components/shared/phone-input';
+import { PhoneInput, isoFromPhoneCode } from '@/components/shared/phone-input';
 import type { BoxfulChangeData } from '@/components/checkout/checkout-panels';
 import type { BoxfulQuote } from '@/lib/boxful/types';
 import type { Tienda } from '@/types/tienda';
@@ -58,6 +58,8 @@ export function CarritoCheckoutClient({
   const [pedidosNums, setPedidosNums] = useState<string[]>([]);
   const [pedidoTrackingUrls, setPedidoTrackingUrls] = useState<string[]>([]);
 
+  const tiendaConfig = getTiendaConfig(tienda);
+  const simbolo = tiendaConfig.simbolo_moneda;
   const metodoEnvioSel = metodosEnvio.find(m => m.id === metodoEnvioId);
   const isBoxfulSelected = metodoEnvioId === BOXFUL_SHIPPING_ID;
   const metodoPagoSel = metodosPago.find(m => m.id === metodoPagoId);
@@ -67,8 +69,8 @@ export function CarritoCheckoutClient({
   const esPixelPay = metodoPagoSel?.tipo === 'tarjeta' && metodoPagoSel?.proveedor?.toLowerCase().includes('pixelpay');
   const initials = tienda.nombre.split(' ').map(w => w[0]).slice(0, 2).join('').toUpperCase();
   const envioResumen = isBoxfulSelected
-    ? (boxfulData.quote ? formatCurrency(boxfulData.quote.price) : 'Seleccioná ciudad')
-    : formatCurrencyFree(costoEnvio);
+    ? (boxfulData.quote ? formatCurrencyTienda(boxfulData.quote.price, simbolo) : 'Seleccioná ciudad')
+    : formatCurrencyFreeTienda(costoEnvio, simbolo);
 
   // Redirigir si carrito vacío
   useEffect(() => {
@@ -201,7 +203,7 @@ export function CarritoCheckoutClient({
         mode: boxfulData.mode,
         quote: boxfulData.quote,
         destination: boxfulData.destination,
-        originCityName: tienda.ciudad ?? PLATFORM.defaultCity,
+        originCityName: tienda.ciudad ?? null,
       } : undefined,
     });
 
@@ -270,6 +272,7 @@ export function CarritoCheckoutClient({
           <CheckoutProcessingOverlay
             message={processingMessage || 'Estamos procesando tu compra.'}
             total={total}
+            simbolo={simbolo}
           />
         </div>
       )}
@@ -350,7 +353,7 @@ export function CarritoCheckoutClient({
               </div>
               <div id="field-whatsapp">
                 <label className="label">WhatsApp</label>
-                <PhoneInput value={whatsapp} onChange={v => { setWhatsapp(v); clearFe('whatsapp'); }} size="lg" />
+                <PhoneInput value={whatsapp} onChange={v => { setWhatsapp(v); clearFe('whatsapp'); }} size="lg" defaultCountry={isoFromPhoneCode(tiendaConfig.codigo_telefono)} />
                 {fe('whatsapp') && <div className="mt-1 text-[12px] text-[var(--urgent)]">{fe('whatsapp')}</div>}
               </div>
               <div className="text-[12px] text-[var(--ink-3)] -mt-1">Te avisamos por WhatsApp y email cuando salgan tus pedidos</div>
@@ -370,9 +373,12 @@ export function CarritoCheckoutClient({
               {metodoEnvioId === BOXFUL_SHIPPING_ID ? (
                 <div id="field-ciudad">
                   <BoxfulAddressFields
+                    tiendaId={tienda.id}
+                    prendaId={items[0]?.prendaId}
                     originCity={tienda.ciudad}
                     itemsCount={items.length}
                     subtotal={totalPrendas}
+                    simbolo={simbolo}
                     onBoxfulChange={data => { setBoxfulData(data); clearFe('envio'); clearFe('ciudad'); }}
                     onCiudadChange={setCiudad}
                   />
@@ -382,13 +388,13 @@ export function CarritoCheckoutClient({
                 <div className="buyer-checkout-two-col grid grid-cols-2 gap-3">
                   <div id="field-ciudad">
                     <label className="label">Ciudad</label>
-                    <input className={`input input-lg${fe('ciudad') ? ' border-[var(--urgent)]' : ''}`} placeholder={PLATFORM.defaultCity} value={ciudad}
+                    <input className={`input input-lg${fe('ciudad') ? ' border-[var(--urgent)]' : ''}`} placeholder="Tu ciudad" value={ciudad}
                       onChange={e => { setCiudad(e.target.value); clearFe('ciudad'); }} />
                     {fe('ciudad') && <div className="mt-1 text-[12px] text-[var(--urgent)]">{fe('ciudad')}</div>}
                   </div>
                   <div>
                     <label className="label">País</label>
-                    <input className="input input-lg bg-[var(--surface-2)] text-[var(--ink-3)]" value={PLATFORM.country} readOnly />
+                    <input className="input input-lg bg-[var(--surface-2)] text-[var(--ink-3)]" value={tiendaConfig.pais} readOnly />
                   </div>
                 </div>
               )}
@@ -402,6 +408,7 @@ export function CarritoCheckoutClient({
               metodosEnvio={metodosEnvio}
               metodoEnvioId={metodoEnvioId}
               boxfulQuote={boxfulData.quote}
+              simbolo={simbolo}
               onChange={id => {
                 setMetodoEnvioId(id);
                 clearFe('envio');
@@ -519,7 +526,7 @@ export function CarritoCheckoutClient({
               <div className="mt-4">
                 <div className="bg-[var(--surface-2)] rounded-[12px] px-[18px] py-4 mb-3">
                   <div className="text-[12px] text-[var(--ink-3)] mb-[6px]">Transferí el total exacto:</div>
-                  <div className="mono tnum text-[32px] font-bold tracking-[-0.04em]">{formatCurrency(total)}</div>
+                  <div className="mono tnum text-[32px] font-bold tracking-[-0.04em]">{formatCurrencyTienda(total, simbolo)}</div>
                 </div>
                 <input ref={fileRef} type="file" accept="image/*" className="hidden"
                   onChange={e => { const f = e.target.files?.[0]; if (f) subirComprobante(f); }} />
@@ -556,7 +563,7 @@ export function CarritoCheckoutClient({
 
           <button className="btn btn-primary btn-block h-[56px] text-[16px] font-semibold rounded-[14px]"
             onClick={confirmar} disabled={loading || uploading}>
-            {loading ? 'Procesando...' : `Finalizar compra · ${formatCurrency(total)}`}
+            {loading ? 'Procesando...' : `Finalizar compra · ${formatCurrencyTienda(total, simbolo)}`}
           </button>
         </div>
 
@@ -581,7 +588,7 @@ export function CarritoCheckoutClient({
                     <div className="text-[13px] font-semibold">{item.nombre}</div>
                     {item.talla && <div className="text-[12px] text-[var(--ink-3)]">Talla {item.talla}</div>}
                   </div>
-                  <div className="mono tnum text-[14px] font-semibold">{formatCurrency(item.precio)}</div>
+                  <div className="mono tnum text-[14px] font-semibold">{formatCurrencyTienda(item.precio, simbolo)}</div>
                 </div>
               ))}
             </div>
@@ -592,7 +599,7 @@ export function CarritoCheckoutClient({
             <div className="px-5 py-4">
               <div className="flex justify-between text-[13px] text-[var(--ink-2)] mb-2">
                 <span>Subtotal · {items.length} {items.length === 1 ? 'prenda' : 'prendas'}</span>
-                <span className="mono tnum">{formatCurrency(totalPrendas)}</span>
+                <span className="mono tnum">{formatCurrencyTienda(totalPrendas, simbolo)}</span>
               </div>
               <div className="flex justify-between text-[13px] text-[var(--ink-2)] mb-3">
                 <span>Envío</span>
@@ -601,8 +608,8 @@ export function CarritoCheckoutClient({
               <div className="flex justify-between items-baseline">
                 <span className="text-[16px] font-bold">Total</span>
                 <div className="text-right">
-                  <span className="text-[11px] text-[var(--ink-3)] mr-1">{PLATFORM.currency}</span>
-                  <span className="mono tnum text-[22px] font-extrabold">{formatCurrency(total)}</span>
+                  <span className="text-[11px] text-[var(--ink-3)] mr-1">{tiendaConfig.moneda}</span>
+                  <span className="mono tnum text-[22px] font-extrabold">{formatCurrencyTienda(total, simbolo)}</span>
                 </div>
               </div>
             </div>

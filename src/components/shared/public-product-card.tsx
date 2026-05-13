@@ -34,6 +34,7 @@ type PublicProductCardProps = {
   showActions?: boolean;
   cartActive?: boolean;
   cartTitle?: string;
+  simbolo?: string;
   onOpen: () => void;
   onBuy?: () => void;
   onCart?: () => void;
@@ -55,6 +56,7 @@ export function PublicProductCard({
   showActions = true,
   cartActive = false,
   cartTitle = 'Añadir al carrito',
+  simbolo = 'L',
   onOpen,
   onBuy,
   onCart,
@@ -175,7 +177,7 @@ export function PublicProductCard({
 
         <div className="flex items-center justify-between gap-[10px] mt-auto">
           <span className={`mono tnum font-[850] leading-none ${isCompact ? 'text-[15px]' : 'text-[17px]'} ${disponible ? 'text-[#111]' : 'text-[#bbb] line-through'}`}>
-            L {product.precio.toLocaleString()}
+            {simbolo} {product.precio.toLocaleString()}
           </span>
           <span className={`inline-flex items-center gap-[5px] font-bold whitespace-nowrap ${isCompact ? 'text-[11px]' : 'text-[12px]'}`}>
             <span className={`w-[7px] h-[7px] rounded-[99px] shrink-0 ${vendida ? 'bg-[#ef4444]' : apartada ? 'bg-[#f59e0b]' : isPreview ? 'bg-[#888]' : 'bg-[#22c55e]'}`} />

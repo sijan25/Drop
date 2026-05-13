@@ -13,11 +13,11 @@ export const PAYPAL_PLANS = {
   pro_annual: {
     id: process.env.PAYPAL_PLAN_PRO_ANNUAL_ID ?? '',
     label: 'Pro Anual',
-    price: 9990,
-    priceLabel: `${formatCurrency(9990)}/año`,
+    price: 10989,
+    priceLabel: `${formatCurrency(10989)}/año`,
     interval: 'YEAR' as const,
-    savings: `Ahorrás ${formatCurrency(1998)} (2 meses gratis)`,
-    annualEquiv: `${formatCurrency(832)}/mes`,
+    savings: `Ahorrás ${formatCurrency(999)} (1 mes gratis)`,
+    annualEquiv: `${formatCurrency(916)}/mes`,
   },
 } as const;
 

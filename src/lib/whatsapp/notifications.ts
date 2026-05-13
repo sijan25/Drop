@@ -1,8 +1,8 @@
 import { sendWhatsAppText, type WhatsAppSendResult } from './client'
-import { formatCurrency, APP_URL } from '@/lib/config/platform'
+import { formatCurrencyTienda, APP_URL } from '@/lib/config/platform'
 
-function lps(n: number) {
-  return formatCurrency(n)
+function lps(n: number, simbolo?: string | null) {
+  return formatCurrencyTienda(n, simbolo ?? 'L')
 }
 
 // ── 1. NUEVO PEDIDO → tienda ─────────────────────────────
@@ -14,6 +14,7 @@ export async function wsNuevoPedido(opts: {
   compradorTelefono: string
   prendaNombre: string
   montoTotal: number
+  simboloMoneda?: string | null
   metodoPago: string
   dashboardUrl?: string
 }): Promise<WhatsAppSendResult> {
@@ -22,7 +23,7 @@ export async function wsNuevoPedido(opts: {
     ``,
     `Pedido: *${opts.numeroPedido}*`,
     `Prenda: ${opts.prendaNombre}`,
-    `Total: *${lps(opts.montoTotal)}*`,
+    `Total: *${lps(opts.montoTotal, opts.simboloMoneda)}*`,
     `Pago: ${opts.metodoPago}`,
     ``,
     `Comprador: ${opts.compradorNombre}`,
@@ -41,6 +42,7 @@ export async function wsPagoConfirmado(opts: {
   numeroPedido: string
   prendaNombre: string
   montoTotal: number
+  simboloMoneda?: string | null
   tiendaNombre: string
   trackingUrl?: string | null
 }): Promise<WhatsAppSendResult> {
@@ -51,7 +53,7 @@ export async function wsPagoConfirmado(opts: {
     ``,
     `Pedido: *${opts.numeroPedido}*`,
     `Prenda: ${opts.prendaNombre}`,
-    `Total pagado: *${lps(opts.montoTotal)}*`,
+    `Total pagado: *${lps(opts.montoTotal, opts.simboloMoneda)}*`,
     ``,
     opts.trackingUrl ? `🔍 Seguimiento: ${opts.trackingUrl}` : '',
   ].filter(Boolean).join('\n')

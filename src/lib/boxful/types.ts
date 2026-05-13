@@ -56,6 +56,7 @@ export type BoxfulCreateShipmentInput = {
   customerCityId?: string | null;
   customerStateName?: string | null;
   customerCityName?: string | null;
+  phoneAreaCode?: string | null;
   parcels: Array<{
     content: string;
     price: number;

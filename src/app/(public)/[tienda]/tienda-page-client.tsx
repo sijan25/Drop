@@ -1,7 +1,7 @@
 'use client';
 
 import Image from 'next/image';
-import { PLATFORM } from '@/lib/config/platform';
+import { getTiendaConfig } from '@/lib/config/platform';
 
 import { cld } from '@/lib/cloudinary/client';
 import { useState, useEffect, type FormEvent } from 'react';
@@ -198,7 +198,7 @@ function LiveDropHero({
                 <div className="px-3 pt-[10px] pb-3">
                   {featured.marca && <div className="text-[10px] text-[rgba(255,255,255,0.45)] font-bold uppercase tracking-[0.06em] mb-[3px]">{featured.marca}</div>}
                   <div className="text-[13px] font-bold text-white whitespace-nowrap overflow-hidden text-ellipsis mb-[6px]">{featured.nombre}</div>
-                  <div className="mono tnum text-[15px] font-black text-white">L {featured.precio.toLocaleString()}</div>
+                  <div className="mono tnum text-[15px] font-black text-white">{tiendaConfig.simbolo_moneda} {featured.precio.toLocaleString()}</div>
                 </div>
               </div>
             </div>
@@ -441,7 +441,7 @@ function BuyerProfileSheet({
             </div>
             <div className="border border-[rgba(0,0,0,0.08)] rounded-[12px] px-[13px] py-3 bg-white">
               <div className="text-[11px] text-[#999] font-extrabold uppercase tracking-[0.07em]">Compras</div>
-              <div className="mono tnum text-[22px] font-black text-[#111] mt-[5px]">L {loadingPedidos ? '--' : totalGastado.toLocaleString()}</div>
+              <div className="mono tnum text-[22px] font-black text-[#111] mt-[5px]">{tiendaConfig.simbolo_moneda} {loadingPedidos ? '--' : totalGastado.toLocaleString()}</div>
             </div>
             <div className="border border-[rgba(0,0,0,0.08)] rounded-[12px] px-[13px] py-3 bg-white">
               <div className="text-[11px] text-[#999] font-extrabold uppercase tracking-[0.07em]">Perfil</div>
@@ -518,7 +518,7 @@ function BuyerProfileSheet({
                           <div className="text-[12px] text-[#999] mt-[2px] whitespace-nowrap overflow-hidden text-ellipsis">{[pedido.drop?.nombre, (item?.talla_seleccionada ?? prenda?.talla) && `T. ${item?.talla_seleccionada ?? prenda?.talla}`, formatShortDate(pedido.created_at)].filter(Boolean).join(' · ')}</div>
                         </div>
                         <div className="text-right">
-                          <div className="mono tnum text-[14px] font-black text-[#111]">L {pedido.monto_total.toLocaleString()}</div>
+                          <div className="mono tnum text-[14px] font-black text-[#111]">{tiendaConfig.simbolo_moneda} {pedido.monto_total.toLocaleString()}</div>
                           <Icons.arrow width={15} height={15} className="text-[#aaa] mt-2" />
                         </div>
                       </button>
@@ -567,7 +567,7 @@ function BuyerProfileSheet({
 
               <div>
                 <label className="label">Ciudad</label>
-                <input className="input input-lg" value={profileForm.ciudad} onChange={e => { setProfileForm(f => ({ ...f, ciudad: e.target.value })); setProfileError(''); setProfileMsg(''); }} placeholder={PLATFORM.cities[0]} />
+                <input className="input input-lg" value={profileForm.ciudad} onChange={e => { setProfileForm(f => ({ ...f, ciudad: e.target.value })); setProfileError(''); setProfileMsg(''); }} placeholder="Tu ciudad" />
               </div>
 
               {profileError && <div className="text-[13px] text-[#b91c1c] bg-[#fef2f2] rounded-[10px] px-3 py-[10px]">{profileError}</div>}
@@ -602,6 +602,7 @@ export function TiendaPageClient(props: {
   isOwnerPreview?: boolean;
 }) {
   const { tienda, drops, prendasDisponibles, prendasDrops, categoriasCatalogo, tiendaEmail, isOwnerPreview = false } = props;
+  const tiendaConfig = getTiendaConfig(tienda);
   const router = useRouter();
   const [catFilter, setCatFilter] = useState<string | null>(null);
   const [visibleCount, setVisibleCount] = useState(12);
@@ -1285,6 +1286,7 @@ export function TiendaPageClient(props: {
                         views={vistas}
                         cartActive={!tieneVariantes && enCarrito}
                         cartTitle={tieneVariantes ? 'Elegir talla' : enCarrito ? 'Ver carrito' : 'Añadir al carrito'}
+                        simbolo={tiendaConfig.simbolo_moneda}
                         onOpen={() => router.push(href)}
                         onBuy={() => router.push(href)}
                         onCart={() => {
@@ -1338,7 +1340,7 @@ export function TiendaPageClient(props: {
                 </svg>
               ),
               title: 'Envío Rápido',
-              desc: `Recibe tu compra en cualquier parte de ${PLATFORM.country}`,
+              desc: `Recibe tu compra en cualquier parte de ${tiendaConfig.pais}`,
             },
             {
               svg: (

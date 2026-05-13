@@ -336,17 +336,30 @@ export async function crearCheckoutPublico(input: CheckoutInput): Promise<{
       return total + Number((prenda as { precio?: number | string } | undefined)?.precio ?? 0);
     }, 0);
 
-    boxfulQuote = await quoteBoxful({
-      mode: data.envioBoxful.mode,
-      originCityName: data.envioBoxful.originCityName,
-      destinationStateId: data.envioBoxful.destination.stateId,
-      destinationStateName: data.envioBoxful.destination.stateName,
-      destinationCityId: data.envioBoxful.destination.cityId,
-      destinationCityName: data.envioBoxful.destination.cityName,
-      preferredCourierId: data.envioBoxful.quote.courierId,
-      itemsCount: itemsNormalizados.length,
-      subtotal,
-    });
+    const { data: tiendaBoxful } = await service
+      .from('tiendas')
+      .select('boxful_email, boxful_password, boxful_enabled')
+      .eq('id', data.tiendaId)
+      .maybeSingle();
+    const boxfulCreds = tiendaBoxful?.boxful_enabled && tiendaBoxful.boxful_email && tiendaBoxful.boxful_password
+      ? { email: tiendaBoxful.boxful_email, password: tiendaBoxful.boxful_password }
+      : null;
+
+    try {
+      boxfulQuote = await quoteBoxful({
+        mode: data.envioBoxful.mode,
+        originCityName: data.envioBoxful.originCityName,
+        destinationStateId: data.envioBoxful.destination.stateId,
+        destinationStateName: data.envioBoxful.destination.stateName,
+        destinationCityId: data.envioBoxful.destination.cityId,
+        destinationCityName: data.envioBoxful.destination.cityName,
+        preferredCourierId: data.envioBoxful.quote.courierId,
+        itemsCount: itemsNormalizados.length,
+        subtotal,
+      }, boxfulCreds);
+    } catch (error) {
+      return { error: error instanceof Error ? error.message : 'No pudimos confirmar la cotización de Boxful.' };
+    }
   }
 
   // ── PixelPay: preparar credenciales, pero cobrar después de crear el pedido local.
@@ -593,6 +606,7 @@ export async function crearCheckoutPublico(input: CheckoutInput): Promise<{
         prendaMarca: checkout.prendas_count > 1 ? null : checkout.prenda_marca,
         prendaTalla,
         montoTotal: Number(checkout.monto_total),
+        simboloMoneda: tiendaSimb,
         tiendaNombre: checkout.tienda_nombre,
         tiendaUsername: checkout.tienda_username,
         tiendaEmail,
@@ -605,7 +619,8 @@ export async function crearCheckoutPublico(input: CheckoutInput): Promise<{
         pagoConfirmado: !!pixelPaymentUuid,
       });
     }
-    const tiendaWa = await service.from('tiendas').select('whatsapp').eq('id', data.tiendaId).maybeSingle()
+    const tiendaWa = await service.from('tiendas').select('whatsapp, simbolo_moneda').eq('id', data.tiendaId).maybeSingle()
+    const tiendaSimb = (tiendaWa.data as { simbolo_moneda?: string } | null)?.simbolo_moneda ?? 'L'
     wsNuevoPedido({
       tiendaWhatsApp: tiendaWa.data?.whatsapp,
       tiendaNombre: checkout.tienda_nombre,
@@ -614,6 +629,7 @@ export async function crearCheckoutPublico(input: CheckoutInput): Promise<{
       compradorTelefono: data.whatsapp,
       prendaNombre: checkout.prendas_count > 1 ? `${checkout.prendas_count} prendas` : checkout.prenda_nombre,
       montoTotal: Number(checkout.monto_total),
+      simboloMoneda: tiendaSimb,
       metodoPago: metodoPagoLabelDesdeRpc(checkout),
     }).catch(() => {});
   } catch (error) {

@@ -10,7 +10,7 @@ export default async function DashboardPage() {
 
   const { data: tienda } = await supabase
     .from('tiendas')
-    .select('id, nombre, username')
+    .select('id, nombre, username, simbolo_moneda')
     .eq('user_id', user.id)
     .maybeSingle();
 
@@ -45,6 +45,7 @@ export default async function DashboardPage() {
     <DashboardPageClient
       tiendaUsername={tienda.username}
       tiendaNombre={tienda.nombre}
+      simbolo={(tienda as unknown as { simbolo_moneda: string }).simbolo_moneda ?? 'L'}
       drops={(dropsRes.data ?? []) as Parameters<typeof DashboardPageClient>[0]['drops']}
       pedidos={(pedidosRes.data ?? []) as Parameters<typeof DashboardPageClient>[0]['pedidos']}
       stats={{

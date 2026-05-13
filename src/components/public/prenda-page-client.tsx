@@ -10,6 +10,7 @@ import { Ph } from '@/components/shared/image-placeholder';
 import { PublicProductCard } from '@/components/shared/public-product-card';
 import { BuyerCheckoutAccess } from '@/components/buyer/buyer-checkout-access';
 import { EnvioPanel, PagoPanel, ConfirmadoPanel } from '@/components/checkout/checkout-panels';
+import { getTiendaConfig } from '@/lib/config/platform';
 import type { Tienda } from '@/types/tienda';
 import type { Prenda } from '@/types/prenda';
 import type { Drop } from '@/types/drop';
@@ -69,6 +70,7 @@ export function PrendaPageClient({
     channelName: drop ? `prenda-${prenda.id}` : `prenda-catalogo-${prenda.id}`,
   });
 
+  const tiendaConfig = getTiendaConfig(tienda);
   const dropAbierto = drop ? drop.estado === 'activo' : true;
   const dropProgramado = drop ? drop.estado === 'programado' : false;
   const dropTarget = drop
@@ -309,7 +311,7 @@ export function PrendaPageClient({
 
           <div className={`buyer-product-price-row flex flex-wrap my-5 ${isCompact ? 'items-start gap-x-3 gap-y-[6px]' : 'items-baseline gap-[10px]'}`}>
             <span className={`mono tnum font-semibold tracking-[-0.03em] ${isCompact ? 'text-[25px]' : 'text-[28px]'}`}>
-              L {prenda.precio.toLocaleString()}
+              {tiendaConfig.simbolo_moneda} {prenda.precio.toLocaleString()}
             </span>
             {tieneStock && (
               <span className="text-[13px] font-medium" style={{ color: drop ? (dropAbierto ? 'var(--urgent)' : '#777') : 'var(--ok)' }}>
@@ -542,6 +544,7 @@ export function PrendaPageClient({
           <div className="buyer-checkout-drawer w-[480px] bg-white h-screen overflow-y-auto shadow-[-20px_0_60px_rgba(0,0,0,0.12)] [animation:slideIn_.22s_ease]">
             {checkoutStep === 'envio' && (
               <EnvioPanel
+                tiendaId={tienda.id}
                 prenda={prenda}
                 tallaSeleccionada={tallaActiva || null}
                 nombre={nombre} email={email} whatsapp={whatsapp}
@@ -561,6 +564,9 @@ export function PrendaPageClient({
                 onBuyer={aplicarBuyer}
                 boxfulOriginCity={tienda.ciudad}
                 boxfulData={boxfulData}
+                simbolo={tiendaConfig.simbolo_moneda}
+                pais={tiendaConfig.pais}
+                codigoTelefono={tiendaConfig.codigo_telefono}
                 onBoxfulChange={setBoxfulData}
                 onContinuar={() => {
                   if (!nombre.trim()) { setErrorMsg('Ingresá tu nombre completo.'); return; }
@@ -589,6 +595,7 @@ export function PrendaPageClient({
                 errorMsg={errorMsg} loading={loadingPedido} processingMessage={processingMessage} fileRef={fileRef}
                 compradorNombre={nombre}
                 cardData={cardData}
+                simbolo={tiendaConfig.simbolo_moneda}
                 onCardChange={(field, value) => setCardData(d => ({ ...d, [field]: value }))}
                 onChange={(f, v) => { if (f === 'metodoPagoId') setMetodoPagoId(v); setErrorMsg(''); }}
                 onSubirComprobante={subirComprobante}

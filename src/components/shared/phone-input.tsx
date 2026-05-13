@@ -3,6 +3,11 @@
 import { useState } from 'react';
 import { getCountries, getCountryCallingCode, parsePhoneNumberWithError, type CountryCode } from 'libphonenumber-js';
 
+export function isoFromPhoneCode(codigoTelefono: string): CountryCode {
+  const dial = codigoTelefono.replace('+', '').trim();
+  return (getCountries().find(iso => String(getCountryCallingCode(iso)) === dial) ?? 'HN') as CountryCode;
+}
+
 const flag = (code: string) =>
   code.toUpperCase().replace(/./g, c => String.fromCodePoint(c.charCodeAt(0) + 127397));
 
@@ -24,7 +29,7 @@ function normalizeLocal(value: string, iso: CountryCode) {
   return limit ? digits.slice(0, limit) : digits;
 }
 
-function parsePhone(full: string): { prefix: string; iso: CountryCode; local: string } {
+function parsePhone(full: string, defaultCountry: CountryCode = 'HN'): { prefix: string; iso: CountryCode; local: string } {
   if (full) {
     try {
       const parsed = parsePhoneNumberWithError(full.startsWith('+') ? full : `+${full}`);
@@ -34,7 +39,8 @@ function parsePhone(full: string): { prefix: string; iso: CountryCode; local: st
       }
     } catch { /* fall through */ }
   }
-  return { prefix: '+504', iso: 'HN', local: full ?? '' };
+  const prefix = `+${getCountryCallingCode(defaultCountry)}`;
+  return { prefix, iso: defaultCountry, local: full ?? '' };
 }
 
 interface PhoneInputProps {
@@ -45,6 +51,7 @@ interface PhoneInputProps {
   inputStyle?: React.CSSProperties;
   selectStyle?: React.CSSProperties;
   size?: 'sm' | 'md' | 'lg';
+  defaultCountry?: CountryCode;
 }
 
 export function PhoneInput({
@@ -55,8 +62,9 @@ export function PhoneInput({
   inputStyle,
   selectStyle,
   size = 'md',
+  defaultCountry = 'HN',
 }: PhoneInputProps) {
-  const parsed = parsePhone(value ?? '');
+  const parsed = parsePhone(value ?? '', defaultCountry);
   const [iso, setIso] = useState<CountryCode>(parsed.iso);
   const [local, setLocal] = useState(parsed.local);
 

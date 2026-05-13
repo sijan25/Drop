@@ -817,6 +817,8 @@ export type Database = {
           pixelpay_payment_uuid: string | null
           pixelpay_response: Json
           pixelpay_transaction_id: string | null
+          simbolo_moneda: string | null
+          moneda: string | null
           tienda_id: string
           tracking_numero: string | null
           tracking_url: string | null
@@ -858,6 +860,8 @@ export type Database = {
           pixelpay_payment_uuid?: string | null
           pixelpay_response?: Json
           pixelpay_transaction_id?: string | null
+          simbolo_moneda?: string | null
+          moneda?: string | null
           tienda_id: string
           tracking_numero?: string | null
           tracking_url?: string | null
@@ -899,6 +903,8 @@ export type Database = {
           pixelpay_payment_uuid?: string | null
           pixelpay_response?: Json
           pixelpay_transaction_id?: string | null
+          simbolo_moneda?: string | null
+          moneda?: string | null
           tienda_id?: string
           tracking_numero?: string | null
           tracking_url?: string | null
@@ -1228,9 +1234,16 @@ export type Database = {
           pixelpay_key_id: string | null
           pixelpay_sandbox: boolean
           pixelpay_secret_key: string | null
+          boxful_email: string | null
+          boxful_password: string | null
+          boxful_enabled: boolean
+          codigo_telefono: string
+          moneda: string
+          pais: string
           plan: string | null
           plan_status: string | null
           plan_vence_at: string | null
+          simbolo_moneda: string
           tiktok: string | null
           tipo_negocio: string
           ubicacion: string | null
@@ -1244,6 +1257,7 @@ export type Database = {
           activa?: boolean | null
           bio?: string | null
           ciudad?: string | null
+          codigo_telefono?: string
           contact_email?: string | null
           cover_cloudinary_id?: string | null
           cover_url?: string | null
@@ -1254,19 +1268,24 @@ export type Database = {
           instagram?: string | null
           logo_cloudinary_id?: string | null
           logo_url?: string | null
+          moneda?: string
           next_order_number?: number
           nombre: string
           order_prefix: string
+          pais?: string
           paypal_plan_id?: string | null
           paypal_sub_id?: string | null
           pixelpay_enabled?: boolean
           pixelpay_endpoint?: string | null
           pixelpay_key_id?: string | null
           pixelpay_sandbox?: boolean
-          pixelpay_secret_key?: string | null
+          boxful_email?: string | null
+          boxful_password?: string | null
+          boxful_enabled?: boolean
           plan?: string | null
           plan_status?: string | null
           plan_vence_at?: string | null
+          simbolo_moneda?: string
           tiktok?: string | null
           tipo_negocio?: string
           ubicacion?: string | null
@@ -1280,6 +1299,7 @@ export type Database = {
           activa?: boolean | null
           bio?: string | null
           ciudad?: string | null
+          codigo_telefono?: string
           contact_email?: string | null
           cover_cloudinary_id?: string | null
           cover_url?: string | null
@@ -1290,19 +1310,24 @@ export type Database = {
           instagram?: string | null
           logo_cloudinary_id?: string | null
           logo_url?: string | null
+          moneda?: string
           next_order_number?: number
           nombre?: string
           order_prefix?: string
+          pais?: string
           paypal_plan_id?: string | null
           paypal_sub_id?: string | null
           pixelpay_enabled?: boolean
           pixelpay_endpoint?: string | null
           pixelpay_key_id?: string | null
           pixelpay_sandbox?: boolean
-          pixelpay_secret_key?: string | null
+          boxful_email?: string | null
+          boxful_password?: string | null
+          boxful_enabled?: boolean
           plan?: string | null
           plan_status?: string | null
           plan_vence_at?: string | null
+          simbolo_moneda?: string
           tiktok?: string | null
           tipo_negocio?: string
           ubicacion?: string | null

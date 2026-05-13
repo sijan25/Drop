@@ -13,6 +13,7 @@ import { useCountdown, pad } from '@/hooks/use-countdown';
 import { useDropViewerCount } from '@/hooks/use-drop-viewer-count';
 import { useCarrito } from '@/hooks/use-carrito';
 import { getAvailableProductSizes, getProductTotalQuantity } from '@/lib/product-sizes';
+import { getTiendaConfig } from '@/lib/config/platform';
 import type { Tienda } from '@/types/tienda';
 import type { Prenda } from '@/types/prenda';
 import type { Drop } from '@/types/drop';
@@ -58,6 +59,7 @@ export function DropPageClient({
   actividad: Actividad[]; anotadasCount: number;
 }) {
   const router = useRouter();
+  const tiendaConfig = getTiendaConfig(tienda);
   const [prendas, setPrendas] = useState<Prenda[]>(prendasInit);
   const [actividadLive, setActividadLive] = useState<Actividad[]>(actividadInit);
   const [dropEstado, setDropEstado] = useState(drop.estado);
@@ -321,6 +323,7 @@ export function DropPageClient({
                       showActions={esActivo}
                       cartActive={!tieneVariantes && enCarrito}
                       cartTitle={tieneVariantes ? 'Elegir talla' : enCarrito ? 'Ver carrito' : 'Añadir al carrito'}
+                      simbolo={tiendaConfig.simbolo_moneda}
                       onOpen={openCard}
                       onBuy={() => router.push(href)}
                       onCart={() => {

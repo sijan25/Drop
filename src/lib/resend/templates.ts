@@ -1,5 +1,5 @@
 /** Templates HTML para los emails de Droppi */
-import { formatCurrency } from '@/lib/config/platform'
+import { formatCurrencyTienda } from '@/lib/config/platform'
 
 const BASE_STYLE = `
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
@@ -88,6 +88,7 @@ export function emailPedidoConfirmado(opts: {
   prendaMarca?: string | null
   prendaTalla?: string | null
   montoTotal: number
+  simboloMoneda?: string | null
   tiendaNombre: string
   tiendaUsername: string
   metodoPago: string
@@ -124,7 +125,7 @@ export function emailPedidoConfirmado(opts: {
 
     <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:24px;">
       ${infoRow('Prenda', `${opts.prendaNombre}${opts.prendaMarca ? ` · ${opts.prendaMarca}` : ''}${opts.prendaTalla ? ` · Talla ${opts.prendaTalla}` : ''}`)}
-      ${infoRow('Total', formatCurrency(opts.montoTotal))}
+      ${infoRow('Total', formatCurrencyTienda(opts.montoTotal, opts.simboloMoneda ?? 'L'))}
       ${infoRow('Método de pago', opts.metodoPago)}
       ${infoRow('Envío', opts.metodoEnvio)}
       ${opts.direccion ? infoRow('Dirección', opts.direccion) : ''}
@@ -179,6 +180,7 @@ export function emailNuevoPedidoVendedor(opts: {
   compradorEmail?: string | null
   prendaNombre: string
   montoTotal: number
+  simboloMoneda?: string | null
   metodoPago: string
   metodoEnvio: string
   direccion?: string | null
@@ -203,7 +205,7 @@ export function emailNuevoPedidoVendedor(opts: {
 
     <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:24px;">
       ${infoRow('Prenda', opts.prendaNombre)}
-      ${infoRow('Total', formatCurrency(opts.montoTotal))}
+      ${infoRow('Total', formatCurrencyTienda(opts.montoTotal, opts.simboloMoneda ?? 'L'))}
       ${infoRow('Comprador', opts.compradorNombre)}
       ${infoRow('WhatsApp', opts.compradorTelefono)}
       ${opts.compradorEmail ? infoRow('Email', opts.compradorEmail) : ''}
@@ -241,6 +243,7 @@ export function emailPagoConfirmado(opts: {
   numeroPedido: string
   prendaNombre: string
   montoTotal: number
+  simboloMoneda?: string | null
   tiendaNombre: string
   metodoEnvio: string
   direccion?: string | null
@@ -263,7 +266,7 @@ export function emailPagoConfirmado(opts: {
 
     <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:24px;">
       ${infoRow('Prenda', opts.prendaNombre)}
-      ${infoRow('Total pagado', formatCurrency(opts.montoTotal))}
+      ${infoRow('Total pagado', formatCurrencyTienda(opts.montoTotal, opts.simboloMoneda ?? 'L'))}
       ${infoRow('Envío', opts.metodoEnvio)}
       ${opts.direccion ? infoRow('Dirección', opts.direccion) : ''}
     </table>

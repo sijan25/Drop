@@ -4,6 +4,7 @@ import {
   HONDURAS_STATE_NAMES,
   HONDURAS_STATES_FALLBACK,
 } from './honduras-states';
+import { decryptBoxfulPassword } from './security';
 import type {
   BoxfulCreateShipmentInput,
   BoxfulQuote,
@@ -12,8 +13,13 @@ import type {
   BoxfulState,
 } from './types';
 
-const BOXFUL_API_URL = process.env.BOXFUL_API_URL ?? 'https://api.goboxful.com';
-const BOXFUL_BASE_URL = process.env.BOXFUL_BASE_URL ?? BOXFUL_API_URL;
+function getBoxfulBaseUrl() {
+  const baseUrl = process.env.BOXFUL_BASE_URL?.trim();
+  if (!baseUrl) {
+    throw new Error('BOXFUL_BASE_URL no está configurada.');
+  }
+  return baseUrl.replace(/\/+$/, '');
+}
 
 type BoxfulStateApi = {
   id: string;
@@ -76,76 +82,103 @@ function normalizeText(value: string) {
     .trim();
 }
 
-function hasBoxfulCredentials() {
+export type BoxfulCredentials = {
+  email: string;
+  password: string;
+};
+
+function resolveCredentials(creds?: BoxfulCredentials | null): BoxfulCredentials | null {
+  if (creds?.email && creds?.password) {
+    const password = decryptBoxfulPassword(creds.password);
+    return password ? { email: creds.email, password } : null;
+  }
+  const email = process.env.BOXFUL_EMAIL?.trim();
+  const password = process.env.BOXFUL_PASSWORD?.trim();
+  if (email && password) return { email, password };
+  return null;
+}
+
+function hasBoxfulCredentials(creds?: BoxfulCredentials | null) {
   return Boolean(
-    process.env.BOXFUL_API_TOKEN?.trim()
-    || (process.env.BOXFUL_EMAIL?.trim() && process.env.BOXFUL_PASSWORD?.trim())
+    process.env.BOXFUL_API_TOKEN?.trim() || resolveCredentials(creds)
   );
 }
 
-let cachedAuthToken: { token: string; expiresAt: number } | null = null;
+const tokenCache = new Map<string, { token: string; expiresAt: number }>();
 
-async function getBoxfulAccessToken(forceRefresh = false) {
+async function getBoxfulAccessToken(creds?: BoxfulCredentials | null, forceRefresh = false) {
   const staticToken = process.env.BOXFUL_API_TOKEN?.trim();
-  const email = process.env.BOXFUL_EMAIL?.trim();
-  const password = process.env.BOXFUL_PASSWORD?.trim();
+  const resolved = resolveCredentials(creds);
 
-  if (!email || !password) return staticToken || null;
-  if (!forceRefresh && cachedAuthToken && cachedAuthToken.expiresAt > Date.now()) {
-    return cachedAuthToken.token;
+  if (!resolved) return staticToken || null;
+
+  const cacheKey = resolved.email;
+  const cached = tokenCache.get(cacheKey);
+  if (!forceRefresh && cached && cached.expiresAt > Date.now()) return cached.token;
+
+  const baseUrl = getBoxfulBaseUrl();
+  let response: Response;
+  try {
+    response = await fetch(`${baseUrl}/auth/client`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: resolved.email, password: resolved.password }),
+      cache: 'no-store',
+    });
+  } catch {
+    throw new Error(`No se pudo conectar con Boxful (${baseUrl}). Revisá BOXFUL_BASE_URL o confirmá que el ambiente esté disponible.`);
   }
 
-  const response = await fetch(`${BOXFUL_BASE_URL}/auth/client`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ email, password }),
-    cache: 'no-store',
-  });
-
-  if (!response.ok) {
-    throw new Error(`Boxful auth respondió ${response.status}.`);
-  }
+  if (!response.ok) throw new Error(`Boxful auth respondió ${response.status}.`);
 
   const payload = await response.json() as BoxfulAuthResponse;
   const token = payload.accessToken ?? payload.token;
   if (!token) throw new Error('Boxful no devolvió accessToken.');
 
-  cachedAuthToken = {
-    token,
-    expiresAt: Date.now() + 45 * 60 * 1000,
-  };
-
+  tokenCache.set(cacheKey, { token, expiresAt: Date.now() + 45 * 60 * 1000 });
   return token;
 }
 
-async function boxfulRequest<T>(path: string, init?: RequestInit, retryAuth = true): Promise<T | null> {
-  const token = await getBoxfulAccessToken();
+async function boxfulRequest<T>(path: string, init?: RequestInit, retryAuth = true, creds?: BoxfulCredentials | null): Promise<T | null> {
+  const token = await getBoxfulAccessToken(creds);
   if (!token) return null;
 
-  const response = await fetch(`${BOXFUL_BASE_URL}${path}`, {
-    ...init,
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${token}`,
-      ...(init?.headers ?? {}),
-    },
-    cache: 'no-store',
-  });
-
-  if (response.status === 401 && retryAuth) {
-    cachedAuthToken = null;
-    const freshToken = await getBoxfulAccessToken(true);
-    if (!freshToken) return null;
-
-    const retryResponse = await fetch(`${BOXFUL_BASE_URL}${path}`, {
+  const baseUrl = getBoxfulBaseUrl();
+  let response: Response;
+  try {
+    response = await fetch(`${baseUrl}${path}`, {
       ...init,
       headers: {
         'Content-Type': 'application/json',
-        Authorization: `Bearer ${freshToken}`,
+        Authorization: `Bearer ${token}`,
         ...(init?.headers ?? {}),
       },
       cache: 'no-store',
     });
+  } catch {
+    throw new Error(`No se pudo conectar con Boxful (${baseUrl}). Revisá BOXFUL_BASE_URL o confirmá que el ambiente esté disponible.`);
+  }
+
+  if (response.status === 401 && retryAuth) {
+    const resolved = resolveCredentials(creds);
+    if (resolved) tokenCache.delete(resolved.email);
+    const freshToken = await getBoxfulAccessToken(creds, true);
+    if (!freshToken) return null;
+
+    let retryResponse: Response;
+    try {
+      retryResponse = await fetch(`${baseUrl}${path}`, {
+        ...init,
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${freshToken}`,
+          ...(init?.headers ?? {}),
+        },
+        cache: 'no-store',
+      });
+    } catch {
+      throw new Error(`No se pudo conectar con Boxful (${baseUrl}). Revisá BOXFUL_BASE_URL o confirmá que el ambiente esté disponible.`);
+    }
 
     if (!retryResponse.ok) {
       throw new Error(`Boxful respondió ${retryResponse.status}.`);
@@ -180,21 +213,24 @@ function onlyHondurasStates(states: BoxfulStateApi[]): BoxfulState[] {
     .sort((a, b) => a.name.localeCompare(b.name, 'es'));
 }
 
-export async function getBoxfulStates(): Promise<{ states: BoxfulState[]; source: 'boxful' | 'local_estimate' }> {
-  if (!hasBoxfulCredentials()) {
+export async function getBoxfulStates(creds?: BoxfulCredentials | null): Promise<{ states: BoxfulState[]; source: 'boxful' | 'local_estimate' }> {
+  if (!hasBoxfulCredentials(creds)) {
     return { states: HONDURAS_STATES_FALLBACK, source: 'local_estimate' };
   }
 
   try {
-    const response = await boxfulRequest<BoxfulStatesResponse>('/states');
+    const response = await boxfulRequest<BoxfulStatesResponse>('/states', undefined, true, creds);
     const states = onlyHondurasStates(response?.states ?? []);
+    if (states.length === 0) {
+      throw new Error('Boxful no devolvió departamentos/ciudades de Honduras.');
+    }
     return {
-      states: states.length > 0 ? states : HONDURAS_STATES_FALLBACK,
-      source: states.length > 0 ? 'boxful' : 'local_estimate',
+      states,
+      source: 'boxful',
     };
   } catch (error) {
     console.error('[boxful] Error cargando estados:', error);
-    return { states: HONDURAS_STATES_FALLBACK, source: 'local_estimate' };
+    throw error;
   }
 }
 
@@ -246,10 +282,10 @@ function quoteFromCourier(
 
 let _cachedAddresses: BoxfulAddressApi[] | null = null;
 
-async function getBoxfulAddresses(): Promise<BoxfulAddressApi[]> {
+async function getBoxfulAddresses(creds?: BoxfulCredentials | null): Promise<BoxfulAddressApi[]> {
   if (_cachedAddresses) return _cachedAddresses;
   try {
-    const response = await boxfulRequest<BoxfulAddressesResponse>('/addresses');
+    const response = await boxfulRequest<BoxfulAddressesResponse>('/addresses', undefined, true, creds);
     _cachedAddresses = response?.addresses ?? [];
     return _cachedAddresses;
   } catch {
@@ -257,13 +293,13 @@ async function getBoxfulAddresses(): Promise<BoxfulAddressApi[]> {
   }
 }
 
-async function findOriginCityId(originCityName: string | null | undefined, states: BoxfulState[]): Promise<string | null> {
+async function findOriginCityId(originCityName: string | null | undefined, states: BoxfulState[], creds?: BoxfulCredentials | null): Promise<string | null> {
   const normalized = normalizeText(originCityName || '');
   if (!normalized) return null;
 
   // Try matching against registered Boxful addresses first (exact city IDs)
   try {
-    const addresses = await getBoxfulAddresses();
+    const addresses = await getBoxfulAddresses(creds);
     if (addresses.length > 0) {
       // Build city lookup from states to match address cityIds to names
       const cityIdToName = new Map<string, string>();
@@ -307,15 +343,17 @@ function findLocationByNames(states: BoxfulState[], stateName?: string | null, c
   return null;
 }
 
-export async function quoteBoxfulOptions(input: BoxfulQuoteRequest): Promise<BoxfulQuote[]> {
-  if (!hasBoxfulCredentials() || !input.destinationCityId) {
+export async function quoteBoxfulOptions(input: BoxfulQuoteRequest, creds?: BoxfulCredentials | null): Promise<BoxfulQuote[]> {
+  if (!hasBoxfulCredentials(creds) || !input.destinationCityId) {
     return [estimateLocalQuote(input)];
   }
 
   try {
-    const { states } = await getBoxfulStates();
-    const originCityId = await findOriginCityId(input.originCityName, states);
-    if (!originCityId) return [estimateLocalQuote(input)];
+    const { states } = await getBoxfulStates(creds);
+    const originCityId = await findOriginCityId(input.originCityName, states, creds);
+    if (!originCityId) {
+      throw new Error('Boxful no encontró la ciudad de origen de la tienda.');
+    }
 
     const response = await boxfulRequest<BoxfulQuoterResponse>('/quoter', {
       method: 'POST',
@@ -323,48 +361,47 @@ export async function quoteBoxfulOptions(input: BoxfulQuoteRequest): Promise<Box
         recollectionCityId: originCityId,
         customerCityId: input.destinationCityId,
       }),
-    });
+    }, true, creds);
 
     const couriers = response?.couriers
       ?.map(item => ({ ...item, numericPrice: Number(item.clientPrice ?? item.price ?? 0) }))
       .filter(item => item.numericPrice > 0)
       .sort((a, b) => a.numericPrice - b.numericPrice) ?? [];
 
-    if (couriers.length === 0) return [estimateLocalQuote(input)];
+    if (couriers.length === 0) {
+      throw new Error('Boxful no devolvió couriers para esta ruta.');
+    }
 
     return couriers.map(courier => quoteFromCourier(input, courier));
   } catch (error) {
     console.error('[boxful] Error cotizando:', error);
-    return [estimateLocalQuote(input)];
+    throw error;
   }
 }
 
-export async function quoteBoxful(input: BoxfulQuoteRequest): Promise<BoxfulQuote> {
-  const quotes = await quoteBoxfulOptions(input);
+export async function quoteBoxful(input: BoxfulQuoteRequest, creds?: BoxfulCredentials | null): Promise<BoxfulQuote> {
+  const quotes = await quoteBoxfulOptions(input, creds);
   if (!input.preferredCourierId) return quotes[0];
   return quotes.find(quote => quote.courierId === input.preferredCourierId) ?? quotes[0];
 }
 
-export async function createBoxfulShipment(input: BoxfulCreateShipmentInput): Promise<BoxfulShipmentResult> {
-  if (!hasBoxfulCredentials() || !input.courierId || !input.customerStateId || !input.customerCityId) {
-    const shipmentNumber = `LOCAL-${input.orderNumber}`;
-    return {
-      shipmentId: null,
-      shipmentNumber,
-      trackingUrl: null,
-      labelUrl: null,
-      courierName: input.courierName ?? 'Boxful',
-      statusDescription: input.mode === 'boxful_dropoff'
-        ? 'Pendiente de entrega en punto autorizado'
-        : 'Pendiente de recolección',
-      source: 'local_estimate',
-    };
+export async function createBoxfulShipment(input: BoxfulCreateShipmentInput, creds?: BoxfulCredentials | null): Promise<BoxfulShipmentResult> {
+  if (!hasBoxfulCredentials(creds)) {
+    throw new Error('Boxful no está configurado para esta tienda.');
+  }
+  if (!input.courierId) {
+    throw new Error('La cotización no tiene courierId real de Boxful.');
+  }
+  if (!input.customerStateId || !input.customerCityId) {
+    throw new Error('La dirección de entrega no tiene IDs reales de Boxful.');
   }
 
-  const { states } = await getBoxfulStates();
+  const { states } = await getBoxfulStates(creds);
   const originLocation = findLocationByNames(states, input.originStateName, input.originCityName);
   const originAddress = input.originAddress?.trim();
-  const originPhone = input.originPhone?.replace(/\D/g, '').replace(/^504/, '') || input.customerPhone.replace(/\D/g, '').replace(/^504/, '');
+  const areaCode = input.phoneAreaCode ?? '+504';
+  const dialCode = areaCode.replace('+', '');
+  const originPhone = input.originPhone?.replace(/\D/g, '').replace(new RegExp(`^${dialCode}`), '') || input.customerPhone.replace(/\D/g, '').replace(new RegExp(`^${dialCode}`), '');
 
   if (!originLocation || !originAddress) {
     throw new Error('Configurá departamento, ciudad y dirección de retiro de la tienda antes de crear la guía de Boxful.');
@@ -380,7 +417,7 @@ export async function createBoxfulShipment(input: BoxfulCreateShipmentInput): Pr
       longitude: originLocation.city.longitude ?? 0,
       stateId: originLocation.state.id,
       cityId: originLocation.city.id,
-      areaCode: '+504',
+      areaCode: areaCode,
       phone: originPhone,
     },
     parcels: input.parcels.map(parcel => ({
@@ -396,8 +433,8 @@ export async function createBoxfulShipment(input: BoxfulCreateShipmentInput): Pr
     codAmount: 0,
     customerName: input.customerName,
     customerLastname: 'Cliente',
-    customerPhone: input.customerPhone.replace(/\D/g, '').replace(/^504/, ''),
-    customerPhoneAreaCode: '+504',
+    customerPhone: input.customerPhone.replace(/\D/g, '').replace(new RegExp(`^${dialCode}`), ''),
+    customerPhoneAreaCode: areaCode,
     customerEmail: input.customerEmail || 'cliente@droppi.local',
     customerAddress: input.customerAddress,
     customerState: input.customerStateId,
@@ -411,7 +448,7 @@ export async function createBoxfulShipment(input: BoxfulCreateShipmentInput): Pr
   const response = await boxfulRequest<BoxfulShipmentResponse>('/shipment', {
     method: 'POST',
     body: JSON.stringify(shipmentPayload),
-  });
+  }, true, creds);
 
   const shipment = response?.shipmentData;
   if (!shipment?.shipmentNumber) {

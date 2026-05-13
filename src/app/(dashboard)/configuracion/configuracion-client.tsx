@@ -7,8 +7,9 @@ import { Icons } from '@/components/shared/icons';
 import { PhoneInput } from '@/components/shared/phone-input';
 import { uploadImage } from '@/lib/cloudinary/client';
 import type { CatalogOptionTipo } from '@/lib/catalog-options';
+import { getCountryDataList, getEmojiFlag } from 'countries-list';
 import { USERNAME_CHANGE_LIMIT, normalizeStoreUsername } from '@/lib/stores/username';
-import { PLATFORM, formatCurrencyFree } from '@/lib/config/platform';
+import { formatCurrencyFree } from '@/lib/config/platform';
 import type { Tienda } from '@/types/tienda';
 import type { MetodoPago, MetodoEnvio } from '@/types/envio';
 import type { OpcionCatalogo } from '@/types/catalog';
@@ -26,9 +27,32 @@ import {
   eliminarOpcionCatalogo,
   resetearCatalogo,
   guardarPixelPayCredenciales,
+  guardarBoxfulCredenciales,
 } from './actions';
 
 type OpcionTipo = CatalogOptionTipo;
+
+function getCurrencySymbol(code: string) {
+  try {
+    const parts = new Intl.NumberFormat('es', { style: 'currency', currency: code, currencyDisplay: 'narrowSymbol' }).formatToParts(0);
+    return parts.find(p => p.type === 'currency')?.value ?? code;
+  } catch { return code; }
+}
+
+const PAISES_CONFIG = getCountryDataList()
+  .filter(c => c.currency?.length && c.phone?.length)
+  .map(c => ({
+    pais: c.name,
+    moneda: c.currency[0],
+    simbolo: getCurrencySymbol(c.currency[0]),
+    telefono: `+${c.phone[0]}`,
+    bandera: getEmojiFlag(c.iso2 as Parameters<typeof getEmojiFlag>[0]),
+  }))
+  .sort((a, b) => a.pais.localeCompare(b.pais, 'es'));
+
+const MONEDAS_CONFIG = Array.from(
+  new Map(PAISES_CONFIG.map(p => [p.moneda, { moneda: p.moneda, simbolo: p.simbolo }])).values()
+).sort((a, b) => a.moneda.localeCompare(b.moneda));
 
 function sameOptionName(a: string, b: string) {
   return a.trim().toLowerCase() === b.trim().toLowerCase();
@@ -62,14 +86,61 @@ function FeedbackModal({
             className="w-[38px] h-[38px] rounded-[10px] flex items-center justify-center shrink-0"
             style={{ background: ok ? '#ecfdf5' : '#fef2f2', color: ok ? '#047857' : '#dc2626' }}
           >
-            {ok ? <Icons.check width={18} height={18}/> : <Icons.close width={18} height={18}/>}
+            {ok ? <Icons.check width={18} height={18} /> : <Icons.close width={18} height={18} />}
           </div>
           <div className="flex-1 min-w-0">
             <div className="text-[16px] font-bold">{title}</div>
             <div className="t-mute text-[13px] mt-[4px]">{message}</div>
           </div>
           <button type="button" onClick={onClose} className="btn-ghost w-[28px] h-[28px] p-0 flex items-center justify-center">
-            <Icons.close width={15} height={15}/>
+            <Icons.close width={15} height={15} />
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function ConfirmDeleteModal({
+  nombre,
+  tipo,
+  onConfirm,
+  onCancel,
+}: {
+  nombre: string;
+  tipo: string;
+  onConfirm: () => void;
+  onCancel: () => void;
+}) {
+  return (
+    <div
+      role="dialog"
+      aria-modal="true"
+      onClick={onCancel}
+      className="fixed inset-0 bg-[rgba(15,20,25,0.32)] flex items-center justify-center z-[520] p-[18px]"
+    >
+      <div onClick={e => e.stopPropagation()} className="w-[min(400px,100%)] bg-white rounded-[16px] shadow-[0_24px_70px_rgba(0,0,0,0.22)] p-[24px]">
+        <div className="w-[40px] h-[40px] rounded-[10px] bg-red-50 flex items-center justify-center mb-[14px]">
+          <Icons.trash width={18} height={18} className="text-red-500" />
+        </div>
+        <div className="text-[16px] font-bold mb-[6px]">
+          ¿Eliminar {tipo === 'categoria' ? 'categoría' : 'talla'}?
+        </div>
+        <div className="text-[13px] text-[var(--ink-3)] mb-[20px] leading-[1.5]">
+          Estás por eliminar <span className="font-semibold text-[var(--ink)]">{nombre}</span>. Esta acción no se puede deshacer.
+        </div>
+        <div className="flex gap-[10px]">
+          <button
+            onClick={onConfirm}
+            className="flex-1 h-[40px] rounded-[10px] bg-red-500 text-white text-[13px] font-semibold cursor-pointer"
+          >
+            Sí, eliminar
+          </button>
+          <button
+            onClick={onCancel}
+            className="flex-1 h-[40px] rounded-[10px] border border-[var(--line)] text-[var(--ink)] text-[13px] font-medium cursor-pointer bg-white"
+          >
+            Cancelar
           </button>
         </div>
       </div>
@@ -98,37 +169,37 @@ function EnvioModal({ m, onClose, onSave }: {
       <div className="settings-modal-panel w-[520px] bg-white rounded-[16px] flex flex-col shadow-[0_30px_80px_rgba(0,0,0,0.2)]" onClick={e => e.stopPropagation()}>
         <div className="px-[22px] py-[18px] border-b border-[var(--line)] flex items-center justify-between">
           <div className="text-[16px] font-semibold">{m?.id ? 'Editar método de envío' : 'Nuevo método de envío'}</div>
-          <button onClick={onClose} className="text-[var(--ink-3)]"><Icons.close width={16} height={16}/></button>
+          <button onClick={onClose} className="text-[var(--ink-3)]"><Icons.close width={16} height={16} /></button>
         </div>
         <div className="p-[22px] grid gap-[14px]">
           <div className="settings-modal-grid-2 grid grid-cols-[2fr_1fr] gap-[12px]">
             <div>
               <label className="label">Nombre público</label>
-              <input className="input" value={form.nombre} onChange={e => change('nombre', e.target.value)} placeholder={`Envío a todo ${PLATFORM.country}`}/>
+              <input className="input" value={form.nombre} onChange={e => change('nombre', e.target.value)} placeholder="Envío a todo el país" />
             </div>
             <div>
               <label className="label">Precio (L)</label>
-              <input className="input mono tnum" type="number" min={0} value={form.precio} onChange={e => change('precio', Number(e.target.value))}/>
+              <input className="input mono tnum" type="number" min={0} value={form.precio} onChange={e => change('precio', Number(e.target.value))} />
             </div>
           </div>
           <div className="settings-modal-grid-2 grid grid-cols-2 gap-[12px]">
             <div>
               <label className="label">Empresa / Proveedor</label>
-              <input className="input" value={form.proveedor} onChange={e => change('proveedor', e.target.value)} placeholder="C807 Xpress"/>
+              <input className="input" value={form.proveedor} onChange={e => change('proveedor', e.target.value)} placeholder="C807 Xpress" />
             </div>
             <div>
               <label className="label">Tiempo estimado</label>
-              <input className="input" value={form.tiempo_estimado} onChange={e => change('tiempo_estimado', e.target.value)} placeholder="3 días laborales"/>
+              <input className="input" value={form.tiempo_estimado} onChange={e => change('tiempo_estimado', e.target.value)} placeholder="3 días laborales" />
             </div>
           </div>
           <div className="settings-modal-grid-2 grid grid-cols-2 gap-[12px]">
             <div>
               <label className="label">Zona de cobertura</label>
-              <input className="input" value={form.cobertura} onChange={e => change('cobertura', e.target.value)} placeholder="Todos los departamentos"/>
+              <input className="input" value={form.cobertura} onChange={e => change('cobertura', e.target.value)} placeholder="Todos los departamentos" />
             </div>
             <div>
               <label className="label">URL de rastreo</label>
-              <input className="input" value={form.tracking_url} onChange={e => change('tracking_url', e.target.value)} placeholder="https://proveedor.com/track?id="/>
+              <input className="input" value={form.tracking_url} onChange={e => change('tracking_url', e.target.value)} placeholder="https://proveedor.com/track?id=" />
             </div>
           </div>
         </div>
@@ -153,7 +224,7 @@ function AgregarMetodoPagoModal({ onClose, onSave }: {
       <div className="settings-modal-panel w-[480px] bg-white rounded-[16px] flex flex-col shadow-[0_30px_80px_rgba(0,0,0,0.2)]" onClick={e => e.stopPropagation()}>
         <div className="px-[22px] py-[18px] border-b border-[var(--line)] flex items-center justify-between">
           <div className="text-[16px] font-semibold">Agregar método de pago</div>
-          <button onClick={onClose} className="text-[var(--ink-3)]"><Icons.close width={16} height={16}/></button>
+          <button onClick={onClose} className="text-[var(--ink-3)]"><Icons.close width={16} height={16} /></button>
         </div>
         <div className="p-[22px] grid gap-[14px]">
           <div>
@@ -172,9 +243,9 @@ function AgregarMetodoPagoModal({ onClose, onSave }: {
             </div>
           ) : (
             <>
-              <div><label className="label">Nombre público</label><input className="input" value={form.nombre} onChange={e => change('nombre', e.target.value)} placeholder="Banco Ficohsa"/></div>
-              <div><label className="label">Proveedor / Banco</label><input className="input" value={form.proveedor} onChange={e => change('proveedor', e.target.value)} placeholder="ficohsa"/></div>
-              <div><label className="label">Número de cuenta · Titular</label><input className="input" value={form.detalle} onChange={e => change('detalle', e.target.value)} placeholder="123-456-7890 · María López"/></div>
+              <div><label className="label">Nombre público</label><input className="input" value={form.nombre} onChange={e => change('nombre', e.target.value)} placeholder="Banco Ficohsa" /></div>
+              <div><label className="label">Proveedor / Banco</label><input className="input" value={form.proveedor} onChange={e => change('proveedor', e.target.value)} placeholder="ficohsa" /></div>
+              <div><label className="label">Número de cuenta · Titular</label><input className="input" value={form.detalle} onChange={e => change('detalle', e.target.value)} placeholder="123-456-7890 · María López" /></div>
             </>
           )}
         </div>
@@ -239,7 +310,7 @@ function CatalogOptionsCard({
     <div className="settings-catalog-card border border-[var(--line)] rounded-[12px] overflow-hidden bg-white">
       <div className="p-[16px] border-b border-[var(--line)] flex gap-[12px] items-start">
         <div className="w-[34px] h-[34px] rounded-[8px] bg-[var(--surface-2)] flex items-center justify-center shrink-0">
-          {tipo === 'categoria' ? <Icons.grid width={15} height={15}/> : <Icons.box width={15} height={15}/>}
+          {tipo === 'categoria' ? <Icons.grid width={15} height={15} /> : <Icons.box width={15} height={15} />}
         </div>
         <div className="flex-1 min-w-0">
           <div className="text-[14px] font-semibold">{title}</div>
@@ -258,7 +329,7 @@ function CatalogOptionsCard({
               style={{ height: 38, borderColor: inputError ? 'var(--urgent)' : undefined }}
             />
             <button className="btn btn-primary btn-sm h-[38px] shrink-0" disabled={pending || !nombre.trim()}>
-              <Icons.plus width={13} height={13}/> Agregar
+              <Icons.plus width={13} height={13} /> Agregar
             </button>
           </div>
           {inputError && <div className="text-[11px] text-[var(--urgent)]">{inputError}</div>}
@@ -299,10 +370,10 @@ function CatalogOptionsCard({
                     className="w-[32px] h-[18px] rounded-[10px] relative shrink-0 cursor-pointer border-none"
                     style={{ background: option.activo ? 'var(--ink)' : 'var(--line)' }}
                   >
-                    <div className="absolute top-[2px] w-[14px] h-[14px] rounded-[7px] bg-white transition-[left] duration-150" style={{ left: option.activo ? 16 : 2 }}/>
+                    <div className="absolute top-[2px] w-[14px] h-[14px] rounded-[7px] bg-white transition-[left] duration-150" style={{ left: option.activo ? 16 : 2 }} />
                   </button>
                   <button type="button" onClick={() => onDelete(option.id)} className="btn-ghost p-[4px]">
-                    <Icons.trash width={14} height={14} className="text-[var(--ink-3)]"/>
+                    <Icons.trash width={14} height={14} className="text-[var(--ink-3)]" />
                   </button>
                 </div>
               ))}
@@ -346,9 +417,15 @@ export function ConfiguracionClient({
     keyId: tienda.pixelpay_key_id ?? '',
     secretKey: '',
   });
+  const [boxfulForm, setBoxfulForm] = useState({
+    enabled: tienda.boxful_enabled ?? false,
+    email: tienda.boxful_email ?? '',
+    password: '',
+  });
   const [isPending, startTransition] = useTransition();
   const [toast, setToast] = useState<{ msg: string; ok: boolean } | null>(null);
   const [notice, setNotice] = useState<{ title: string; message: string; ok: boolean } | null>(null);
+  const [confirmDeleteOpcion, setConfirmDeleteOpcion] = useState<{ id: string; nombre: string; tipo: OpcionTipo } | null>(null);
 
   const showToast = (msg: string, ok = true) => {
     setToast({ msg, ok });
@@ -377,13 +454,17 @@ export function ConfiguracionClient({
     departamento: tienda.departamento ?? '',
     contact_email: tienda.contact_email ?? ownerEmail,
     whatsapp: (tienda as { whatsapp?: string | null }).whatsapp ?? '',
+    pais: tienda.pais ?? 'Honduras',
+    moneda: tienda.moneda ?? 'HNL',
+    simbolo_moneda: tienda.simbolo_moneda ?? 'L',
+    codigo_telefono: tienda.codigo_telefono ?? '+504',
   });
 
   const [boxfulStates, setBoxfulStates] = useState<Array<{ id: string; name: string; cities: Array<{ id: string; name: string }> }>>([]);
   useEffect(() => {
     fetch('/api/boxful/states').then(r => r.json()).then(data => {
       setBoxfulStates(data.states ?? []);
-    }).catch(() => {});
+    }).catch(() => { });
   }, []);
   const usernamePreview = normalizeStoreUsername(infoForm.username);
   const usernameChanged = usernamePreview !== normalizeStoreUsername(tienda.username);
@@ -470,6 +551,14 @@ export function ConfiguracionClient({
     });
   };
 
+  const handleGuardarBoxful = () => {
+    startTransition(async () => {
+      const res = await guardarBoxfulCredenciales(boxfulForm);
+      if (!res.error) showToast('Configuración de Boxful guardada');
+      else showToast(res.error, false);
+    });
+  };
+
   // ── Handlers envío ──
   const handleGuardarEnvio = (data: { nombre: string; proveedor: string; precio: number; tiempo_estimado: string; cobertura: string; tracking_url: string }) => {
     const id = editingEnvio?.id;
@@ -533,11 +622,19 @@ export function ConfiguracionClient({
 
   const handleEliminarOpcion = (id: string) => {
     const actual = opcionesCatalogo.find(item => item.id === id);
+    if (!actual) return;
+    setConfirmDeleteOpcion({ id, nombre: actual.nombre, tipo: actual.tipo as OpcionTipo });
+  };
+
+  const doEliminarOpcion = () => {
+    if (!confirmDeleteOpcion) return;
+    const { id } = confirmDeleteOpcion;
+    const actual = opcionesCatalogo.find(item => item.id === id);
+    setConfirmDeleteOpcion(null);
     setOpcionesCatalogo(items => items.filter(item => item.id !== id));
     startTransition(async () => {
       const res = await eliminarOpcionCatalogo(id);
-      if (!res.error) showNotice('Opción eliminada', `${actual?.nombre ?? 'La opción'} se eliminó correctamente.`);
-      else {
+      if (res.error) {
         if (actual) setOpcionesCatalogo(items => sortOptions([...items, actual]));
         showNotice('No se pudo eliminar', res.error, false);
       }
@@ -613,7 +710,7 @@ export function ConfiguracionClient({
                 </div>
 
                 <div className="settings-form-grid" style={{ display: 'grid', gridTemplateColumns: isCompact ? '1fr' : '1fr 1fr', gap: 14 }}>
-                  <div><label className="label">Nombre de tienda</label><input className="input" value={infoForm.nombre} onChange={e => setInfoForm(f => ({ ...f, nombre: e.target.value }))}/></div>
+                  <div><label className="label">Nombre de tienda</label><input className="input" value={infoForm.nombre} onChange={e => setInfoForm(f => ({ ...f, nombre: e.target.value }))} /></div>
                   <div>
                     <label className="label">Link público</label>
                     <input
@@ -644,7 +741,7 @@ export function ConfiguracionClient({
                   </div>
                   <div style={{ gridColumn: isCompact ? 'auto' : 'span 2' }}>
                     <label className="label flex items-center gap-[6px]">
-                      <Icons.whatsapp width={13} height={13}/> WhatsApp de la tienda
+                      WhatsApp de la tienda
                     </label>
                     <PhoneInput
                       value={infoForm.whatsapp}
@@ -652,7 +749,7 @@ export function ConfiguracionClient({
                     />
                     <div className="help">Número donde recibirás el aviso de nuevos pedidos por WhatsApp.</div>
                   </div>
-                  <div style={{ gridColumn: isCompact ? 'auto' : 'span 2' }}><label className="label">Bio</label><textarea className="input h-[72px] p-[10px] resize-none" value={infoForm.bio} onChange={e => setInfoForm(f => ({ ...f, bio: e.target.value }))}/></div>
+                  <div style={{ gridColumn: isCompact ? 'auto' : 'span 2' }}><label className="label">Bio</label><textarea className="input h-[72px] p-[10px] resize-none" value={infoForm.bio} onChange={e => setInfoForm(f => ({ ...f, bio: e.target.value }))} /></div>
                   <div style={{ gridColumn: isCompact ? 'auto' : 'span 2', display: 'grid', gridTemplateColumns: isCompact ? '1fr' : '1fr 1fr', gap: 12 }}>
                     <div>
                       <label className="label">Departamento de origen</label>
@@ -688,29 +785,68 @@ export function ConfiguracionClient({
                   </div>
                   <div style={{ gridColumn: isCompact ? 'auto' : 'span 2' }}>
                     <label className="label">Dirección / Colonia</label>
-                    <input className="input" placeholder="Ej: Col. Los Andes, calle principal" value={infoForm.ubicacion} onChange={e => setInfoForm(f => ({ ...f, ubicacion: e.target.value }))}/>
+                    <input className="input" placeholder="Ej: Col. Los Andes, calle principal" value={infoForm.ubicacion} onChange={e => setInfoForm(f => ({ ...f, ubicacion: e.target.value }))} />
                     <div className="help">Se muestra en el perfil de la tienda.</div>
+                  </div>
+                  <div style={{ gridColumn: isCompact ? 'auto' : 'span 2', borderTop: '1px solid var(--line)', paddingTop: 14, marginTop: 2 }}>
+                    <div className="text-[13px] font-semibold mb-[12px] text-[var(--ink-2)]">Región y moneda</div>
+                    <div className="grid gap-3" style={{ gridTemplateColumns: isCompact ? '1fr' : '1fr 1fr 1fr' }}>
+                      <div>
+                        <label className="label">País</label>
+                        <select
+                          className="input"
+                          value={PAISES_CONFIG.some(p => p.pais === infoForm.pais) ? infoForm.pais : PAISES_CONFIG[0].pais}
+                          onChange={e => {
+                            const found = PAISES_CONFIG.find(p => p.pais === e.target.value);
+                            if (found) setInfoForm(f => ({ ...f, pais: found.pais, moneda: found.moneda, simbolo_moneda: found.simbolo, codigo_telefono: found.telefono }));
+                          }}
+                        >
+                          {PAISES_CONFIG.map(p => (
+                            <option key={p.pais} value={p.pais}>{p.bandera} {p.pais}</option>
+                          ))}
+                        </select>
+                      </div>
+                      <div>
+                        <label className="label">Moneda (ISO)</label>
+                        <select
+                          className="input"
+                          value={infoForm.moneda}
+                          onChange={e => {
+                            const found = MONEDAS_CONFIG.find(m => m.moneda === e.target.value);
+                            if (found) setInfoForm(f => ({ ...f, moneda: found.moneda, simbolo_moneda: found.simbolo }));
+                          }}
+                        >
+                          {MONEDAS_CONFIG.map(m => (
+                            <option key={m.moneda} value={m.moneda}>{m.moneda}</option>
+                          ))}
+                        </select>
+                      </div>
+                      <div>
+                        <label className="label">Símbolo</label>
+                        <input className="input" value={infoForm.simbolo_moneda} onChange={e => setInfoForm(f => ({ ...f, simbolo_moneda: e.target.value }))} placeholder="L" />
+                      </div>
+                    </div>
                   </div>
                   <div style={{ gridColumn: isCompact ? 'auto' : 'span 2', borderTop: '1px solid var(--line)', paddingTop: 14, marginTop: 2 }}>
                     <div className="text-[13px] font-semibold mb-[12px] text-[var(--ink-2)]">Redes sociales</div>
                     <div className="settings-social-grid" style={{ display: 'grid', gridTemplateColumns: isCompact ? '1fr' : '1fr 1fr 1fr', gap: 12 }}>
                       <div>
                         <label className="label flex items-center gap-[6px]">
-                          <Icons.ig width={13} height={13}/> Instagram
+                          <Icons.ig width={13} height={13} /> Instagram
                         </label>
-                        <input className="input" placeholder="@tutienda" value={infoForm.instagram} onChange={e => setInfoForm(f => ({ ...f, instagram: e.target.value }))}/>
+                        <input className="input" placeholder="@tutienda" value={infoForm.instagram} onChange={e => setInfoForm(f => ({ ...f, instagram: e.target.value }))} />
                       </div>
                       <div>
                         <label className="label flex items-center gap-[6px]">
-                          <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/></svg> Facebook
+                          <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z" /></svg> Facebook
                         </label>
-                        <input className="input" placeholder="facebook.com/tutienda" value={infoForm.facebook} onChange={e => setInfoForm(f => ({ ...f, facebook: e.target.value }))}/>
+                        <input className="input" placeholder="facebook.com/tutienda" value={infoForm.facebook} onChange={e => setInfoForm(f => ({ ...f, facebook: e.target.value }))} />
                       </div>
                       <div>
                         <label className="label flex items-center gap-[6px]">
-                          <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-2.88 2.5 2.89 2.89 0 0 1-2.89-2.89 2.89 2.89 0 0 1 2.89-2.89c.28 0 .54.04.79.1V9.01a6.33 6.33 0 0 0-.79-.05 6.34 6.34 0 0 0-6.34 6.34 6.34 6.34 0 0 0 6.34 6.34 6.34 6.34 0 0 0 6.33-6.34V8.69a8.18 8.18 0 0 0 4.78 1.52V6.75a4.85 4.85 0 0 1-1.01-.06z"/></svg> TikTok
+                          <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-2.88 2.5 2.89 2.89 0 0 1-2.89-2.89 2.89 2.89 0 0 1 2.89-2.89c.28 0 .54.04.79.1V9.01a6.33 6.33 0 0 0-.79-.05 6.34 6.34 0 0 0-6.34 6.34 6.34 6.34 0 0 0 6.34 6.34 6.34 6.34 0 0 0 6.33-6.34V8.69a8.18 8.18 0 0 0 4.78 1.52V6.75a4.85 4.85 0 0 1-1.01-.06z" /></svg> TikTok
                         </label>
-                        <input className="input" placeholder="@tutienda" value={infoForm.tiktok} onChange={e => setInfoForm(f => ({ ...f, tiktok: e.target.value }))}/>
+                        <input className="input" placeholder="@tutienda" value={infoForm.tiktok} onChange={e => setInfoForm(f => ({ ...f, tiktok: e.target.value }))} />
                       </div>
                     </div>
                   </div>
@@ -731,7 +867,7 @@ export function ConfiguracionClient({
                     <div className="text-[15px] font-semibold">Métodos de pago</div>
                     <div className="t-mute text-[12px]">Tus compradoras verán estas opciones al pagar.</div>
                   </div>
-                  <button onClick={() => setShowAgregarPago(true)} className="btn btn-outline btn-sm" style={{ width: isNarrow ? '100%' : undefined }}><Icons.plus width={13} height={13}/> Agregar</button>
+                  <button onClick={() => setShowAgregarPago(true)} className="btn btn-outline btn-sm" style={{ width: isNarrow ? '100%' : undefined }}><Icons.plus width={13} height={13} /> Agregar</button>
                 </div>
                 {metodosPago.length === 0 ? (
                   <div className="py-[32px] text-center text-[var(--ink-3)] text-[13px]">No tenés métodos de pago configurados.</div>
@@ -741,16 +877,16 @@ export function ConfiguracionClient({
                       const Ic = m.tipo === 'tarjeta' ? Icons.card : Icons.bank;
                       return (
                         <div className="settings-method-row px-[14px] py-[12px] border border-[var(--line)] rounded-[10px] flex items-center gap-[12px]" key={m.id} style={{ flexWrap: isNarrow ? 'wrap' : undefined }}>
-                          <div className="w-[32px] h-[32px] rounded-[6px] bg-[var(--surface-2)] flex items-center justify-center"><Ic width={14} height={14}/></div>
+                          <div className="w-[32px] h-[32px] rounded-[6px] bg-[var(--surface-2)] flex items-center justify-center"><Ic width={14} height={14} /></div>
                           <div className="flex-1">
                             <div className="text-[13px] font-medium">{m.nombre}</div>
                             <div className="t-mute text-[11px]">{m.detalle ?? m.proveedor}</div>
                           </div>
                           <button onClick={() => handleTogglePago(m.id, !m.activo)} className="w-[32px] h-[18px] rounded-[10px] relative shrink-0 cursor-pointer border-none" style={{ background: m.activo ? 'var(--ink)' : 'var(--line)' }}>
-                            <div className="absolute top-[2px] w-[14px] h-[14px] rounded-[7px] bg-white transition-[left] duration-150" style={{ left: m.activo ? 16 : 2 }}/>
+                            <div className="absolute top-[2px] w-[14px] h-[14px] rounded-[7px] bg-white transition-[left] duration-150" style={{ left: m.activo ? 16 : 2 }} />
                           </button>
                           <button onClick={() => handleEliminarPago(m.id)} className="btn-ghost p-[4px]">
-                            <Icons.trash width={14} height={14} className="text-[var(--ink-3)]"/>
+                            <Icons.trash width={14} height={14} className="text-[var(--ink-3)]" />
                           </button>
                         </div>
                       );
@@ -766,7 +902,7 @@ export function ConfiguracionClient({
                 <div className="flex items-center justify-between mb-[16px] gap-[12px]">
                   <div>
                     <div className="text-[15px] font-semibold flex items-center gap-[8px]">
-                      <Icons.card width={15} height={15} className="text-[var(--ink-2)]"/>
+                      <Icons.card width={15} height={15} className="text-[var(--ink-2)]" />
                       Conectar PixelPay
                     </div>
                     <div className="t-mute text-[12px] mt-[2px]">Procesá pagos con tarjeta directamente en tu tienda.</div>
@@ -776,7 +912,7 @@ export function ConfiguracionClient({
                     className="w-[32px] h-[18px] rounded-[10px] relative shrink-0 cursor-pointer border-none"
                     style={{ background: pixelpayForm.enabled ? 'var(--ink)' : 'var(--line)' }}
                   >
-                    <div className="absolute top-[2px] w-[14px] h-[14px] rounded-[7px] bg-white transition-[left] duration-150" style={{ left: pixelpayForm.enabled ? 16 : 2 }}/>
+                    <div className="absolute top-[2px] w-[14px] h-[14px] rounded-[7px] bg-white transition-[left] duration-150" style={{ left: pixelpayForm.enabled ? 16 : 2 }} />
                   </button>
                 </div>
 
@@ -788,7 +924,7 @@ export function ConfiguracionClient({
                       className="w-[32px] h-[18px] rounded-[10px] relative shrink-0 cursor-pointer border-none"
                       style={{ background: pixelpayForm.sandbox ? 'var(--ink)' : 'var(--line)' }}
                     >
-                      <div className="absolute top-[2px] w-[14px] h-[14px] rounded-[7px] bg-white transition-[left] duration-150" style={{ left: pixelpayForm.sandbox ? 16 : 2 }}/>
+                      <div className="absolute top-[2px] w-[14px] h-[14px] rounded-[7px] bg-white transition-[left] duration-150" style={{ left: pixelpayForm.sandbox ? 16 : 2 }} />
                     </button>
                   </div>
 
@@ -851,12 +987,12 @@ export function ConfiguracionClient({
                     <div className="t-mute text-[12px] mt-[2px]">Vos definís con qué empresas enviás y cuánto cobrás.</div>
                   </div>
                   <button onClick={() => setEditingEnvio({})} className="btn btn-outline btn-sm" style={{ width: isNarrow ? '100%' : undefined }}>
-                    <Icons.plus width={13} height={13}/> Nuevo método
+                    <Icons.plus width={13} height={13} /> Nuevo método
                   </button>
                 </div>
                 {metodosEnvio.length === 0 ? (
                   <div className="py-[40px] text-center text-[var(--ink-3)] text-[13px]">
-                    No tenés métodos de envío configurados.<br/>
+                    No tenés métodos de envío configurados.<br />
                     <button onClick={() => setEditingEnvio({})} className="btn btn-outline btn-sm mt-[12px]">+ Agregar primero</button>
                   </div>
                 ) : (
@@ -865,7 +1001,7 @@ export function ConfiguracionClient({
                       <div key={m.id} className="px-[16px] py-[14px] border border-[var(--line)] rounded-[12px] bg-white">
                         <div className="settings-shipping-row flex items-start gap-[14px]" style={{ flexDirection: isNarrow ? 'column' : undefined }}>
                           <div className="w-[38px] h-[38px] rounded-[8px] bg-[var(--surface-2)] flex items-center justify-center shrink-0">
-                            <Icons.truck width={16} height={16} className="text-[var(--ink-2)]"/>
+                            <Icons.truck width={16} height={16} className="text-[var(--ink-2)]" />
                           </div>
                           <div className="flex-1 min-w-0">
                             <div className="flex items-baseline gap-[10px] flex-wrap">
@@ -878,13 +1014,13 @@ export function ConfiguracionClient({
                           </div>
                           <div className="flex gap-[6px] shrink-0 items-center" style={{ alignSelf: isNarrow ? 'stretch' : undefined, justifyContent: isNarrow ? 'flex-end' : undefined, width: isNarrow ? '100%' : undefined }}>
                             <button onClick={() => handleToggleEnvio(m.id, !m.activo)} className="w-[32px] h-[18px] rounded-[10px] relative shrink-0 cursor-pointer border-none" style={{ background: m.activo ? 'var(--ink)' : 'var(--line)' }}>
-                              <div className="absolute top-[2px] w-[14px] h-[14px] rounded-[7px] bg-white transition-[left] duration-150" style={{ left: m.activo ? 16 : 2 }}/>
+                              <div className="absolute top-[2px] w-[14px] h-[14px] rounded-[7px] bg-white transition-[left] duration-150" style={{ left: m.activo ? 16 : 2 }} />
                             </button>
                             <button onClick={() => setEditingEnvio(m)} className="btn-ghost p-[4px]">
-                              <Icons.edit width={14} height={14} className="text-[var(--ink-3)]"/>
+                              <Icons.edit width={14} height={14} className="text-[var(--ink-3)]" />
                             </button>
                             <button onClick={() => handleEliminarEnvio(m.id)} className="btn-ghost p-[4px]">
-                              <Icons.trash width={14} height={14} className="text-[var(--ink-3)]"/>
+                              <Icons.trash width={14} height={14} className="text-[var(--ink-3)]" />
                             </button>
                           </div>
                         </div>
@@ -892,6 +1028,60 @@ export function ConfiguracionClient({
                     ))}
                   </div>
                 )}
+              </div>
+            )}
+
+            {/* ── Conectar Boxful ── */}
+            {tab === 'ship' && (
+              <div className="card settings-card mt-[12px]" style={{ padding: isCompact ? 16 : 24 }}>
+                <div className="flex items-center justify-between mb-[16px] gap-[12px]">
+                  <div>
+                    <div className="text-[15px] font-semibold flex items-center gap-[8px]">
+                      <Icons.truck width={15} height={15} className="text-[var(--ink-2)]" />
+                      Conectar Boxful
+                    </div>
+                    <div className="t-mute text-[12px] mt-[2px]">Generá guías y rastreá envíos con tu cuenta de Boxful.</div>
+                  </div>
+                  <button
+                    onClick={() => setBoxfulForm(f => ({ ...f, enabled: !f.enabled }))}
+                    className="w-[32px] h-[18px] rounded-[10px] relative shrink-0 cursor-pointer border-none"
+                    style={{ background: boxfulForm.enabled ? 'var(--ink)' : 'var(--line)' }}
+                  >
+                    <div className="absolute top-[2px] w-[14px] h-[14px] rounded-[7px] bg-white transition-[left] duration-150" style={{ left: boxfulForm.enabled ? 16 : 2 }} />
+                  </button>
+                </div>
+
+                {boxfulForm.enabled && (
+                  <div className="grid gap-[10px]">
+                    <div>
+                      <label className="label">Email de Boxful</label>
+                      <input
+                        className="input"
+                        type="email"
+                        value={boxfulForm.email}
+                        onChange={e => setBoxfulForm(f => ({ ...f, email: e.target.value }))}
+                        placeholder="tu@email.com"
+                      />
+                    </div>
+                    <div>
+                      <label className="label">Contraseña de Boxful</label>
+                      <input
+                        className="input"
+                        type="password"
+                        value={boxfulForm.password}
+                        onChange={e => setBoxfulForm(f => ({ ...f, password: e.target.value }))}
+                        placeholder={tienda.boxful_email ? '••••••••' : 'Tu contraseña'}
+                      />
+                      {tienda.boxful_email && <div className="help mt-[4px]">Dejá vacío para mantener la contraseña actual.</div>}
+                    </div>
+                  </div>
+                )}
+
+                <div className="flex justify-end mt-[16px]">
+                  <button onClick={handleGuardarBoxful} disabled={isPending} className="btn btn-primary btn-sm">
+                    Guardar configuración
+                  </button>
+                </div>
               </div>
             )}
 
@@ -952,13 +1142,13 @@ export function ConfiguracionClient({
                     const Ic = m.icon;
                     return (
                       <div key={i} className="px-[14px] py-[12px] border border-[var(--line)] rounded-[10px] flex items-center gap-[12px]">
-                        <div className="w-[32px] h-[32px] rounded-[6px] bg-[var(--surface-2)] flex items-center justify-center"><Ic width={14} height={14}/></div>
+                        <div className="w-[32px] h-[32px] rounded-[6px] bg-[var(--surface-2)] flex items-center justify-center"><Ic width={14} height={14} /></div>
                         <div className="flex-1">
                           <div className="text-[13px] font-medium">{m.t}</div>
                           <div className="t-mute text-[11px]">{m.d}</div>
                         </div>
                         <div className="w-[32px] h-[18px] rounded-[10px] relative shrink-0" style={{ background: m.on ? 'var(--ink)' : 'var(--line)' }}>
-                          <div className="absolute top-[2px] w-[14px] h-[14px] rounded-[7px] bg-white transition-[left] duration-150" style={{ left: m.on ? 16 : 2 }}/>
+                          <div className="absolute top-[2px] w-[14px] h-[14px] rounded-[7px] bg-white transition-[left] duration-150" style={{ left: m.on ? 16 : 2 }} />
                         </div>
                       </div>
                     );
@@ -1001,9 +1191,9 @@ export function ConfiguracionClient({
           style={{ background: toast.ok ? '#0a0a0a' : '#dc2626' }}
         >
           {toast.ok ? (
-            <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><circle cx="7" cy="7" r="7" fill="#22c55e"/><path d="M4 7l2 2 4-4" stroke="#fff" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><circle cx="7" cy="7" r="7" fill="#22c55e" /><path d="M4 7l2 2 4-4" stroke="#fff" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /></svg>
           ) : (
-            <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><circle cx="7" cy="7" r="7" fill="#fff2f2"/><path d="M5 5l4 4M9 5l-4 4" stroke="#dc2626" strokeWidth="1.5" strokeLinecap="round"/></svg>
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><circle cx="7" cy="7" r="7" fill="#fff2f2" /><path d="M5 5l4 4M9 5l-4 4" stroke="#dc2626" strokeWidth="1.5" strokeLinecap="round" /></svg>
           )}
           {toast.msg}
         </div>
@@ -1020,10 +1210,18 @@ export function ConfiguracionClient({
 
       {/* Modales */}
       {editingEnvio !== null && (
-        <EnvioModal m={editingEnvio} onClose={() => setEditingEnvio(null)} onSave={handleGuardarEnvio}/>
+        <EnvioModal m={editingEnvio} onClose={() => setEditingEnvio(null)} onSave={handleGuardarEnvio} />
       )}
       {showAgregarPago && (
-        <AgregarMetodoPagoModal onClose={() => setShowAgregarPago(false)} onSave={handleAgregarPago}/>
+        <AgregarMetodoPagoModal onClose={() => setShowAgregarPago(false)} onSave={handleAgregarPago} />
+      )}
+      {confirmDeleteOpcion && (
+        <ConfirmDeleteModal
+          nombre={confirmDeleteOpcion.nombre}
+          tipo={confirmDeleteOpcion.tipo}
+          onConfirm={doEliminarOpcion}
+          onCancel={() => setConfirmDeleteOpcion(null)}
+        />
       )}
     </div>
   );

@@ -14,7 +14,7 @@ export default async function PedidosPage() {
 
   const { data: tienda } = await supabase
     .from('tiendas')
-    .select('id')
+    .select('id, simbolo_moneda')
     .eq('user_id', user.id)
     .single()
   if (!tienda) redirect('/onboarding')
@@ -30,7 +30,7 @@ export default async function PedidosPage() {
     .select(`
       id, numero, comprador_nombre, comprador_telefono, direccion,
       metodo_envio, monto_total, estado, created_at,
-      pagado_at, empacado_at, en_camino_at,
+      pagado_at, empacado_at, en_camino_at, entregado_at,
       tracking_numero, tracking_url,
       envio_proveedor, envio_modalidad, envio_monto,
       envio_courier_id, envio_courier_nombre, envio_courier_logo,
@@ -55,6 +55,7 @@ export default async function PedidosPage() {
       semanaCount={semanaCount}
       transitoTotal={transitoTotal}
       metodosEnvio={(metodosEnvio ?? []) as unknown as { id: string; nombre: string; tracking_url: string | null }[]}
+      simbolo={(tienda as unknown as { simbolo_moneda: string }).simbolo_moneda ?? 'L'}
     />
   )
 }

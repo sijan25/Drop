@@ -321,6 +321,7 @@ function ModalPrenda({ tiendaId, drops, prenda, onClose, onSaved }: ModalProps) 
 /* ─── Página principal ───────────────────────────────────── */
 export default function InventarioPage() {
   const [tiendaId, setTiendaId] = useState<string | null>(null);
+  const [simbolo, setSimbolo] = useState('L');
   const [prendas, setPrendas] = useState<Prenda[]>([]);
   const [drops, setDrops] = useState<Drop[]>([]);
   const [loading, setLoading] = useState(true);
@@ -349,10 +350,11 @@ export default function InventarioPage() {
       const supabase = createClient();
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
-      const { data: t } = await supabase.from('tiendas').select('id').eq('user_id', user.id as never).single();
+      const { data: t } = await supabase.from('tiendas').select('id, simbolo_moneda').eq('user_id', user.id as never).single();
       if (!t) return;
-      const tiendaData = t as { id: string };
+      const tiendaData = t as { id: string; simbolo_moneda: string };
       setTiendaId(tiendaData.id);
+      setSimbolo(tiendaData.simbolo_moneda ?? 'L');
       const { data: dropsData } = await supabase
         .from('drops').select('id, nombre').eq('tienda_id', tiendaData.id as never).order('inicia_at', { ascending: false });
       setDrops(dropsData ?? []);
@@ -506,7 +508,7 @@ export default function InventarioPage() {
                   <div className="t-mute text-[11px]">{p.categoria ?? '—'}</div>
                 </div>
                 <div className="t-mute inventory-drop">{p.drops?.nombre ?? '—'}</div>
-                <div className="mono tnum inventory-price font-medium">L {p.precio.toLocaleString()}</div>
+                <div className="mono tnum inventory-price font-medium">{simbolo} {p.precio.toLocaleString()}</div>
                 <div className="mono tnum inventory-qty font-semibold">{getProductTotalQuantity(p)}</div>
                 <div className="mono inventory-size whitespace-nowrap overflow-hidden text-ellipsis">{formatProductSizes(p)?.replace('Tallas ', '').replace('Talla ', '') ?? '—'}</div>
                 <div className="inventory-status"><Badge estado={p.estado} /></div>

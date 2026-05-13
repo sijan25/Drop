@@ -6,6 +6,7 @@ import { createClient, createServiceClient } from '@/lib/supabase/server';
 import { getCatalogDefaults, type CatalogOptionTipo, type TipoNegocio } from '@/lib/catalog-options';
 import { guardServerMutation } from '@/lib/security/request';
 import { encryptPixelPaySecret } from '@/lib/pixelpay/security';
+import { encryptBoxfulPassword } from '@/lib/boxful/security';
 import {
   STORE_USERNAME_TAKEN_ERROR,
   USERNAME_CHANGE_COOLDOWN_DAYS,
@@ -25,9 +26,6 @@ function normalizeWhatsapp(value: string): { value: string | null; error?: strin
 
   try {
     const parsed = parsePhoneNumberWithError(raw.startsWith('+') ? raw : `+${raw}`);
-    if (parsed.country === 'HN' && parsed.nationalNumber.length !== 8) {
-      return { value: null, error: 'El WhatsApp de Honduras debe tener exactamente 8 dígitos.' };
-    }
     if (!parsed.isValid()) {
       return { value: null, error: 'Ingresá un número de WhatsApp válido.' };
     }
@@ -77,6 +75,10 @@ export async function guardarInfoTienda(data: {
   ciudad: string;
   departamento: string;
   whatsapp: string;
+  pais?: string;
+  moneda?: string;
+  simbolo_moneda?: string;
+  codigo_telefono?: string;
   logo_url?: string | null;
   logo_cloudinary_id?: string | null;
   cover_url?: string | null;
@@ -148,6 +150,10 @@ export async function guardarInfoTienda(data: {
     ciudad: data.ciudad || null,
     departamento: data.departamento || null,
     whatsapp: whatsapp.value,
+    pais: data.pais?.trim() || 'Honduras',
+    moneda: data.moneda?.trim().toUpperCase() || 'HNL',
+    simbolo_moneda: data.simbolo_moneda?.trim() || 'L',
+    codigo_telefono: data.codigo_telefono?.trim() || '+504',
     ...(data.logo_url !== undefined ? { logo_url: data.logo_url } : {}),
     ...(data.logo_cloudinary_id !== undefined ? { logo_cloudinary_id: data.logo_cloudinary_id } : {}),
     ...(data.cover_url !== undefined ? { cover_url: data.cover_url } : {}),
@@ -567,7 +573,8 @@ export async function guardarPixelPayCredenciales(data: {
   };
 
   if (!data.sandbox) {
-    const { data: current } = await supabase
+    const svc = await createServiceClient();
+    const { data: current } = await svc
       .from('tiendas')
       .select('pixelpay_secret_key')
       .eq('id', tiendaId!)
@@ -631,6 +638,56 @@ export async function eliminarMetodoEnvio(id: string): Promise<{ error?: string 
     .delete()
     .eq('id', id)
     .eq('tienda_id', tiendaId!);
+
+  if (error) return { error: error.message };
+
+  revalidatePath('/configuracion');
+  return {};
+}
+
+export async function guardarBoxfulCredenciales(data: {
+  email: string;
+  password: string;
+  enabled: boolean;
+}): Promise<{ error?: string }> {
+  const { error: authError, tiendaId, supabase } = await getTiendaId();
+  if (authError || !supabase) return { error: authError ?? 'Error' };
+
+  if (data.enabled && (!data.email.trim() || !data.password.trim())) {
+    return { error: 'Ingresá tu email y contraseña de Boxful.' };
+  }
+
+  let encryptedPassword: string | null = null;
+  if (data.password.trim()) {
+    try {
+      encryptedPassword = encryptBoxfulPassword(data.password);
+    } catch {
+      return { error: 'No se pudo cifrar la contraseña. Configurá PIXELPAY_CREDENTIALS_SECRET.' };
+    }
+  }
+
+  if (data.enabled && !encryptedPassword) {
+    const svc = await createServiceClient();
+    const { data: current } = await svc
+      .from('tiendas')
+      .select('boxful_password')
+      .eq('id', tiendaId!)
+      .maybeSingle();
+    if (!current?.boxful_password) {
+      return { error: 'Ingresá tu contraseña de Boxful.' };
+    }
+  }
+
+  const update: Record<string, unknown> = {
+    boxful_enabled: data.enabled,
+    boxful_email: data.email.trim() || null,
+  };
+  if (encryptedPassword) update.boxful_password = encryptedPassword;
+
+  const { error } = await supabase
+    .from('tiendas')
+    .update(update)
+    .eq('id', tiendaId!);
 
   if (error) return { error: error.message };
 

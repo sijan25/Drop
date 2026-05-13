@@ -11,7 +11,6 @@ import { HONDURAS_STATES_FALLBACK } from '@/lib/boxful/honduras-states';
 import type { BoxfulState } from '@/lib/boxful/types';
 import { createAccount } from './actions';
 import s from '../auth.module.css';
-import { PLATFORM } from '@/lib/config/platform';
 
 interface StepOneData {
   email: string;
@@ -380,7 +379,7 @@ export default function OnboardingPage() {
                     <div key={i} className="flex items-center justify-between px-[14px] py-[10px] border border-[var(--line)] rounded-[10px] mb-[8px] bg-[var(--surface-2)]">
                       <div>
                         <div className="text-[13px] font-medium">{m.nombre}</div>
-                        <div className="t-mute text-[11px]">L {m.precio}{m.tiempoEstimado ? ` · ${m.tiempoEstimado}` : ''}</div>
+                        <div className="t-mute text-[11px]">{m.precio}{m.tiempoEstimado ? ` · ${m.tiempoEstimado}` : ''}</div>
                       </div>
                       <button type="button" onClick={() => setTwo(t => ({ ...t, metodosEnvio: t.metodosEnvio.filter((_, j) => j !== i) }))}
                         className="text-[11px] text-[var(--ink-3)] bg-transparent border-none cursor-pointer">Quitar</button>
@@ -483,12 +482,7 @@ export default function OnboardingPage() {
                     <div className="px-[16px] pb-[16px] grid gap-[10px]">
                       <div>
                         <label className="label">Banco</label>
-                        <select className="input" value={cuentaBancaria.banco} onChange={e => setCuentaBancaria(c => ({ ...c, banco: e.target.value }))}>
-                          <option value="">— Seleccioná tu banco —</option>
-                          {PLATFORM.banks.map(b => (
-                            <option key={b} value={b}>{b}</option>
-                          ))}
-                        </select>
+                        <input className="input" placeholder="Ej: Banco Nacional, BAC, Banesco…" value={cuentaBancaria.banco} onChange={e => setCuentaBancaria(c => ({ ...c, banco: e.target.value }))} />
                       </div>
                       <div className={`${s.obGrid2} gap-[10px]`}>
                         <div>

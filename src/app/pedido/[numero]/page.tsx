@@ -35,8 +35,9 @@ type Pedido = Pick<
   | 'envio_estado'
   | 'envio_tracking_url'
   | 'envio_label_url'
+  | 'simbolo_moneda'
 > & {
-  tienda: { nombre: string; username: string; logo_url: string | null; user_id: string } | null;
+  tienda: { nombre: string; username: string; logo_url: string | null; user_id: string; simbolo_moneda: string } | null;
   drop: { nombre: string | null } | null;
   items: {
     id: string;
@@ -81,6 +82,7 @@ function buildTimeline(pedido: Pedido) {
     },
     { label: 'Empacado', date: formatDate(pedido.empacado_at), done: empacadoDone },
     { label: 'Enviado', date: formatDate(pedido.en_camino_at), done: caminoDone, trackingUrl: caminoDone ? trackingUrl : null },
+    { label: 'Entregado', date: formatDate(pedido.entregado_at), done: entregadoDone },
   ];
 }
 
@@ -200,7 +202,8 @@ export default async function PedidoPublicoPage({
       comprobante_estado, pagado_at, empacado_at, en_camino_at, entregado_at, cancelado_at,
       foto_paquete_url, tracking_numero, tracking_url,
       envio_modalidad, envio_courier_nombre, envio_estado, envio_tracking_url, envio_label_url,
-      tienda:tiendas(nombre, username, logo_url, user_id),
+      simbolo_moneda,
+      tienda:tiendas(nombre, username, logo_url, user_id, simbolo_moneda),
       drop:drops(nombre),
       items:pedido_items(
         id, precio, talla_seleccionada,
@@ -268,7 +271,7 @@ export default async function PedidoPublicoPage({
                       </div>
                     </div>
                     <div className="mono tnum text-[14px] font-black">
-                      L {item.precio.toLocaleString()}
+                      {visiblePedido.simbolo_moneda ?? visiblePedido.tienda?.simbolo_moneda ?? 'L'} {item.precio.toLocaleString()}
                     </div>
                   </div>
                 ))}
@@ -276,7 +279,7 @@ export default async function PedidoPublicoPage({
 
               <div className="mt-[22px] pt-[18px] border-t border-black/[0.07] flex justify-between items-baseline">
                 <span className="text-[14px] font-extrabold">Total</span>
-                <span className="mono tnum text-[24px] font-black">L {visiblePedido.monto_total.toLocaleString()}</span>
+                <span className="mono tnum text-[24px] font-black">{visiblePedido.simbolo_moneda ?? visiblePedido.tienda?.simbolo_moneda ?? 'L'} {visiblePedido.monto_total.toLocaleString()}</span>
               </div>
             </div>
 

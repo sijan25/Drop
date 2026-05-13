@@ -9,7 +9,7 @@ export default async function ComprobantesPage() {
 
   const { data: tienda } = await supabase
     .from('tiendas')
-    .select('id')
+    .select('id, simbolo_moneda')
     .eq('user_id', user.id)
     .single()
   if (!tienda) redirect('/onboarding')
@@ -36,6 +36,7 @@ export default async function ComprobantesPage() {
     <ComprobantesClient
       comprobantes={(comprobantes ?? []) as Parameters<typeof ComprobantesClient>[0]['comprobantes']}
       historial={(historial ?? []) as Parameters<typeof ComprobantesClient>[0]['comprobantes']}
+      simbolo={(tienda as unknown as { simbolo_moneda: string }).simbolo_moneda ?? 'L'}
     />
   )
 }

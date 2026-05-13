@@ -1,5 +1,5 @@
 import { redirect } from 'next/navigation';
-import { createClient } from '@/lib/supabase/server';
+import { createClient, createServiceClient } from '@/lib/supabase/server';
 import { ConfiguracionClient } from './configuracion-client';
 
 export default async function ConfiguracionPage() {
@@ -7,7 +7,8 @@ export default async function ConfiguracionPage() {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect('/login');
 
-  const { data: tienda } = await supabase
+  const service = await createServiceClient();
+  const { data: tienda } = await service
     .from('tiendas')
     .select('*')
     .eq('user_id', user.id)
@@ -18,6 +19,7 @@ export default async function ConfiguracionPage() {
   const tiendaSinSecret = {
     ...tienda,
     pixelpay_secret_key: tienda.pixelpay_secret_key ? '' : null,
+    boxful_password: tienda.boxful_password ? '' : null,
   };
 
   const { data: metodosPago } = await supabase

@@ -9,7 +9,6 @@ import type { Tienda } from '@/types/tienda';
 import type { MetodoPago, MetodoEnvio } from '@/types/envio';
 import { obtenerPerfilComprador } from '@/lib/buyer/actions';
 import { crearCheckoutPublico } from '@/lib/checkout/actions';
-import { PLATFORM } from '@/lib/config/platform';
 import { uploadImage } from '@/lib/cloudinary/client';
 import { createClient } from '@/lib/supabase/client';
 import {
@@ -257,7 +256,7 @@ export function usePrendaCheckout({
         mode: boxfulData.mode,
         quote: boxfulData.quote,
         destination: boxfulData.destination,
-        originCityName: tienda.ciudad ?? PLATFORM.defaultCity,
+        originCityName: tienda.ciudad ?? null,
       } : undefined,
     });
 

@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Icons } from '@/components/shared/icons';
 import { createClient } from '@/lib/supabase/client';
-import { formatCurrency } from '@/lib/config/platform';
+import { formatCurrencyTienda } from '@/lib/config/platform';
 
 interface PedidoItem {
   precio: number;
@@ -56,9 +56,6 @@ function getRange(preset: Preset, customDesde?: string, customHasta?: string): {
   return { desde, hasta: now, label: String(now.getFullYear()) };
 }
 
-function fmtL(n: number) {
-  return formatCurrency(n);
-}
 
 function fmtFecha(iso: string | null | undefined) {
   if (!iso) return '—';
@@ -221,6 +218,8 @@ export default function AnaliticasClient() {
   const [isCompact, setIsCompact] = useState(false);
   const [isNarrow, setIsNarrow] = useState(false);
   const tiendaId = useRef<string | null>(null);
+  const simboloRef = useRef<string>('L');
+  function fmtL(n: number) { return formatCurrencyTienda(n, simboloRef.current); }
 
   async function cargar(p: Preset, cDesde?: string, cHasta?: string) {
     setLoading(true);
@@ -230,9 +229,11 @@ export default function AnaliticasClient() {
     if (!tiendaId.current) {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) { router.push('/login'); return; }
-      const { data: t } = await supabase.from('tiendas').select('id').eq('user_id', user.id as never).maybeSingle();
+      const { data: t } = await supabase.from('tiendas').select('id, simbolo_moneda').eq('user_id', user.id as never).maybeSingle();
       if (!t) { router.push('/onboarding'); return; }
-      tiendaId.current = (t as { id: string }).id;
+      const td = t as { id: string; simbolo_moneda: string };
+      tiendaId.current = td.id;
+      simboloRef.current = td.simbolo_moneda ?? 'L';
     }
 
     const { data } = await supabase
@@ -372,7 +373,7 @@ export default function AnaliticasClient() {
         </div>
       </div>
 
-      <div className="analytics-content flex-1 overflow-y-auto" style={{ padding: isCompact ? '14px 14px 120px' : '20px 28px 28px' }}>
+      <div className="analytics-content flex-1 overflow-y-auto overflow-x-auto" style={{ padding: isCompact ? '14px 14px 120px' : '20px 28px 28px' }}>
         {/* KPIs */}
         <div
           className="analytics-kpi-grid grid"
@@ -390,8 +391,8 @@ export default function AnaliticasClient() {
           ].map(k => (
             <div
               key={k.label}
-              className={`card analytics-kpi-card ${k.accent ? 'bg-[linear-gradient(135deg,#E78C61_0%,#C96442_100%)] border-0 shadow-[0_8px_24px_rgba(201,100,66,0.22)]' : ''}`}
-              style={{ padding: isCompact ? '16px' : '18px 20px' }}
+              className={`card analytics-kpi-card ${k.accent ? 'border-0 shadow-[0_8px_24px_rgba(201,100,66,0.22)]' : ''}`}
+              style={{ padding: isCompact ? '16px' : '18px 20px', ...(k.accent ? { background: 'linear-gradient(135deg,#E78C61 0%,#C96442 100%)' } : {}) }}
             >
               <div className={`text-[11px] font-bold uppercase tracking-[0.06em] mb-2 ${k.accent ? 'text-[rgba(255,255,255,0.75)]' : 'text-[var(--ink-3)]'}`}>
                 {k.label}

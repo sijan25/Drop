@@ -9,7 +9,7 @@ export const PLATFORM = {
   defaultCity: 'Tegucigalpa',
   location: 'San Pedro Sula, Honduras',
   cities: ['San Pedro Sula', 'Tegucigalpa', 'La Ceiba', 'Choloma', 'Comayagua', 'Choluteca'],
-  banks: ['Ficohsa', 'BAC Honduras', 'Banco Atlántida', 'Banco del País', 'Banpais', 'BANHCAFE', 'Davivienda', 'Lafise'],
+  phoneCode: '+504',
 } as const;
 
 export function formatCurrency(amount: number): string {
@@ -18,4 +18,30 @@ export function formatCurrency(amount: number): string {
 
 export function formatCurrencyFree(amount: number, freeLabel = 'Gratis'): string {
   return amount === 0 ? freeLabel : formatCurrency(amount);
+}
+
+export type TiendaMonedaConfig = {
+  pais: string;
+  moneda: string;
+  simbolo_moneda: string;
+  codigo_telefono: string;
+  ciudad?: string | null;
+};
+
+export function getTiendaConfig(tienda: Partial<TiendaMonedaConfig>): TiendaMonedaConfig {
+  return {
+    pais: tienda.pais || PLATFORM.country,
+    moneda: tienda.moneda || PLATFORM.currency,
+    simbolo_moneda: tienda.simbolo_moneda || PLATFORM.currencySymbol,
+    codigo_telefono: tienda.codigo_telefono || PLATFORM.phoneCode,
+    ciudad: tienda.ciudad,
+  };
+}
+
+export function formatCurrencyTienda(amount: number, simbolo: string): string {
+  return `${simbolo} ${amount.toLocaleString('es')}`;
+}
+
+export function formatCurrencyFreeTienda(amount: number, simbolo: string, freeLabel = 'Gratis'): string {
+  return amount === 0 ? freeLabel : formatCurrencyTienda(amount, simbolo);
 }
