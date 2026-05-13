@@ -8,6 +8,7 @@ interface LogoProps {
   white?: boolean;
   showWordmark?: boolean;
   className?: string;
+  live?: boolean;
 }
 
 export function Logo({
@@ -17,6 +18,7 @@ export function Logo({
   white = false,
   showWordmark = true,
   className,
+  live = false,
 }: LogoProps) {
   const cssVars = {
     '--fd-logo-size': `${size}px`,
@@ -35,7 +37,8 @@ export function Logo({
 
   return (
     <span className={[styles.logo, className].filter(Boolean).join(' ')} style={cssVars}>
-      <span className={styles.icon} aria-hidden="true">
+      <span className={styles.iconWrap} aria-hidden="true">
+      <span className={styles.icon}>
         <svg className={[styles.glyph, styles.glyphD].join(' ')} viewBox="0 0 48 48" fill="none">
           <path
             d="M16 10v28"
@@ -69,6 +72,8 @@ export function Logo({
             strokeLinecap="round"
           />
         </svg>
+      </span>
+      {live && <span className={styles.liveDot} />}
       </span>
 
       {showWordmark ? <span className={styles.wordmark}>Droppi</span> : null}

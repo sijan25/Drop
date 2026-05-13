@@ -359,7 +359,7 @@ export default function Home() {
           <div className="landing-demo-grid" data-reveal>
             <article className="landing-demo-card">
               <div className="landing-demo-head">
-                <span className="landing-demo-dot" />
+                <Logo size={22} showWordmark={false} live className="shrink-0" />
                 <strong>Drop en vivo — Fardo de primavera</strong>
                 <span>Cierra en</span>
               </div>
