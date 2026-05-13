@@ -39,34 +39,41 @@ export function Logo({
     <span className={[styles.logo, className].filter(Boolean).join(' ')} style={cssVars}>
       <span className={styles.iconWrap} aria-hidden="true">
       <span className={styles.icon}>
-        <svg className={[styles.glyph, styles.glyphD].join(' ')} viewBox="0 0 48 48" fill="none">
+        <svg className={styles.glyph} viewBox="0 0 48 48" fill="none">
+          {/* D — left stroke */}
           <path
-            d="M16 10v28"
+            d="M 11 15 L 11 40"
             stroke="var(--fd-logo-glyph-color)"
-            strokeWidth="4.25"
+            strokeWidth="4.5"
             strokeLinecap="round"
           />
+          {/* D — outer curve */}
           <path
-            d="M16 10c12 0 18 5.5 18 14s-6 14-18 14"
+            d="M 11 15 C 11 15 37 15 37 27.5 C 37 40 11 40 11 40"
             stroke="var(--fd-logo-glyph-color)"
-            strokeWidth="4.25"
+            strokeWidth="4.5"
             strokeLinecap="round"
             strokeLinejoin="round"
+            fill="none"
           />
-        </svg>
-
-        <svg className={[styles.glyph, styles.glyphBag].join(' ')} viewBox="0 0 48 48" fill="none">
+          {/* Bag body */}
           <rect
-            x="14"
-            y="18"
-            width="20"
-            height="18"
-            rx="4.5"
+            x="14" y="19" width="20" height="15"
+            rx="4"
             stroke="var(--fd-logo-glyph-color)"
             strokeWidth="3.75"
           />
+          {/* Bag handle */}
           <path
-            d="M18.5 19v-2c0-3.5 2.4-6 5.5-6s5.5 2.5 5.5 6v2"
+            d="M 18.5 19 V 16.5 C 18.5 12.5 21.2 9.5 24 9.5 C 26.8 9.5 29.5 12.5 29.5 16.5 V 19"
+            stroke="var(--fd-logo-glyph-color)"
+            strokeWidth="3.75"
+            strokeLinecap="round"
+            fill="none"
+          />
+          {/* Handle crossbar */}
+          <line
+            x1="18.5" y1="14.5" x2="29.5" y2="14.5"
             stroke="var(--fd-logo-glyph-color)"
             strokeWidth="3.75"
             strokeLinecap="round"
