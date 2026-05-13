@@ -34,11 +34,6 @@
   pointer-events: none;
 }
 
-.iconImg {
-  object-fit: contain;
-  object-position: center;
-  padding: 8%;
-}
 
 .iconWrap {
   position: relative;

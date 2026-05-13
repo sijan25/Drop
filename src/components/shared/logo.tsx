@@ -1,5 +1,4 @@
 import type { CSSProperties } from 'react';
-import Image from 'next/image';
 import styles from './logo.module.css';
 
 interface LogoProps {
@@ -27,8 +26,8 @@ export function Logo({
     '--fd-logo-wordmark-size': `${wordmarkSize ?? Math.max(13, Math.round(size * 0.68))}px`,
     '--fd-logo-text-color': color ?? (white ? '#ffffff' : '#1A1714'),
     '--fd-logo-tile-bg': white
-      ? 'linear-gradient(180deg, rgba(255,248,243,0.96) 0%, rgba(248,240,233,0.94) 100%)'
-      : 'linear-gradient(180deg, #d9754d 0%, #c96442 100%)',
+      ? "url('/logo-glyph.png') center/78% no-repeat, linear-gradient(180deg, rgba(255,248,243,0.96) 0%, rgba(248,240,233,0.94) 100%)"
+      : "url('/logo-glyph.png') center/78% no-repeat, linear-gradient(180deg, #d9754d 0%, #c96442 100%)",
     '--fd-logo-border': white ? 'rgba(255,255,255,0.14)' : 'rgba(26,23,20,0.08)',
     '--fd-logo-shadow': white
       ? '0 16px 34px rgba(0,0,0,0.24)'
@@ -38,16 +37,7 @@ export function Logo({
   return (
     <span className={[styles.logo, className].filter(Boolean).join(' ')} style={cssVars}>
       <span className={styles.iconWrap} aria-hidden="true">
-      <span className={styles.icon}>
-        <Image
-          src="/logo-glyph.png"
-          alt=""
-          fill
-          className={styles.iconImg}
-          sizes="64px"
-          priority
-        />
-      </span>
+      <span className={styles.icon} />
       {live && <span className={styles.liveDot} />}
       </span>
 
