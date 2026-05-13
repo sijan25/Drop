@@ -36,7 +36,7 @@ function normalizeText(value: string | null | undefined) {
     .trim();
 }
 
-function getWebhookToken(request: NextRequest, payload: BoxfulWebhookPayload) {
+function getWebhookToken(request: NextRequest) {
   const auth = request.headers.get('authorization')?.trim();
   if (auth?.toLowerCase().startsWith('bearer ')) return auth.slice(7).trim();
 
@@ -44,10 +44,8 @@ function getWebhookToken(request: NextRequest, payload: BoxfulWebhookPayload) {
     request.headers.get('x-boxful-token') ??
     request.headers.get('x-boxful-access-token') ??
     request.headers.get('x-webhook-token') ??
-    payload.accessToken ??
-    payload.token ??
     ''
-  ).toString().trim();
+  ).trim();
 }
 
 function isValidEventDate(value: string | undefined) {
@@ -135,7 +133,7 @@ export async function POST(request: NextRequest) {
   }
 
   const configuredToken = process.env.BOXFUL_WEBHOOK_TOKEN?.trim();
-  if (configuredToken && getWebhookToken(request, payload) !== configuredToken) {
+  if (configuredToken && getWebhookToken(request) !== configuredToken) {
     return NextResponse.json({ error: 'Invalid webhook token' }, { status: 401 });
   }
 
