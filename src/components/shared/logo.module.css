@@ -15,13 +15,23 @@
 }
 
 .icon {
+  position: relative;
   width: var(--fd-logo-size);
   height: var(--fd-logo-size);
   border-radius: calc(var(--fd-logo-size) * 0.26);
+  overflow: hidden;
   flex-shrink: 0;
+  border: 1px solid var(--fd-logo-border);
   box-shadow: var(--fd-logo-shadow);
-  object-fit: cover;
-  display: block;
+  background: var(--fd-logo-tile-bg);
+}
+
+.icon::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.14) 0%, rgba(255, 255, 255, 0) 42%);
+  pointer-events: none;
 }
 
 
