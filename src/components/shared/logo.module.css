@@ -3,8 +3,6 @@
   --fd-logo-gap: 8px;
   --fd-logo-wordmark-size: 14px;
   --fd-logo-text-color: #1a1714;
-  --fd-logo-tile-bg: linear-gradient(180deg, #d9754d 0%, #c96442 100%);
-  --fd-logo-glyph-color: #fff8f3;
   --fd-logo-border: rgba(26, 23, 20, 0.08);
   --fd-logo-shadow: 0 12px 28px rgba(26, 23, 20, 0.12);
 
@@ -21,23 +19,13 @@
 }
 
 .icon {
-  position: relative;
   width: var(--fd-logo-size);
   height: var(--fd-logo-size);
   border-radius: calc(var(--fd-logo-size) * 0.26);
-  overflow: hidden;
   flex-shrink: 0;
   border: 1px solid var(--fd-logo-border);
   box-shadow: var(--fd-logo-shadow);
   background: var(--fd-logo-tile-bg);
-}
-
-.icon::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.14) 0%, rgba(255, 255, 255, 0) 42%);
-  pointer-events: none;
 }
 
 .liveDot {
@@ -58,24 +46,6 @@
   50% { transform: scale(1.35); opacity: 0.7; }
 }
 
-.glyph {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  transform-origin: 50% 50%;
-}
-
-.glyphD {
-  animation: fd-logo-d 6.4s ease-in-out infinite;
-}
-
-.glyphBag {
-  opacity: 0;
-  transform: scale(0.78) rotate(8deg);
-  animation: fd-logo-bag 6.4s ease-in-out infinite;
-}
-
 .wordmark {
   color: var(--fd-logo-text-color);
   font-family: var(--font-sans), system-ui, sans-serif;
@@ -84,21 +54,4 @@
   line-height: 1;
   letter-spacing: -0.03em;
   white-space: nowrap;
-}
-
-@keyframes fd-logo-d {
-  0%, 36% { opacity: 1; transform: scale(1) rotate(0deg); }
-  44%, 80% { opacity: 0; transform: scale(0.76) rotate(-10deg); }
-  88%, 100% { opacity: 1; transform: scale(1) rotate(0deg); }
-}
-
-@keyframes fd-logo-bag {
-  0%, 38% { opacity: 0; transform: scale(0.78) rotate(8deg); }
-  48%, 76% { opacity: 1; transform: scale(1) rotate(0deg); }
-  84%, 100% { opacity: 0; transform: scale(0.8) rotate(-8deg); }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .glyphD { animation: none; opacity: 1; transform: none; }
-  .glyphBag { animation: none; opacity: 0; }
 }
