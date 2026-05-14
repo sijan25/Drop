@@ -23,15 +23,14 @@
   border-radius: calc(var(--fd-logo-size) * 0.26);
   overflow: hidden;
   flex-shrink: 0;
-  box-shadow: var(--fd-logo-shadow);
   position: relative;
 }
 
 .iconImg {
   position: absolute;
   inset: -7%;
-  width: 114%;
-  height: 114%;
+  width: 100%;
+  height: 100%;
   object-fit: cover;
 }
 
@@ -49,8 +48,17 @@
 }
 
 @keyframes fd-live-pulse {
-  0%, 100% { transform: scale(1); opacity: 1; }
-  50% { transform: scale(1.35); opacity: 0.7; }
+
+  0%,
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+
+  50% {
+    transform: scale(1.35);
+    opacity: 0.7;
+  }
 }
 
 .wordmark {
