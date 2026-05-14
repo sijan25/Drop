@@ -3,7 +3,6 @@
   --fd-logo-gap: 8px;
   --fd-logo-wordmark-size: 14px;
   --fd-logo-text-color: #1a1714;
-  --fd-logo-border: rgba(26, 23, 20, 0.08);
   --fd-logo-shadow: 0 12px 28px rgba(26, 23, 20, 0.12);
 
   display: inline-flex;
@@ -22,10 +21,18 @@
   width: var(--fd-logo-size);
   height: var(--fd-logo-size);
   border-radius: calc(var(--fd-logo-size) * 0.26);
+  overflow: hidden;
   flex-shrink: 0;
-  border: 1px solid var(--fd-logo-border);
   box-shadow: var(--fd-logo-shadow);
-  background: var(--fd-logo-tile-bg);
+  position: relative;
+}
+
+.iconImg {
+  position: absolute;
+  inset: -7%;
+  width: 114%;
+  height: 114%;
+  object-fit: cover;
 }
 
 .liveDot {
